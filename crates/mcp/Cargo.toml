@@ -1,0 +1,13 @@
+[package]
+name = "opengoal-animation-studio-mcp"
+description = "The MCP server of OpenGOAL Animation Studio: an AI assistant defines game-ready animations"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+animation-studio-core.workspace = true
