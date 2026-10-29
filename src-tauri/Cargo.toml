@@ -1,0 +1,24 @@
+[package]
+name = "opengoal-animation-studio"
+description = "OpenGOAL Animation Studio: plays, makes and checks the animations of Jak and Daxter entities"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+default-run = "opengoal-animation-studio"
+
+[build-dependencies]
+tauri-build = { version = "2.5.1", features = [] }
+
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+animation-studio-core.workspace = true
+tauri = { version = "2.11.2", features = [] }
+tauri-plugin-dialog = "2.7.0"
+tauri-plugin-opener = "2.5.3"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
