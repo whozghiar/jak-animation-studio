@@ -1,0 +1,28 @@
+ISC License
+
+Copyright (c) 2026 OpenGOAL Animation Studio contributors
+
+Permission to use, copy, modify, and/or distribute this software for any
+purpose with or without fee is hereby granted, provided that the above
+copyright notice and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+------------------------------------------------------------------------------
+
+This is an independent project, built for the OpenGOAL ecosystem
+(https://github.com/open-goal/jak-project). It is not affiliated with the
+OpenGOAL team, nor endorsed or supported by it. What it knows of the game's
+animation format comes from OpenGOAL's build_actor tool and research.
+
+The Jak and Daxter games belong to Sony Interactive Entertainment and were
+developed by Naughty Dog. No data of the games comes with this project: the
+models it edits are the user's own files.
+
+The fonts in src/assets/fonts/ keep their own licenses (OFL.txt, LICENSE.txt).

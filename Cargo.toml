@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = ["crates/core", "crates/mcp", "src-tauri"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "ISC"
+repository = "https://github.com/whozghiar/open-goal-animation-studio"
+rust-version = "1.89"
+
+[workspace.dependencies]
+anyhow = "1.0.102"
+dirs = "6"
+serde = { version = "1.0", features = ["derive"] }
+# float_roundtrip: the keyframes and rest poses read back exactly as written
+serde_json = { version = "1.0.149", features = ["float_roundtrip"] }
+animation-studio-core = { path = "crates/core" }
+
+[profile.release]
+strip = true
