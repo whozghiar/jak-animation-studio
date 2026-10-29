@@ -1,0 +1,20 @@
+#!/bin/sh
+# Formats the files of the commit before it is made (rustfmt for Rust, Prettier for the rest), then
+# stages them again. `npx yarn install` turns it on (git config core.hooksPath .githooks);
+# `git commit --no-verify` skips it once.
+# ponytail: a file partly staged is staged whole once formatted; lint-staged if that ever matters.
+
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$files" ] || exit 0
+
+rust=$(printf '%s\n' "$files" | grep '\.rs$')
+if [ -n "$rust" ]; then
+  printf '%s\n' "$rust" | xargs rustfmt || exit 1
+fi
+other=$(printf '%s\n' "$files" | grep -v '\.rs$')
+if [ -n "$other" ]; then
+  # .prettierignore keeps what is not ours (the skills' submodule, generated files) as it is
+  printf '%s\n' "$other" |
+    xargs npx prettier --plugin prettier-plugin-svelte --write --ignore-unknown --log-level warn || exit 1
+fi
+printf '%s\n' "$files" | xargs git add

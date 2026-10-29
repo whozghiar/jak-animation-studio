@@ -1,0 +1,74 @@
+name: Lint
+
+# The code's form, before anything is built: Rust formatted by rustfmt and checked by Clippy, the
+# interface formatted by Prettier and type-checked. `npx yarn format` fixes the formatting.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  rust-format:
+    name: Rust formatting
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: cargo fmt
+        run: cargo fmt --all --check
+
+  clippy:
+    name: Rust linter (Clippy)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: clippy
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
+      # the program embeds the built interface (dist/): it must exist for the program to compile
+      - name: Build the interface
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+  interface:
+    name: Interface (formatting, types)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install, check the formatting and the types
+        run: |
+          yarn install --frozen-lockfile
+          yarn check-format
+          yarn typecheck

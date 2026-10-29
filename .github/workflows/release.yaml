@@ -1,0 +1,185 @@
+name: Release
+
+# Run by hand (Actions > Release > Run workflow), with what the release changes: patch, minor or
+# major. The version follows the last tag vX.Y.Z (v1.0.0 for the first release): the run writes it
+# into package.json, Cargo.toml, Cargo.lock and src-tauri/tauri.conf.json, commits that to the
+# branch, tags the commit, then makes a draft release with, per platform (Windows, Linux, macOS),
+# the installers, a portable zip (the studio and its MCP server side by side, what the OpenGOAL
+# Launcher will download: opengoal-animation-studio-portable-<platform>.zip) and the MCP server
+# alone. Check the draft, then publish it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "What the release changes: patch (fixes), minor (new features), major (breaking changes)"
+        type: choice
+        options: [patch, minor, major]
+        default: patch
+
+permissions:
+  contents: write
+
+# one release at a time: two runs would take the same number
+concurrency: release
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+
+jobs:
+  draft:
+    name: Version and draft release
+    runs-on: ubuntu-24.04
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      release_id: ${{ steps.draft.outputs.release_id }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Next version, committed and tagged
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+        run: |
+          last=$(git ls-remote --tags --refs origin 'v*' | sed 's#.*refs/tags/##' |
+            grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
+          if [ -z "$last" ]; then
+            next=1.0.0
+          else
+            IFS=. read -r major minor patch <<< "${last#v}"
+            case "$BUMP" in
+              major) next="$((major + 1)).0.0" ;;
+              minor) next="$major.$((minor + 1)).0" ;;
+              *) next="$major.$minor.$((patch + 1))" ;;
+            esac
+          fi
+          tag="v$next"
+          echo "last release ${last:-none}, $BUMP: $tag"
+
+          sed -i -E "0,/\"version\": \"[^\"]*\"/s//\"version\": \"$next\"/" package.json src-tauri/tauri.conf.json
+          sed -i -E "0,/^version = \"[^\"]*\"$/s//version = \"$next\"/" Cargo.toml
+          cargo update --workspace
+          package=$(node -p "require('./package.json').version")
+          tauri=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          cargo=$(sed -n 's/^version = "\(.*\)"$/\1/p' Cargo.toml | head -n 1)
+          for version in "$package" "$cargo" "$tauri"; do
+            if [ "$version" != "$next" ]; then
+              echo "::error::The versions were not all written: package.json $package, Cargo.toml $cargo, src-tauri/tauri.conf.json $tauri"
+              exit 1
+            fi
+          done
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: release $tag" || echo "the versions were already $next"
+          git tag "$tag"
+          git push --atomic origin "HEAD:refs/heads/$GITHUB_REF_NAME" "refs/tags/$tag"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create the draft release
+        id: draft
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          # the id from the answer itself: a draft just made may not be listed yet
+          id=$(gh api -X POST "repos/$GH_REPO/releases" -f tag_name="$TAG" -f name="OpenGOAL Animation Studio $TAG" \
+            -F draft=true -F generate_release_notes=true --jq .id)
+          echo "release $id"
+          echo "release_id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build (${{ matrix.platform }})
+    needs: draft
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x64
+          - os: ubuntu-24.04
+            platform: linux-x64
+          # one program for Apple Silicon and Intel Macs
+          - os: macos-latest
+            platform: macos-universal
+            target: universal-apple-darwin
+    runs-on: ${{ matrix.os }}
+    env:
+      TAG: ${{ needs.draft.outputs.tag }}
+      # Windows: the C runtime inside the programs, which then run without the VC++ redistributable
+      RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-C target-feature=+crt-static' || '' }}
+    steps:
+      # the commit the version was written in
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.draft.outputs.tag }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: yarn
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: release-${{ matrix.os }}
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev zip
+
+      - name: Install the interface's packages
+        run: yarn install --frozen-lockfile
+
+      - name: Build the studio and its installers
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          releaseId: ${{ needs.draft.outputs.release_id }}
+          args: --config src-tauri/tauri.release.conf.json ${{ matrix.target && format('--target {0}', matrix.target) || '' }}
+
+      - name: Build the MCP server
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = macOS ]; then
+            # both Macs' programs in one (as the studio's universal-apple-darwin)
+            for arch in aarch64 x86_64; do
+              cargo build --release -p opengoal-animation-studio-mcp --target "$arch-apple-darwin"
+            done
+            mkdir -p target/universal-apple-darwin/release
+            lipo -create -output target/universal-apple-darwin/release/opengoal-animation-studio-mcp \
+              target/aarch64-apple-darwin/release/opengoal-animation-studio-mcp \
+              target/x86_64-apple-darwin/release/opengoal-animation-studio-mcp
+          else
+            cargo build --release -p opengoal-animation-studio-mcp
+          fi
+
+      - name: Make the zips and upload them
+        shell: bash
+        env:
+          # not PLATFORM: Windows' names ignore case
+          ASSET_PLATFORM: ${{ matrix.platform }}
+        run: |
+          exe=""; [ "$RUNNER_OS" = Windows ] && exe=.exe
+          bin=target/release; [ "$RUNNER_OS" = macOS ] && bin=target/universal-apple-darwin/release
+          zip_dir() { # zip_dir <folder> <zip>: the folder's content at the zip's root
+            if [ "$RUNNER_OS" = Windows ]; then (cd "$1" && 7z a -tzip -bso0 "$2" .)
+            else (cd "$1" && zip -qr "$2" .); fi
+          }
+          rm -rf stage && mkdir -p stage/portable stage/mcp stage/dist
+          out="$PWD/stage/dist"
+          # the MCP server next to the studio: its settings show the command to register it from there
+          cp "$bin/opengoal-animation-studio$exe" "$bin/opengoal-animation-studio-mcp$exe" stage/portable/
+          cp "$bin/opengoal-animation-studio-mcp$exe" stage/mcp/
+          zip_dir stage/portable "$out/opengoal-animation-studio-portable-$ASSET_PLATFORM.zip"
+          zip_dir stage/mcp "$out/opengoal-animation-studio-mcp-$ASSET_PLATFORM.zip"
+          ls -l stage/dist
+          gh release upload "$TAG" stage/dist/*.zip --clobber
