@@ -1,0 +1,459 @@
+use std::f32::consts::FRAC_1_SQRT_2;
+
+use serde_json::json;
+
+use crate::{
+  edit::{self, Channel, JointPose, Pose},
+  glb::Glb,
+  library, math, model,
+  rules::{self, Level},
+};
+
+/// A chain of `n` joints ("align", then "j1", "j2"... 10 cm above each other) skinning a triangle.
+fn skinned(n: usize) -> Glb {
+  let mut glb = Glb {
+    json: json!({ "asset": { "version": "2.0" } }),
+    bin: Vec::new(),
+  };
+  let positions = glb.push_floats(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], "VEC3");
+  let ibm: Vec<f32> = (0..n)
+    .flat_map(|i| {
+      let mut m = [0.0; 16];
+      (m[0], m[5], m[10], m[15]) = (1.0, 1.0, 1.0, 1.0);
+      m[13] = -0.1 * i as f32;
+      m
+    })
+    .collect();
+  let ibm = glb.push_floats(&ibm, "MAT4");
+  let mut nodes: Vec<_> = (0..n)
+    .map(|i| {
+      let mut node = json!({
+        "name": if i == 0 { "align".to_owned() } else { format!("j{i}") },
+        "translation": [0.0, if i == 0 { 0.0 } else { 0.1 }, 0.0],
+      });
+      if i + 1 < n {
+        node["children"] = json!([i + 1]);
+      }
+      node
+    })
+    .collect();
+  nodes.push(json!({ "name": "body", "mesh": 0, "skin": 0 }));
+  glb.json["nodes"] = json!(nodes);
+  glb.json["meshes"] = json!([{ "primitives": [{ "attributes": { "POSITION": positions } }] }]);
+  glb.json["skins"] = json!([{ "joints": (0..n).collect::<Vec<_>>(), "inverseBindMatrices": ibm }]);
+  glb.json["scenes"] = json!([{ "nodes": [0, n] }]);
+  glb
+}
+
+fn rotation(joint: usize, times: &[f32]) -> Channel {
+  let values = times
+    .iter()
+    .flat_map(|t| math::from_euler_xyz_degrees([0.0, 0.0, 90.0 * t]))
+    .collect();
+  Channel {
+    joint,
+    path: "rotation".into(),
+    times: times.to_vec(),
+    values,
+  }
+}
+
+fn errors(glb: &Glb, name: &str) -> Vec<&'static str> {
+  rules::check(glb, name)
+    .into_iter()
+    .filter(|i| i.level == Level::Error)
+    .map(|i| i.text.code)
+    .collect()
+}
+
+#[test]
+fn reads_back_what_it_writes() {
+  let glb = Glb::parse(&skinned(4).to_bytes()).unwrap();
+  let joints = model::skeleton(&glb).unwrap();
+  let names: Vec<_> = joints.iter().map(|j| j.name.as_str()).collect();
+  assert_eq!(names, ["align", "j1", "j2", "j3"]);
+  assert_eq!(joints[3].parent, Some(2));
+  assert_eq!(joints[0].parent, None);
+  assert_eq!(glb.floats(&json!(0)).unwrap()[3], 1.0);
+}
+
+#[test]
+fn every_joint_is_keyed_and_constant_keys_are_stored_once() {
+  let mut glb = skinned(4);
+  edit::set_animation(&mut glb, "wave", &[rotation(2, &[0.0, 0.5, 1.0])]).unwrap();
+  let anim = &glb.array("animations")[0];
+  let channels = model::channels(&glb, anim);
+  assert_eq!(channels.len(), 4 * 3);
+  for c in &channels {
+    let (times, _) = c.keys.as_ref().unwrap();
+    let moving = c.node == 2 && c.path == "rotation";
+    assert_eq!(times.len(), if moving { 3 } else { 1 }, "{c:?}");
+  }
+  assert!(errors(&glb, "chain").is_empty());
+  assert_eq!(model::animations(&glb)[0].duration, 1.0);
+}
+
+#[test]
+fn replacing_keeps_the_slot_and_the_size() {
+  let mut glb = skinned(4);
+  edit::set_animation(&mut glb, "a", &[rotation(1, &[0.0, 1.0])]).unwrap();
+  edit::set_animation(&mut glb, "b", &[rotation(2, &[0.0, 1.0])]).unwrap();
+  let size = glb.bin.len();
+  edit::set_animation(&mut glb, "a", &[rotation(3, &[0.0, 1.0])]).unwrap();
+  let names: Vec<_> = model::animations(&glb)
+    .into_iter()
+    .map(|a| a.name)
+    .collect();
+  assert_eq!(names, ["a", "b"]);
+  assert_eq!(glb.bin.len(), size);
+  edit::delete_animation(&mut glb, "a").unwrap();
+  edit::delete_animation(&mut glb, "b").unwrap();
+  // what is left: the triangle and the inverse bind matrices
+  assert_eq!(glb.bin.len(), 9 * 4 + 4 * 16 * 4);
+  assert_eq!(glb.floats(&json!(0)).unwrap()[3], 1.0);
+  assert!(glb.json.get("animations").is_none());
+}
+
+#[test]
+fn a_foreign_animation_is_flagged_then_fixed_by_normalize() {
+  let mut glb = skinned(4);
+  let times = glb.push_floats(&[0.0, 1.0], "SCALAR");
+  let rot = glb.push_floats(
+    &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, FRAC_1_SQRT_2, FRAC_1_SQRT_2],
+    "VEC4",
+  );
+  let weights = glb.push_floats(&[0.0, 1.0], "SCALAR");
+  let moves = glb.push_floats(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0], "VEC3");
+  glb.json["animations"] = json!([{
+    "name": "Wave",
+    "samplers": [
+      { "input": times, "output": rot, "interpolation": "STEP" },
+      { "input": times, "output": weights },
+      { "input": times, "output": moves }
+    ],
+    "channels": [
+      { "sampler": 0, "target": { "node": 2, "path": "rotation" } },
+      { "sampler": 1, "target": { "node": 4, "path": "weights" } },
+      { "sampler": 2, "target": { "node": 4, "path": "translation" } }
+    ]
+  }]);
+  let found = errors(&glb, "chain");
+  for code in ["missing-keys", "weights", "not-a-joint"] {
+    assert!(found.contains(&code), "{code} in {found:?}");
+  }
+  let notes = edit::normalize(&mut glb, "chain").unwrap();
+  assert!(
+    notes
+      .iter()
+      .any(|n| n.code == "renamed" && n.args["to"] == "chain-wave"),
+    "{notes:?}"
+  );
+  assert!(errors(&glb, "chain").is_empty());
+  assert_eq!(model::animations(&glb)[0].name, "chain-wave");
+}
+
+#[test]
+fn animation_names_lose_their_model_prefix() {
+  assert_eq!(rules::short_name("babak-idle", "babak-lod0"), "idle");
+  assert_eq!(rules::short_name("babak-lod0-walk", "babak-lod0"), "walk");
+  assert_eq!(rules::short_name("wave", "babak-lod0"), "wave");
+  assert_eq!(rules::short_name("crab-idle", "my-crab"), "crab-idle");
+}
+
+#[test]
+fn the_game_limits_are_checked() {
+  assert!(errors(&skinned(rules::MAX_JOINTS + 1), "big").contains(&"too-many-joints"));
+  assert!(errors(&skinned(rules::MAX_JOINTS), "big").is_empty());
+
+  // 110 joints moving in translation, rotation and scale: 2 x 64 + 108 x 20 bytes a frame
+  let mut glb = skinned(110);
+  let channels: Vec<Channel> = (0..110)
+    .flat_map(|j| {
+      let moving = |path: &str, a: f32, b: f32| Channel {
+        joint: j,
+        path: path.into(),
+        times: vec![0.0, 1.0],
+        values: vec![a, a, a, b, b, b],
+      };
+      [
+        moving("translation", 0.0, 0.1),
+        moving("scale", 1.0, 1.1),
+        rotation(j, &[0.0, 1.0]),
+      ]
+    })
+    .collect();
+  edit::set_animation(&mut glb, "everything", &channels).unwrap();
+  assert!(errors(&glb, "big").contains(&"frame-too-big"));
+}
+
+#[test]
+fn poses_are_relative_to_the_rest_pose() {
+  let mut glb = skinned(3);
+  let joints = model::skeleton(&glb).unwrap();
+  let poses: Vec<Pose> = serde_json::from_value(json!([
+    { "time": 1.0, "joints": { "j1": { "rotate": [0, 0, 90], "translate": [0, 0.5, 0] } } },
+    { "time": 0.0, "joints": { "j1": {} } }
+  ]))
+  .unwrap();
+  let channels = edit::channels_from_poses(&joints, &poses).unwrap();
+  let t = channels.iter().find(|c| c.path == "translation").unwrap();
+  assert_eq!(t.times, [1.0]);
+  assert!((t.values[1] - 0.6).abs() < 1e-6);
+  edit::set_animation(&mut glb, "turn", &channels).unwrap();
+  let bad = vec![Pose {
+    time: 0.0,
+    joints: [("nope".to_owned(), JointPose::default())].into(),
+  }];
+  assert!(edit::channels_from_poses(&joints, &bad).is_err());
+}
+
+#[test]
+fn a_creation_is_a_copy_and_exports_for_the_game() {
+  let root = std::env::temp_dir().join(format!("ogas-test-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  let (models, creations) = (root.join("models"), root.join("creations"));
+  std::fs::create_dir_all(&models).unwrap();
+  let source = models.join("My Crab.glb");
+  skinned(4).write(&source).unwrap();
+  std::fs::write(
+    models.join("rock.glb"),
+    Glb {
+      json: json!({ "asset": { "version": "2.0" } }),
+      bin: vec![],
+    }
+    .to_bytes(),
+  )
+  .unwrap();
+
+  let listed = library::list_models(&models, "jak2", true);
+  assert_eq!(listed.len(), 1, "only the entity is listed");
+  let creation = library::edit_creation(&source, &creations, "jak2", |glb| {
+    edit::set_animation(glb, "idle", &[rotation(1, &[0.0, 1.0])])
+  })
+  .unwrap();
+  assert_eq!(
+    creation,
+    creations.join("jak2").join("my-crab").join("my-crab.glb")
+  );
+  assert!(
+    Glb::read(&source).unwrap().array("animations").is_empty(),
+    "the original is untouched"
+  );
+
+  let export = library::export(&creation, "jak2", None, "en").unwrap();
+  assert!(
+    export
+      .glb
+      .ends_with("export/custom_assets/jak2/models/custom_levels/my-crab.glb")
+  );
+  assert!(
+    export.issues.iter().all(|i| i.level != Level::Error),
+    "{:?}",
+    export.issues
+  );
+  let readme = std::fs::read_to_string(&export.readme).unwrap();
+  assert!(readme.contains("(build-actor \"my-crab\")") && readme.contains(":art (idle-ja)"));
+  assert_eq!(
+    library::list_models(&creations, "jak2", true).len(),
+    1,
+    "exports are not listed"
+  );
+
+  let rock = library::import(&models.join("rock.glb"), &creations, "jak2", false).unwrap_err();
+  assert_eq!(
+    rock.downcast_ref::<rules::Text>().map(|t| t.code),
+    Some("not-an-entity"),
+    "the interface says it in its language"
+  );
+  let readme = library::export(&creation, "jak2", None, "fr")
+    .unwrap()
+    .readme;
+  assert!(
+    std::fs::read_to_string(readme)
+      .unwrap()
+      .contains("Construisez son art group")
+  );
+  assert!(library::import(&source, &creations, "jak2", false).is_err());
+  library::import(&source, &creations, "jak2", true).unwrap();
+  assert!(
+    Glb::read(&creation).unwrap().array("animations").is_empty(),
+    "replaced by the imported model"
+  );
+  assert!(library::import(&source, &creations, "jak4", false).is_err());
+
+  let request = library::PlayRequest {
+    model: creation,
+    animation: Some("idle".into()),
+    game: "jak2".into(),
+    at: library::PlayRequest::now(),
+  };
+  request.send(&root).unwrap();
+  assert_eq!(library::PlayRequest::take(&root), Some(request));
+  assert_eq!(library::PlayRequest::take(&root), None, "played once");
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
+#[test]
+fn a_turn_is_about_the_armature_axes() {
+  // j1 lies turned 90 degrees about X at rest: its own axes are not the armature's
+  let mut glb = skinned(3);
+  glb.json["nodes"][1]["rotation"] = json!(math::from_euler_xyz_degrees([90.0, 0.0, 0.0]));
+  let joints = model::skeleton(&glb).unwrap();
+  let poses: Vec<Pose> =
+    serde_json::from_value(json!([{ "time": 0.0, "joints": { "j2": { "turn": [0, 0, 90] } } }]))
+      .unwrap();
+  let channels = edit::channels_from_poses(&joints, &poses).unwrap();
+  let local: [f32; 4] = channels[0].values[..4].try_into().unwrap();
+  let world = model::rest_world(&joints);
+  let turned = math::rotate(math::mul(world[1].0, local), [0.0, 1.0, 0.0]);
+  let expected = math::rotate(
+    math::from_euler_xyz_degrees([0.0, 0.0, 90.0]),
+    math::rotate(world[2].0, [0.0, 1.0, 0.0]),
+  );
+  for i in 0..3 {
+    assert!(
+      (turned[i] - expected[i]).abs() < 1e-5,
+      "{turned:?} {expected:?}"
+    );
+  }
+}
+
+#[test]
+fn entities_have_their_official_names() {
+  let flutflut = crate::names::title("jak1", "flutflut-lod0").unwrap();
+  assert_eq!(
+    (flutflut.en.as_str(), flutflut.fr.as_deref()),
+    ("Flut Flut", Some("Flut-Flut"))
+  );
+  assert!(crate::names::title("jak1", "my-crab").is_none());
+  assert!(
+    crate::names::title("jak2", "flutflut-lod0").is_none(),
+    "names are by game"
+  );
+}
+
+#[test]
+fn objects_are_told_from_living_entities() {
+  use crate::names::is_object;
+  for living in ["babak-lod0", "eichar-lod0", "yakow-lod0", "flutflut-lod0"] {
+    assert!(!is_object("jak1", living), "{living}");
+  }
+  for object in [
+    "barrel-lod0",
+    "fuel-cell-lod0",
+    "ecovalve-geo",
+    "plant-boss-arms-lod0",
+    "robotboss-basic-lod0",
+  ] {
+    assert!(is_object("jak1", object), "{object}");
+  }
+  assert!(
+    !is_object("jak1", "my-crab"),
+    "a model of your own is shown"
+  );
+  assert!(is_object("jak2", "atoll-hatch-lod0") && !is_object("jak2", "fodder-lod0"));
+  assert!(
+    is_object("jak2", "roboguard-lod0") && is_object("jak3", "kg-grunt-lod0"),
+    "robots"
+  );
+}
+
+/// A u32 index accessor.
+fn push_indices(glb: &mut Glb, indices: &[u32]) -> usize {
+  while !glb.bin.len().is_multiple_of(4) {
+    glb.bin.push(0);
+  }
+  let offset = glb.bin.len();
+  for i in indices {
+    glb.bin.extend(i.to_le_bytes());
+  }
+  glb
+    .array_mut("bufferViews")
+    .push(json!({ "buffer": 0, "byteOffset": offset, "byteLength": indices.len() * 4 }));
+  let view = glb.array("bufferViews").len() - 1;
+  glb.array_mut("accessors").push(
+    json!({ "bufferView": view, "componentType": 5125, "count": indices.len(), "type": "SCALAR" }),
+  );
+  glb.array("accessors").len() - 1
+}
+
+#[test]
+fn a_look_hides_parts_and_bakes_blend_shapes() {
+  let mut glb = skinned(3);
+  // two pieces, each drawing its own three vertices; one blend shape lifting the first vertex
+  let mut corners = Vec::new();
+  for z in [0.0, 1.0] {
+    corners.extend([0.0, 0.0, z, 1.0, 0.0, z, 0.0, 1.0, z]);
+  }
+  let positions = glb.push_floats(&corners, "VEC3");
+  let mut lift = vec![0.0; 18];
+  lift[1] = 1.0;
+  let lift = glb.push_floats(&lift, "VEC3");
+  let (a, b) = (
+    push_indices(&mut glb, &[0, 1, 2]),
+    push_indices(&mut glb, &[3, 4, 5]),
+  );
+  let piece = |indices| json!({ "attributes": { "POSITION": positions }, "indices": indices, "targets": [{ "POSITION": lift }] });
+  glb.json["meshes"] = json!([{ "primitives": [piece(a), piece(b)], "weights": [0.0] }]);
+
+  let looks = crate::looks::looks(&glb);
+  assert_eq!(looks.targets, 1);
+  assert_eq!(
+    looks
+      .parts
+      .iter()
+      .map(|p| p.primitives.clone())
+      .collect::<Vec<_>>(),
+    [vec![0], vec![1]]
+  );
+
+  crate::looks::apply(&mut glb, &[(0, 1)], &[1.0]).unwrap();
+  let mesh = &glb.array("meshes")[0];
+  assert_eq!(mesh["primitives"].as_array().unwrap().len(), 1);
+  assert!(mesh["primitives"][0].get("targets").is_none() && mesh.get("weights").is_none());
+  let baked = glb
+    .floats(&mesh["primitives"][0]["attributes"]["POSITION"])
+    .unwrap();
+  assert_eq!(baked[1], 1.0, "the shape is in the vertices");
+  assert!(
+    crate::looks::apply(&mut glb, &[(0, 0)], &[]).is_err(),
+    "a model keeps a part"
+  );
+}
+
+#[test]
+fn a_twin_skeleton_completes_the_animations() {
+  let root = std::env::temp_dir().join(format!("ogas-twins-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  std::fs::create_dir_all(root.join("level")).unwrap();
+  let mesh = root.join("jak-lod0.glb");
+  skinned(4).write(&mesh).unwrap();
+  let mut anims = skinned(4);
+  edit::set_animation(&mut anims, "run", &[rotation(2, &[0.0, 1.0])]).unwrap();
+  anims
+    .write(&root.join("level").join("jak-anims-lod0.glb"))
+    .unwrap();
+  skinned(5).write(&root.join("other-lod0.glb")).unwrap();
+  let mut stranger = skinned(4);
+  edit::set_animation(&mut stranger, "idle", &[rotation(2, &[0.0, 1.0])]).unwrap();
+  stranger.write(&root.join("stranger-lod0.glb")).unwrap();
+
+  let twins = library::twins(&mesh, std::slice::from_ref(&root));
+  assert_eq!(
+    twins.len(),
+    1,
+    "neither the other skeleton nor another entity's same one is a twin"
+  );
+  assert_eq!(twins[0].animations, ["run"]);
+
+  let mut glb = Glb::read(&mesh).unwrap();
+  let added = edit::copy_animations(&mut glb, &Glb::read(&twins[0].path).unwrap()).unwrap();
+  assert_eq!(added, 1);
+  assert_eq!(model::animations(&glb)[0].name, "run");
+  assert_eq!(
+    edit::copy_animations(&mut glb, &Glb::read(&twins[0].path).unwrap()).unwrap(),
+    0,
+    "an animation it has is not added again"
+  );
+  std::fs::remove_dir_all(&root).unwrap();
+}

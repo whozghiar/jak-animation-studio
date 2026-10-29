@@ -1,0 +1,2930 @@
+{
+  "jak1": {
+    "aphid-lurker": {
+      "en": "Aphid Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Aphid_lurker",
+      "fr_source": null
+    },
+    "assistant": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "assistant-firecanyon": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "assistant-lavatube-end": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "assistant-lavatube-start": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "assistant-village2": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "assistant-village3": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x0124",
+      "fr_source": "game_text #x0124"
+    },
+    "babak": {
+      "en": "Babak",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Babak",
+      "fr_source": null
+    },
+    "baby-spider": {
+      "en": "Baby Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spider_(lurker)",
+      "fr_source": null
+    },
+    "balloonlurker": {
+      "en": "Balloon Lurker",
+      "fr": "Ballon des Lurkers",
+      "en_source": "game_text #x0217",
+      "fr_source": "game_text #x0217"
+    },
+    "balloonlurker-pilot": {
+      "en": "Balloon Lurker",
+      "fr": null,
+      "en_source": "game_text #x0217",
+      "fr_source": null
+    },
+    "billy": {
+      "en": "Boggy Billy",
+      "fr": "Boggy Billy",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Boggy_Billy",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "billy-sidekick": {
+      "en": "Farthy",
+      "fr": "Farthy",
+      "en_source": "game_text #x0309",
+      "fr_source": "game_text #x0309"
+    },
+    "bird-lady": {
+      "en": "Bird Watcher",
+      "fr": "Dame aux oiseaux",
+      "en_source": "game_text #x0207",
+      "fr_source": "game_text #x0207"
+    },
+    "bird-lady-beach": {
+      "en": "Bird Watcher",
+      "fr": "Dame aux oiseaux",
+      "en_source": "game_text #x0207",
+      "fr_source": "game_text #x0207"
+    },
+    "bluesage": {
+      "en": "Blue Sage",
+      "fr": "Sage bleu",
+      "en_source": "game_text #x0802",
+      "fr_source": "game_text #x0802"
+    },
+    "bonelurker": {
+      "en": "Bone Armor Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Bone_armor_lurker",
+      "fr_source": null
+    },
+    "bully": {
+      "en": "Bully",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Bully",
+      "fr_source": null
+    },
+    "buzzer": {
+      "en": "Scout Fly",
+      "fr": "Mécamouche",
+      "en_source": "game_text #x020b",
+      "fr_source": "game_text #x020b"
+    },
+    "citb-bunny": {
+      "en": "Citadel Bunny",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Bunny",
+      "fr_source": null
+    },
+    "citb-robotboss": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-belly": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-gun": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-head": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-leftarm": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-leftshoulder": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-nose": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-rightarm": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "citb-robotboss-rightshoulder": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "crate-barrel": {
+      "en": "Barrel",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Barrel",
+      "fr_source": null
+    },
+    "crate-darkeco": {
+      "en": "Dark Eco Box",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Dark_eco_box",
+      "fr_source": null
+    },
+    "crate-darkeco-cluster": {
+      "en": "Dark Eco Box",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Dark_eco_box",
+      "fr_source": null
+    },
+    "crate-iron": {
+      "en": "Locked Box",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Scout_fly",
+      "fr_source": null
+    },
+    "crate-steel": {
+      "en": "Strong Box",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Strong_box",
+      "fr_source": null
+    },
+    "dark-crystal": {
+      "en": "Dark Eco Crystal",
+      "fr": "Cristal d'eco noire",
+      "en_source": "game_text #x0411",
+      "fr_source": "game_text #x0411"
+    },
+    "dark-crystal-explode": {
+      "en": "Dark Eco Crystal",
+      "fr": "Cristal d'eco noire",
+      "en_source": "game_text #x0411",
+      "fr_source": "game_text #x0411"
+    },
+    "dark-plant": {
+      "en": "Dark Eco Infected Plant",
+      "fr": "Plante infectée par l'eco noire",
+      "en_source": "game_text #x0316",
+      "fr_source": "game_text #x0316"
+    },
+    "double-lurker": {
+      "en": "Double Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Double_lurker",
+      "fr_source": null
+    },
+    "double-lurker-top": {
+      "en": "Double Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Double_lurker",
+      "fr_source": null
+    },
+    "driller-lurker": {
+      "en": "Drilling Lurker",
+      "fr": "Lurker mineur",
+      "en_source": "game_text #x040a",
+      "fr_source": "game_text #x040a"
+    },
+    "ecovalve-geo": {
+      "en": "Eco Vent",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Eco_vent",
+      "fr_source": null
+    },
+    "eggtop": {
+      "en": "Blue Vent Switch",
+      "fr": "Interrupteur d'eco bleue",
+      "en_source": "game_text #x020e",
+      "fr_source": "game_text #x020e"
+    },
+    "eichar": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Jak",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "evilbro": {
+      "en": "Gol",
+      "fr": "Gol",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "evilbro-citadel": {
+      "en": "Gol",
+      "fr": "Gol",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "evilbro-village3": {
+      "en": "Gol",
+      "fr": "Gol",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "evilsis": {
+      "en": "Maia",
+      "fr": "Maia",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "evilsis-citadel": {
+      "en": "Maia",
+      "fr": "Maia",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "evilsis-village3": {
+      "en": "Maia",
+      "fr": "Maia",
+      "en_source": "game_text #x0122",
+      "fr_source": "game_text #x0122"
+    },
+    "explorer": {
+      "en": "Jak's Uncle",
+      "fr": "Oncle de Jak",
+      "en_source": "game_text #x021c",
+      "fr_source": "game_text #x021c"
+    },
+    "farmer": {
+      "en": "Farmer",
+      "fr": "Fermier",
+      "en_source": "game_text #x0203",
+      "fr_source": "game_text #x0203"
+    },
+    "fisher": {
+      "en": "Fisherman",
+      "fr": "Pêcheur",
+      "en_source": "game_text #x021d",
+      "fr_source": "game_text #x021d"
+    },
+    "flut-saddle": {
+      "en": "Flut Flut",
+      "fr": "Flut-Flut",
+      "en_source": "game_text #x0228",
+      "fr_source": "game_text #x0228"
+    },
+    "flutflut": {
+      "en": "Flut Flut",
+      "fr": "Flut-Flut",
+      "en_source": "game_text #x0228",
+      "fr_source": "game_text #x0228"
+    },
+    "flutflut-bluehut": {
+      "en": "Flut Flut",
+      "fr": "Flut-Flut",
+      "en_source": "game_text #x0228",
+      "fr_source": "game_text #x0228"
+    },
+    "flutflutegg": {
+      "en": "Flut Flut Egg",
+      "fr": "Œuf de Flut-Flut",
+      "en_source": "game_text #x0206",
+      "fr_source": "game_text #x0206"
+    },
+    "flying-lurker": {
+      "en": "Pedal-Copter Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Pedal-copter_lurker",
+      "fr_source": null
+    },
+    "fuel-cell": {
+      "en": "Power Cell",
+      "fr": "Pile d'énergie",
+      "en_source": "game_text #x022d",
+      "fr_source": "game_text #x022d"
+    },
+    "fuelcell-naked": {
+      "en": "Power Cell",
+      "fr": "Pile d'énergie",
+      "en_source": "game_text #x022d",
+      "fr_source": "game_text #x022d"
+    },
+    "gambler": {
+      "en": "Gambler",
+      "fr": "Parieur",
+      "en_source": "game_text #x0300",
+      "fr_source": "game_text #x0300"
+    },
+    "geologist": {
+      "en": "Geologist",
+      "fr": "Géologue",
+      "en_source": "game_text #x0301",
+      "fr_source": "game_text #x0301"
+    },
+    "gnawer": {
+      "en": "Gnawing Lurker",
+      "fr": "Lurker rongeur",
+      "en_source": "game_text #x0410",
+      "fr_source": "game_text #x0410"
+    },
+    "gnawer-segment": {
+      "en": "Gnawing Lurker",
+      "fr": "Lurker rongeur",
+      "en_source": "game_text #x0410",
+      "fr_source": "game_text #x0410"
+    },
+    "gondola": {
+      "en": "Gondola",
+      "fr": "Téléphérique",
+      "en_source": "game_text #x041c",
+      "fr_source": "game_text #x041c"
+    },
+    "green-eco-lurker": {
+      "en": "Green Eco Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Green_eco_lurker",
+      "fr_source": null
+    },
+    "harvester": {
+      "en": "Green Eco Harvester",
+      "fr": "Moissonneuse d'eco verte",
+      "en_source": "game_text #x022b",
+      "fr_source": "game_text #x022b"
+    },
+    "hopper": {
+      "en": "Hopper",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Hopper_(lurker)",
+      "fr_source": null
+    },
+    "ice-cube": {
+      "en": "Ice Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Ice_lurker",
+      "fr_source": null
+    },
+    "ice-cube-break": {
+      "en": "Ice Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Ice_lurker",
+      "fr_source": null
+    },
+    "jak-white": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Jak",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "junglefish": {
+      "en": "Jungle Fish",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Jungle_fish",
+      "fr_source": null
+    },
+    "junglesnake": {
+      "en": "Lurker Snake",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lurker_snake",
+      "fr_source": null
+    },
+    "kermit": {
+      "en": "Lurker Toad",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lurker_toad",
+      "fr_source": null
+    },
+    "lightning-mole": {
+      "en": "Lightning Mole",
+      "fr": "Taupe",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lightning_mole",
+      "fr_source": "game_text #x0310"
+    },
+    "lurkercrab": {
+      "en": "Lurker Crab",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lurker_crab",
+      "fr_source": null
+    },
+    "lurkerpuppy": {
+      "en": "Lurker Puppy",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lurker_puppy",
+      "fr_source": null
+    },
+    "lurkerworm": {
+      "en": "Sand Worm",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Sand_worm",
+      "fr_source": null
+    },
+    "mayor": {
+      "en": "Mayor",
+      "fr": "Maire",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "minershort": {
+      "en": "Gordy",
+      "fr": "Gordy",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gordy",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "minertall": {
+      "en": "Willard",
+      "fr": "Willard",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Willard",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "mistycannon": {
+      "en": "Cannon",
+      "fr": "Canon",
+      "en_source": "game_text #x0214",
+      "fr_source": "game_text #x0214"
+    },
+    "money": {
+      "en": "Precursor Orb",
+      "fr": "Orbe Precursor",
+      "en_source": "game_text #x022c",
+      "fr_source": "game_text #x022c"
+    },
+    "mother-spider": {
+      "en": "Mother Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spider_(lurker)",
+      "fr_source": null
+    },
+    "mother-spider-leg": {
+      "en": "Mother Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spider_(lurker)",
+      "fr_source": null
+    },
+    "muse": {
+      "en": "Sculptor's Muse",
+      "fr": "Muse du sculpteur",
+      "en_source": "game_text #x0211",
+      "fr_source": "game_text #x0211"
+    },
+    "ogreboss": {
+      "en": "Klaww",
+      "fr": "Klaww",
+      "en_source": "game_text #x0603",
+      "fr_source": "game_text #x0603"
+    },
+    "ogreboss-village2": {
+      "en": "Klaww",
+      "fr": "Klaww",
+      "en_source": "game_text #x0603",
+      "fr_source": "game_text #x0603"
+    },
+    "oracle": {
+      "en": "Oracle",
+      "fr": "Oracle",
+      "en_source": "game_text #x0204",
+      "fr_source": "game_text #x0204"
+    },
+    "orb-cache-top": {
+      "en": "Orb Cache",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Precursor_orb",
+      "fr_source": null
+    },
+    "pelican": {
+      "en": "Pelican",
+      "fr": "Pélican",
+      "en_source": "game_text #x0208",
+      "fr_source": "game_text #x0208"
+    },
+    "plant-boss-arms": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plant-boss-back-arms": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plant-boss-leaf": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plant-boss-main": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plant-boss-root": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plant-boss-vine": {
+      "en": "Dark Eco Plant",
+      "fr": "Plante d'eco noire",
+      "en_source": "game_text #x020f",
+      "fr_source": "game_text #x020f"
+    },
+    "plunger-lurker": {
+      "en": "Plunger Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Quicksand_lurker",
+      "fr_source": null
+    },
+    "powercellalt": {
+      "en": "Power Cell",
+      "fr": "Pile d'énergie",
+      "en_source": "game_text #x022d",
+      "fr_source": "game_text #x022d"
+    },
+    "puffer-main": {
+      "en": "Puffer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Puffer",
+      "fr_source": null
+    },
+    "puffer-mean": {
+      "en": "Puffer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Puffer",
+      "fr_source": null
+    },
+    "quicksandlurker": {
+      "en": "Quicksand Lurker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Quicksand_lurker",
+      "fr_source": null
+    },
+    "race-ring": {
+      "en": "Precursor Ring",
+      "fr": "Anneau Precursor",
+      "en_source": "game_text #x0324",
+      "fr_source": "game_text #x0324"
+    },
+    "racer-explode": {
+      "en": "Zoomer",
+      "fr": "Zoomer",
+      "en_source": "game_text #x0266",
+      "fr_source": "game_text #x0266"
+    },
+    "racer-geo": {
+      "en": "Zoomer",
+      "fr": "Zoomer",
+      "en_source": "game_text #x0266",
+      "fr_source": "game_text #x0266"
+    },
+    "ram-boss": {
+      "en": "Lurker Glacier Troop",
+      "fr": "Troupe des glaciers lurkers",
+      "en_source": "game_text #x041f",
+      "fr_source": "game_text #x041f"
+    },
+    "redsage": {
+      "en": "Red Sage",
+      "fr": "Sage rouge",
+      "en_source": "game_text #x0803",
+      "fr_source": "game_text #x0803"
+    },
+    "robber": {
+      "en": "Flying Lurker",
+      "fr": "Lurker volant",
+      "en_source": "game_text #x0312",
+      "fr_source": "game_text #x0312"
+    },
+    "robotboss-basic": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "robotboss-blueeco": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "robotboss-cinematic": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "robotboss-redeco": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "robotboss-yelloweco": {
+      "en": "Gol and Maia's Precursor Robot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gol_and_Maia%27s_Precursor_robot",
+      "fr_source": null
+    },
+    "sage": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x0123",
+      "fr_source": "game_text #x0123"
+    },
+    "sage-bluehut": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x0123",
+      "fr_source": "game_text #x0123"
+    },
+    "sage-village3": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x0123",
+      "fr_source": "game_text #x0123"
+    },
+    "sculptor": {
+      "en": "Sculptor",
+      "fr": "Sculpteur",
+      "en_source": "game_text #x0212",
+      "fr_source": "game_text #x0212"
+    },
+    "sculptor-muse": {
+      "en": "Sculptor's Muse",
+      "fr": "Muse du sculpteur",
+      "en_source": "game_text #x0211",
+      "fr_source": "game_text #x0211"
+    },
+    "seagull": {
+      "en": "Seagull",
+      "fr": "Mouette",
+      "en_source": "game_text #x0209",
+      "fr_source": "game_text #x0209"
+    },
+    "sharkey": {
+      "en": "Lurker Shark",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Lurker_shark",
+      "fr_source": null
+    },
+    "sidekick": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Daxter",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "sidekick-human": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Daxter",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_and_Daxter:_The_Precursor_Legacy"
+    },
+    "snow-bunny": {
+      "en": "Snow Bunny",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Bunny",
+      "fr_source": null
+    },
+    "snow-eggtop": {
+      "en": "Yellow Vent Switch",
+      "fr": "Interrupteur d'eco jaune",
+      "en_source": "game_text #x0421",
+      "fr_source": "game_text #x0421"
+    },
+    "swamp-bat": {
+      "en": "Swamp Bat",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Swamp_bat",
+      "fr_source": null
+    },
+    "swamp-blimp": {
+      "en": "Zeppelin",
+      "fr": "Dirigeable",
+      "en_source": "game_text #x0304",
+      "fr_source": "game_text #x0304"
+    },
+    "swamp-rat": {
+      "en": "Swamp Rat",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Swamp_rat",
+      "fr_source": null
+    },
+    "warrior": {
+      "en": "Warrior",
+      "fr": "Guerrier",
+      "en_source": "game_text #x0302",
+      "fr_source": "game_text #x0302"
+    },
+    "yakow": {
+      "en": "Yakow",
+      "fr": "Yacow",
+      "en_source": "game_text #x0202",
+      "fr_source": "game_text #x0202"
+    },
+    "yellowsage": {
+      "en": "Yellow Sage",
+      "fr": "Sage jaune",
+      "en_source": "game_text #x0804",
+      "fr_source": "game_text #x0804"
+    },
+    "yeti": {
+      "en": "Yeti",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Babak",
+      "fr_source": null
+    }
+  },
+  "jak2": {
+    "air-train": {
+      "en": "Air Train",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Air_train",
+      "fr_source": null
+    },
+    "amphibian": {
+      "en": "Znorkle Tooth",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Znorkle_tooth",
+      "fr_source": null
+    },
+    "ashelin": {
+      "en": "Ashelin",
+      "fr": "Ashelin",
+      "en_source": "game_text #x0292",
+      "fr_source": "game_text #x0292"
+    },
+    "ashelin-highres": {
+      "en": "Ashelin",
+      "fr": "Ashelin",
+      "en_source": "game_text #x0292",
+      "fr_source": "game_text #x0292"
+    },
+    "atoll-hellcat": {
+      "en": "Krimzon Guard Cruiser",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krimzon_Guard_cruiser",
+      "fr_source": null
+    },
+    "babak": {
+      "en": "Lurker",
+      "fr": "Lurker",
+      "en_source": "game_text #x01d1",
+      "fr_source": "game_text #x01d1"
+    },
+    "baron": {
+      "en": "Baron Praxis",
+      "fr": "Baron Praxis",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Baron_Praxis",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "baron-highres": {
+      "en": "Baron Praxis",
+      "fr": "Baron Praxis",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Baron_Praxis",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "board": {
+      "en": "JET-Board",
+      "fr": "Jet Board",
+      "en_source": "game_text #x030f",
+      "fr_source": "game_text #x030f"
+    },
+    "bombbot": {
+      "en": "Bombot",
+      "fr": "Explorobot",
+      "en_source": "game_text #x01e9",
+      "fr_source": "game_text #x01e9"
+    },
+    "bombbot-exploding": {
+      "en": "Bombot",
+      "fr": "Explorobot",
+      "en_source": "game_text #x01e9",
+      "fr_source": "game_text #x01e9"
+    },
+    "brutter-balloon": {
+      "en": "Lurker Balloon",
+      "fr": "Ballon des Lurkers",
+      "en_source": "game_text #x01fa",
+      "fr_source": "game_text #x01fa"
+    },
+    "brutter-balloon-norift": {
+      "en": "Lurker Balloon",
+      "fr": "Ballon des Lurkers",
+      "en_source": "game_text #x01fa",
+      "fr_source": "game_text #x01fa"
+    },
+    "brutter-highres": {
+      "en": "Brutter",
+      "fr": "Brutter",
+      "en_source": "game_text #x0209",
+      "fr_source": "game_text #x0209"
+    },
+    "brutter-low": {
+      "en": "Brutter",
+      "fr": "Brutter",
+      "en_source": "game_text #x0209",
+      "fr_source": "game_text #x0209"
+    },
+    "centipede": {
+      "en": "Metal-pede",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal-pede_(Jak_II)",
+      "fr_source": null
+    },
+    "centipede-fma": {
+      "en": "Metal-pede",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal-pede_(Jak_II)",
+      "fr_source": null
+    },
+    "centurion": {
+      "en": "Centurion",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Centurion",
+      "fr_source": null
+    },
+    "collectables-gem": {
+      "en": "Metal Head Skull Gem",
+      "fr": "Gemme Crânienne de Metal Head",
+      "en_source": "game_text #x026d",
+      "fr_source": "game_text #x026d"
+    },
+    "collectables-skill": {
+      "en": "Precursor Orb",
+      "fr": "Orbe précurseur",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Precursor_orb",
+      "fr_source": "https://jakanddaxter.fandom.com/fr/wiki/Orbes_pr%C3%A9curseurs"
+    },
+    "crimson-bike": {
+      "en": "KG Patrol Bike",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/KG_patrol_bike",
+      "fr_source": null
+    },
+    "crimson-guard": {
+      "en": "Krimzon Guard",
+      "fr": "Grenagarde",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krimzon_Guard",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "crimson-guard-highres": {
+      "en": "Krimzon Guard",
+      "fr": "Grenagarde",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krimzon_Guard",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "crimson-guard-hover": {
+      "en": "Hover Guard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Guard",
+      "fr_source": null
+    },
+    "crimson-guard-hover-explode": {
+      "en": "Hover Guard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Guard",
+      "fr_source": null
+    },
+    "crimson-guard-lowres": {
+      "en": "Krimzon Guard",
+      "fr": "Grenagarde",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krimzon_Guard",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "crocadog-escort": {
+      "en": "Croca-dog",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Croca-dog",
+      "fr_source": null
+    },
+    "crocadog-highres": {
+      "en": "Croca-dog",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Croca-dog",
+      "fr_source": null
+    },
+    "darkjak-highres": {
+      "en": "Dark Jak",
+      "fr": "Dark Jak",
+      "en_source": "game_text #x0161",
+      "fr_source": "game_text #x0161"
+    },
+    "daxter": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x0280",
+      "fr_source": "game_text #x0280"
+    },
+    "daxter-highres": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x0280",
+      "fr_source": "game_text #x0280"
+    },
+    "ecowell-a": {
+      "en": "Eco Well",
+      "fr": "Puits d'Éco",
+      "en_source": "game_text #x01d5",
+      "fr_source": "game_text #x01d5"
+    },
+    "ecowell-b": {
+      "en": "Eco Well",
+      "fr": "Puits d'Éco",
+      "en_source": "game_text #x01d5",
+      "fr_source": "game_text #x01d5"
+    },
+    "ecowell-c": {
+      "en": "Eco Well",
+      "fr": "Puits d'Éco",
+      "en_source": "game_text #x01d5",
+      "fr_source": "game_text #x01d5"
+    },
+    "ecowell-d": {
+      "en": "Eco Well",
+      "fr": "Puits d'Éco",
+      "en_source": "game_text #x01d5",
+      "fr_source": "game_text #x01d5"
+    },
+    "errol-highres": {
+      "en": "Erol",
+      "fr": "Erol",
+      "en_source": "game_text #x01ec",
+      "fr_source": "game_text #x01ec"
+    },
+    "flag": {
+      "en": "Banner",
+      "fr": "Drapeau",
+      "en_source": "game_text #x01b8",
+      "fr_source": "game_text #x01b8"
+    },
+    "flamer": {
+      "en": "Metal Jacket",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal_jacket",
+      "fr_source": null
+    },
+    "flitter": {
+      "en": "Stinger",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Stinger",
+      "fr_source": null
+    },
+    "flying-spider": {
+      "en": "Flying Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Flying_spider",
+      "fr_source": null
+    },
+    "fodder": {
+      "en": "Glub",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Glub",
+      "fr_source": null
+    },
+    "fort-robotank": {
+      "en": "Security Tank",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Security_tank",
+      "fr_source": null
+    },
+    "fort-robotank-top": {
+      "en": "Security Tank",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Security_tank",
+      "fr_source": null
+    },
+    "ginsu": {
+      "en": "Ginsu",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Ginsu",
+      "fr_source": null
+    },
+    "grenadier": {
+      "en": "Sling Blaster",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Sling_blaster",
+      "fr_source": null
+    },
+    "grunt": {
+      "en": "Grunt",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt",
+      "fr_source": null
+    },
+    "grunt-fma": {
+      "en": "Grunt",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt",
+      "fr_source": null
+    },
+    "gun": {
+      "en": "Morph Gun",
+      "fr": "Morph Gun",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Morph_Gun",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "heart-of-mar": {
+      "en": "Heart of Mar",
+      "fr": "Cœur de Mar",
+      "en_source": "game_text #x01f4",
+      "fr_source": "game_text #x01f4"
+    },
+    "hellcat": {
+      "en": "Krimzon Guard Cruiser",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krimzon_Guard_cruiser",
+      "fr_source": null
+    },
+    "helldog": {
+      "en": "HellCat Cruiser",
+      "fr": "Char \"Aspic\"",
+      "en_source": "game_text #x01dd",
+      "fr_source": "game_text #x01dd"
+    },
+    "hopper": {
+      "en": "Hopper",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Hopper_(metal_head)",
+      "fr_source": null
+    },
+    "hosehead": {
+      "en": "Hosehead",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Hosehead",
+      "fr_source": null
+    },
+    "intro-flamer": {
+      "en": "Metal Jacket",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal_jacket",
+      "fr_source": null
+    },
+    "jak-highres": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x0298",
+      "fr_source": "game_text #x0298"
+    },
+    "jak-highres-prison": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x0298",
+      "fr_source": "game_text #x0298"
+    },
+    "jak-stand": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x0298",
+      "fr_source": "game_text #x0298"
+    },
+    "jakb": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x0298",
+      "fr_source": "game_text #x0298"
+    },
+    "jakone-highres": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x0298",
+      "fr_source": "game_text #x0298"
+    },
+    "jinx": {
+      "en": "Jinx",
+      "fr": "Jinx",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Jinx",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "juicer": {
+      "en": "Juice Goon",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Juice_goon",
+      "fr_source": null
+    },
+    "keira": {
+      "en": "Keira",
+      "fr": "Kiera",
+      "en_source": "game_text #x0208",
+      "fr_source": "game_text #x0208"
+    },
+    "keira-highres": {
+      "en": "Keira",
+      "fr": "Kiera",
+      "en_source": "game_text #x0208",
+      "fr_source": "game_text #x0208"
+    },
+    "kid": {
+      "en": "Kid",
+      "fr": "L'Enfant",
+      "en_source": "game_text #x01b7",
+      "fr_source": "game_text #x01b7"
+    },
+    "kid-escort": {
+      "en": "Kid",
+      "fr": "L'Enfant",
+      "en_source": "game_text #x01b7",
+      "fr_source": "game_text #x01b7"
+    },
+    "kid-highres": {
+      "en": "Kid",
+      "fr": "L'Enfant",
+      "en_source": "game_text #x01b7",
+      "fr_source": "game_text #x01b7"
+    },
+    "kor": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "kor-break": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "kor-highres": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "kor-transform": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "kor-transform-monsterparts": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x0200",
+      "fr_source": "game_text #x0200"
+    },
+    "krew-clone": {
+      "en": "Krew Clone",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Krew_clone",
+      "fr_source": null
+    },
+    "krew-highres": {
+      "en": "Krew",
+      "fr": "Krew",
+      "en_source": "game_text #x0202",
+      "fr_source": "game_text #x0202"
+    },
+    "krew-lowres": {
+      "en": "Krew",
+      "fr": "Krew",
+      "en_source": "game_text #x0202",
+      "fr_source": "game_text #x0202"
+    },
+    "life-seed": {
+      "en": "Life Seed",
+      "fr": "Graine Vitale",
+      "en_source": "game_text #x01ee",
+      "fr_source": "game_text #x01ef"
+    },
+    "mammoth": {
+      "en": "Grunt Elephant",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt_elephant",
+      "fr_source": null
+    },
+    "mantis": {
+      "en": "Mantis",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Mantis",
+      "fr_source": null
+    },
+    "mech": {
+      "en": "Titan Suit",
+      "fr": "Titanocombi",
+      "en_source": "game_text #x0249",
+      "fr_source": "game_text #x0249"
+    },
+    "mech-explode": {
+      "en": "Titan Suit",
+      "fr": "Titanocombi",
+      "en_source": "game_text #x0249",
+      "fr_source": "game_text #x0249"
+    },
+    "metalkor": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-chopped": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-explode": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-head": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-highres": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-highres-legs": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-highres-lowtorso": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-highres-wings": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-legs": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-lowtorso": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-torso": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalkor-wings": {
+      "en": "Metal Kor",
+      "fr": "Metal Kor",
+      "en_source": "game_text #x01ff",
+      "fr_source": "game_text #x01ff"
+    },
+    "metalmonk": {
+      "en": "Manic Head",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Manic_head",
+      "fr_source": null
+    },
+    "mincan-lighthouse": {
+      "en": "Light Tower",
+      "fr": "Phare",
+      "en_source": "game_text #x02fb",
+      "fr_source": "game_text #x02fb"
+    },
+    "monster-frog": {
+      "en": "Fodder",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Fodder",
+      "fr_source": null
+    },
+    "mtn-gear-device-gear": {
+      "en": "Gear",
+      "fr": "Pièce",
+      "en_source": "game_text #x026b",
+      "fr_source": "game_text #x026b"
+    },
+    "mtn-lens": {
+      "en": "Lens",
+      "fr": "Lentille",
+      "en_source": "game_text #x026a",
+      "fr_source": "game_text #x026a"
+    },
+    "mtn-shard": {
+      "en": "Shard",
+      "fr": "Gemme",
+      "en_source": "game_text #x026c",
+      "fr_source": "game_text #x026c"
+    },
+    "onin-highres": {
+      "en": "Onin",
+      "fr": "Onin",
+      "en_source": "game_text #x0203",
+      "fr_source": "game_text #x0203"
+    },
+    "paddy-wagon": {
+      "en": "Prison Zoomer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Prison_zoomer",
+      "fr_source": null
+    },
+    "pecker-highres": {
+      "en": "Pecker",
+      "fr": "Pecker",
+      "en_source": "game_text #x02d9",
+      "fr_source": "game_text #x02d9"
+    },
+    "pegasus": {
+      "en": "Scout",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Scout",
+      "fr_source": null
+    },
+    "precursor": {
+      "en": "Precursor",
+      "fr": "Précurseur",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Precursors",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "precursor-stone": {
+      "en": "Precursor Stone",
+      "fr": "Pierre des Précurseurs",
+      "en_source": "game_text #x02ed",
+      "fr_source": "game_text #x02ed"
+    },
+    "predator": {
+      "en": "Cloaker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Cloaker",
+      "fr_source": null
+    },
+    "rapid-gunner": {
+      "en": "Rapid Gunner",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rapid_gunner",
+      "fr_source": null
+    },
+    "rhino": {
+      "en": "Ram Head",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Ram_head",
+      "fr_source": null
+    },
+    "rift-rider": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-break": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-break-a": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-break-b": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-break-c": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-chunk-a": {
+      "en": "Rift Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Rider",
+      "fr_source": null
+    },
+    "rift-rider-heart-of-mar": {
+      "en": "Heart of Mar",
+      "fr": "Cœur de Mar",
+      "en_source": "game_text #x01f4",
+      "fr_source": "game_text #x01f4"
+    },
+    "rift-ring": {
+      "en": "Rift Gate",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Gate",
+      "fr_source": null
+    },
+    "rift-ring-in-game": {
+      "en": "Rift Gate",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Rift_Gate",
+      "fr_source": null
+    },
+    "roboguard": {
+      "en": "Roboguard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard",
+      "fr_source": null
+    },
+    "samos": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x01f0",
+      "fr_source": "game_text #x01f0"
+    },
+    "samos-highres": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x01f0",
+      "fr_source": "game_text #x01f0"
+    },
+    "seal-of-mar": {
+      "en": "Mar's Seal",
+      "fr": "Sceau de Mar",
+      "en_source": "game_text #x02aa",
+      "fr_source": "game_text #x02aa"
+    },
+    "seal-of-mar-base": {
+      "en": "Mar's Seal",
+      "fr": "Sceau de Mar",
+      "en_source": "game_text #x02aa",
+      "fr_source": "game_text #x02aa"
+    },
+    "seal-of-mar-top": {
+      "en": "Mar's Seal",
+      "fr": "Sceau de Mar",
+      "en_source": "game_text #x02aa",
+      "fr_source": "game_text #x02aa"
+    },
+    "sig": {
+      "en": "Sig",
+      "fr": "Sig",
+      "en_source": "game_text #x0206",
+      "fr_source": "game_text #x0206"
+    },
+    "sig-highres": {
+      "en": "Sig",
+      "fr": "Sig",
+      "en_source": "game_text #x0206",
+      "fr_source": "game_text #x0206"
+    },
+    "spyder": {
+      "en": "Spyder Gunner",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spyder_gunner",
+      "fr_source": null
+    },
+    "spydroid": {
+      "en": "Spydroid",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spydroid",
+      "fr_source": null
+    },
+    "spydroid-exploding": {
+      "en": "Spydroid",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spydroid",
+      "fr_source": null
+    },
+    "squid": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "squid-break-a": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "squid-break-b": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "squid-break-c": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "squid-break-d": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "squid-break-e": {
+      "en": "Squid Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Squid_mech",
+      "fr_source": null
+    },
+    "tanker": {
+      "en": "Tanker",
+      "fr": "Camion-citerne",
+      "en_source": "game_text #x01d3",
+      "fr_source": "game_text #x01d3"
+    },
+    "tanker-crash": {
+      "en": "Tanker",
+      "fr": "Camion-citerne",
+      "en_source": "game_text #x01d3",
+      "fr_source": "game_text #x01d3"
+    },
+    "tess-highres": {
+      "en": "Tess",
+      "fr": "Tess",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Tess",
+      "fr_source": "https://fr.wikipedia.org/wiki/Jak_II_:_Hors-la-loi"
+    },
+    "time-map": {
+      "en": "Time Map",
+      "fr": "Carte du Temps",
+      "en_source": "game_text #x02af",
+      "fr_source": "game_text #x02af"
+    },
+    "tomb-baby-spider": {
+      "en": "Widowmaker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Widowmaker",
+      "fr_source": null
+    },
+    "torn-highres": {
+      "en": "Torn",
+      "fr": "Torn",
+      "en_source": "game_text #x0201",
+      "fr_source": "game_text #x0201"
+    },
+    "vin": {
+      "en": "Vin",
+      "fr": "Vin",
+      "en_source": "game_text #x0204",
+      "fr_source": "game_text #x0204"
+    },
+    "wasp": {
+      "en": "Wasp",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasp",
+      "fr_source": null
+    },
+    "wasp-explode": {
+      "en": "Wasp",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasp",
+      "fr_source": null
+    },
+    "widow": {
+      "en": "Widow Mech",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Widow_mech",
+      "fr_source": null
+    },
+    "yakow": {
+      "en": "Yakow",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Yakow",
+      "fr_source": null
+    },
+    "youngsamos-highres": {
+      "en": "The Shadow",
+      "fr": "Le Sphinx",
+      "en_source": "game_text #x0205",
+      "fr_source": "game_text #x0205"
+    }
+  },
+  "jak3": {
+    "air-train": {
+      "en": "Air Train",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Air_train",
+      "fr_source": null
+    },
+    "air-train-fma": {
+      "en": "Air Train",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Air_train",
+      "fr_source": null
+    },
+    "ashelin": {
+      "en": "Ashelin",
+      "fr": "Ashelin",
+      "en_source": "game_text #x07c1",
+      "fr_source": "game_text #x07c1"
+    },
+    "ashelin-effect": {
+      "en": "Ashelin",
+      "fr": "Ashelin",
+      "en_source": "game_text #x07c1",
+      "fr_source": "game_text #x07c1"
+    },
+    "ashelin-highres": {
+      "en": "Ashelin",
+      "fr": "Ashelin",
+      "en_source": "game_text #x07c1",
+      "fr_source": "game_text #x07c1"
+    },
+    "babak": {
+      "en": "Lurker",
+      "fr": "Lurker",
+      "en_source": "game_text #x0831",
+      "fr_source": "game_text #x0831"
+    },
+    "baron-highres": {
+      "en": "Baron Praxis",
+      "fr": "Le Baron Praxis",
+      "en_source": "game_text #x0816",
+      "fr_source": "game_text #x0816"
+    },
+    "beam-generator": {
+      "en": "Beam Generator",
+      "fr": "Générateur de rayons",
+      "en_source": "game_text #x0708",
+      "fr_source": "game_text #x0708"
+    },
+    "billy": {
+      "en": "Boggy Billy",
+      "fr": "Boggy Billy",
+      "en_source": "game_text #x0832",
+      "fr_source": "game_text #x0832"
+    },
+    "bird-lady": {
+      "en": "Bird Lady",
+      "fr": "Femme-oiseau",
+      "en_source": "game_text #x0826",
+      "fr_source": "game_text #x0826"
+    },
+    "blue-gun-mod-one": {
+      "en": "Vulcan Fury",
+      "fr": "Vulcanoshooteur",
+      "en_source": "game_text #x06e6",
+      "fr_source": "game_text #x06e6"
+    },
+    "blue-gun-mod-three": {
+      "en": "Needle Lazer",
+      "fr": "Aiguillolaser",
+      "en_source": "game_text #x06e8",
+      "fr_source": "game_text #x06e8"
+    },
+    "blue-two-upgrade": {
+      "en": "Arc Wielder",
+      "fr": "Arcbuteur",
+      "en_source": "game_text #x06e7",
+      "fr_source": "game_text #x06e7"
+    },
+    "bluesage": {
+      "en": "Blue Sage",
+      "fr": "Sage bleu",
+      "en_source": "game_text #x0827",
+      "fr_source": "game_text #x0827"
+    },
+    "board": {
+      "en": "JetBoard",
+      "fr": "JetBoard",
+      "en_source": "game_text #x06f8",
+      "fr_source": "game_text #x06f8"
+    },
+    "bomb-bot-movie": {
+      "en": "Blast Bot",
+      "fr": "Explorobot",
+      "en_source": "game_text #x054a",
+      "fr_source": "game_text #x054a"
+    },
+    "bombbot": {
+      "en": "Blast Bot",
+      "fr": "Explorobot",
+      "en_source": "game_text #x054a",
+      "fr_source": "game_text #x054a"
+    },
+    "breastplate": {
+      "en": "Breastplate",
+      "fr": "Armure de torse",
+      "en_source": "game_text #x06ef",
+      "fr_source": "game_text #x06ef"
+    },
+    "brutter-highres": {
+      "en": "Brutter",
+      "fr": "Brutter",
+      "en_source": "game_text #x0818",
+      "fr_source": "game_text #x0818"
+    },
+    "bt-grunt": {
+      "en": "Grunt",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt",
+      "fr_source": null
+    },
+    "bt-jinx": {
+      "en": "Jinx",
+      "fr": "Jinx",
+      "en_source": "game_text #x0803",
+      "fr_source": "game_text #x0803"
+    },
+    "bt-roboguard": {
+      "en": "Roboguard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard",
+      "fr_source": null
+    },
+    "bt-sig": {
+      "en": "Sig",
+      "fr": "Sig",
+      "en_source": "game_text #x07fd",
+      "fr_source": "game_text #x07fd"
+    },
+    "bt-torn": {
+      "en": "Torn",
+      "fr": "Torn",
+      "en_source": "game_text #x07c0",
+      "fr_source": "game_text #x07c0"
+    },
+    "bt-wasp": {
+      "en": "Wasp",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasp",
+      "fr_source": null
+    },
+    "cav-eco-lg": {
+      "en": "Dark Splitter",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Dark_splitter",
+      "fr_source": null
+    },
+    "cipher": {
+      "en": "Cypher Glyph",
+      "fr": "Code",
+      "en_source": "game_text #x0704",
+      "fr_source": "game_text #x0704"
+    },
+    "citizen-chick": {
+      "en": "Haven Citizen",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Haven_citizens",
+      "fr_source": null
+    },
+    "citizen-fat": {
+      "en": "Haven Citizen",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Haven_citizens",
+      "fr_source": null
+    },
+    "citizen-norm": {
+      "en": "Haven Citizen",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Haven_citizens",
+      "fr_source": null
+    },
+    "citizen-norm-rider": {
+      "en": "Haven Citizen",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Haven_citizens",
+      "fr_source": null
+    },
+    "city-flitter": {
+      "en": "Stinger",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Stinger",
+      "fr_source": null
+    },
+    "city-grunt": {
+      "en": "Grunt",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt",
+      "fr_source": null
+    },
+    "collectables-gem": {
+      "en": "Skull Gem",
+      "fr": "Gemme crânienne",
+      "en_source": "game_text #x061d",
+      "fr_source": "game_text #x061d"
+    },
+    "collectables-health": {
+      "en": "Health Pack",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Health_pack",
+      "fr_source": null
+    },
+    "collectables-skill": {
+      "en": "Precursor Orb",
+      "fr": "Orbe des Précurseurs",
+      "en_source": "game_text #x0892",
+      "fr_source": "game_text #x0892"
+    },
+    "comb-rail-rider": {
+      "en": "Catacombs Rail Rider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Catacombs_rail_rider",
+      "fr_source": null
+    },
+    "crimson-guard": {
+      "en": "Soldier",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Guard",
+      "fr_source": null
+    },
+    "crimson-guard-highres": {
+      "en": "Soldier",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Guard",
+      "fr_source": null
+    },
+    "crocadog-highres": {
+      "en": "Crocadog",
+      "fr": "Croco-chien",
+      "en_source": "game_text #x082d",
+      "fr_source": "game_text #x082d"
+    },
+    "cty-sniper-turret": {
+      "en": "Sniper Cannon",
+      "fr": "Canon sniper",
+      "en_source": "game_text #x054d",
+      "fr_source": "game_text #x054d"
+    },
+    "cty-sniper-turret-explode": {
+      "en": "Sniper Cannon",
+      "fr": "Canon sniper",
+      "en_source": "game_text #x054d",
+      "fr_source": "game_text #x054d"
+    },
+    "dark-maker-idol": {
+      "en": "Precursor Idol",
+      "fr": "Idole des Précurseurs",
+      "en_source": "game_text #x080c",
+      "fr_source": "game_text #x080c"
+    },
+    "dark-maker-idol-break": {
+      "en": "Precursor Idol",
+      "fr": "Idole des Précurseurs",
+      "en_source": "game_text #x080c",
+      "fr_source": "game_text #x080c"
+    },
+    "dark-maker-idol-fma": {
+      "en": "Precursor Idol",
+      "fr": "Idole des Précurseurs",
+      "en_source": "game_text #x080c",
+      "fr_source": "game_text #x080c"
+    },
+    "darkjak-highres": {
+      "en": "Dark Jak",
+      "fr": "Dark Jak",
+      "en_source": "game_text #x0062",
+      "fr_source": "game_text #x0062"
+    },
+    "daxter": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x07be",
+      "fr_source": "game_text #x07be"
+    },
+    "daxter-highres": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x07be",
+      "fr_source": "game_text #x07be"
+    },
+    "daxter-pac-man": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x07be",
+      "fr_source": "game_text #x07be"
+    },
+    "des-beast": {
+      "en": "Metal Head Beast",
+      "fr": "Créature des Metal Heads",
+      "en_source": "game_text #x0456",
+      "fr_source": "game_text #x0456"
+    },
+    "des-terraformer-break": {
+      "en": "Terraformer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Terraformer",
+      "fr_source": null
+    },
+    "des-terraformer-break-a": {
+      "en": "Terraformer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Terraformer",
+      "fr_source": null
+    },
+    "desert-transport": {
+      "en": "Wasteland Transport",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasteland_transport",
+      "fr_source": null
+    },
+    "dm-mine-spider": {
+      "en": "Mine Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Mine_spider",
+      "fr_source": null
+    },
+    "dm-robot": {
+      "en": "Walker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Walker",
+      "fr_source": null
+    },
+    "dm-ship": {
+      "en": "Dark Ship",
+      "fr": "Vaisseau noir",
+      "en_source": "game_text #x0569",
+      "fr_source": "game_text #x0569"
+    },
+    "dm-ship-break": {
+      "en": "Dark Ship",
+      "fr": "Vaisseau noir",
+      "en_source": "game_text #x0569",
+      "fr_source": "game_text #x0569"
+    },
+    "dp-bipedal": {
+      "en": "Trooper",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Trooper",
+      "fr_source": null
+    },
+    "eco-crystal-dark": {
+      "en": "Dark Eco Crystal",
+      "fr": "Cristal d'Éco noire",
+      "en_source": "game_text #x070b",
+      "fr_source": "game_text #x070b"
+    },
+    "eco-crystal-light": {
+      "en": "Light Eco Crystal",
+      "fr": "Cristal d'Éco blanche",
+      "en_source": "game_text #x070a",
+      "fr_source": "game_text #x070a"
+    },
+    "eco-crystal-sphere": {
+      "en": "Eco Power Sphere",
+      "fr": "Sphère d'Éco",
+      "en_source": "game_text #x070c",
+      "fr_source": "game_text #x070c"
+    },
+    "egg-spider": {
+      "en": "Pod Spider",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Pod_spider",
+      "fr_source": null
+    },
+    "errol-highres": {
+      "en": "Errol",
+      "fr": "Errol",
+      "en_source": "game_text #x0830",
+      "fr_source": "game_text #x0830"
+    },
+    "errol-lowres": {
+      "en": "Cyber Errol",
+      "fr": "Cyber Errol",
+      "en_source": "game_text #x0804",
+      "fr_source": "game_text #x0804"
+    },
+    "evilbro": {
+      "en": "Gol",
+      "fr": "Gol",
+      "en_source": "game_text #x0828",
+      "fr_source": "game_text #x0828"
+    },
+    "evilsis": {
+      "en": "Maia",
+      "fr": "Maia",
+      "en_source": "game_text #x0829",
+      "fr_source": "game_text #x0829"
+    },
+    "explorer": {
+      "en": "Explorer",
+      "fr": "Explorateur",
+      "en_source": "game_text #x082a",
+      "fr_source": "game_text #x082a"
+    },
+    "fac-robotank-explode": {
+      "en": "Security Tank",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Security_tank",
+      "fr_source": null
+    },
+    "faccar": {
+      "en": "Factory Car",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Factory_car",
+      "fr_source": null
+    },
+    "farmer": {
+      "en": "Farmer",
+      "fr": "Fermier",
+      "en_source": "game_text #x082b",
+      "fr_source": "game_text #x082b"
+    },
+    "fisher": {
+      "en": "Fisherman",
+      "fr": "Pêcheur",
+      "en_source": "game_text #x082c",
+      "fr_source": "game_text #x082c"
+    },
+    "flamer-lava-explode": {
+      "en": "Metal Jacket",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal_jacket",
+      "fr_source": null
+    },
+    "flitter": {
+      "en": "Stinger",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Stinger",
+      "fr_source": null
+    },
+    "flut-saddle": {
+      "en": "Leaper",
+      "fr": "Lézardosaur",
+      "en_source": "game_text #x0466",
+      "fr_source": "game_text #x0466"
+    },
+    "flut-wild": {
+      "en": "Leaper",
+      "fr": "Lézardosaur",
+      "en_source": "game_text #x0466",
+      "fr_source": "game_text #x0466"
+    },
+    "flutflut": {
+      "en": "Flut Flut",
+      "fr": "Flut Flut",
+      "en_source": "game_text #x081a",
+      "fr_source": "game_text #x081a"
+    },
+    "flyingsaw": {
+      "en": "Blade Beater",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Blade_beater",
+      "fr_source": null
+    },
+    "for-telescope": {
+      "en": "Astro-Viewer",
+      "fr": "Astroscope",
+      "en_source": "game_text #x0445",
+      "fr_source": "game_text #x0445"
+    },
+    "for-telescope-fma": {
+      "en": "Astro-Viewer",
+      "fr": "Astroscope",
+      "en_source": "game_text #x0445",
+      "fr_source": "game_text #x0445"
+    },
+    "for-turret": {
+      "en": "Dark Maker Turret",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Dark_Maker_turret",
+      "fr_source": null
+    },
+    "for-turret-explode": {
+      "en": "Dark Maker Turret",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Dark_Maker_turret",
+      "fr_source": null
+    },
+    "fox": {
+      "en": "Heat Seeker",
+      "fr": "Thermofouineur",
+      "en_source": "game_text #x06c7",
+      "fr_source": "game_text #x06c7"
+    },
+    "gambler": {
+      "en": "Gambler",
+      "fr": "Flambeur",
+      "en_source": "game_text #x0822",
+      "fr_source": "game_text #x0822"
+    },
+    "gauntlets": {
+      "en": "Bracers",
+      "fr": "Gantelets",
+      "en_source": "game_text #x06ec",
+      "fr_source": "game_text #x06ec"
+    },
+    "gekko": {
+      "en": "Gekko",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Gekko",
+      "fr_source": null
+    },
+    "geologist": {
+      "en": "Geologist",
+      "fr": "Géologue",
+      "en_source": "game_text #x0821",
+      "fr_source": "game_text #x0821"
+    },
+    "grunt": {
+      "en": "Grunt",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Grunt",
+      "fr_source": null
+    },
+    "gun": {
+      "en": "Morph Gun",
+      "fr": "Morphoflingue",
+      "en_source": "game_text #x086f",
+      "fr_source": "game_text #x086f"
+    },
+    "gun-clank": {
+      "en": "Clank",
+      "fr": "Clank",
+      "en_source": "game_text #x087e",
+      "fr_source": "game_text #x087e"
+    },
+    "gun-clank-explode": {
+      "en": "Clank",
+      "fr": "Clank",
+      "en_source": "game_text #x087e",
+      "fr_source": "game_text #x087e"
+    },
+    "gun-rachet": {
+      "en": "Ratchet",
+      "fr": "Ratchet",
+      "en_source": "game_text #x087d",
+      "fr_source": "game_text #x087d"
+    },
+    "gun-rachet-explode": {
+      "en": "Ratchet",
+      "fr": "Ratchet",
+      "en_source": "game_text #x087d",
+      "fr_source": "game_text #x087d"
+    },
+    "hellcat": {
+      "en": "HellCat Fighter",
+      "fr": "Guerrier Aspic",
+      "en_source": "game_text #x0640",
+      "fr_source": "game_text #x0640"
+    },
+    "hellcat-lowres-fma": {
+      "en": "HellCat Fighter",
+      "fr": "Guerrier Aspic",
+      "en_source": "game_text #x0640",
+      "fr_source": "game_text #x0640"
+    },
+    "hellcat-tower": {
+      "en": "HellCat Fighter",
+      "fr": "Guerrier Aspic",
+      "en_source": "game_text #x0640",
+      "fr_source": "game_text #x0640"
+    },
+    "interceptor": {
+      "en": "Marauder Buggy",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Marauder_buggy",
+      "fr_source": null
+    },
+    "interceptor-b": {
+      "en": "Marauder Buggy",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Marauder_buggy",
+      "fr_source": null
+    },
+    "jak-highres": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x07bb",
+      "fr_source": "game_text #x07bb"
+    },
+    "jak-one": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x07bb",
+      "fr_source": "game_text #x07bb"
+    },
+    "jakb": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x07bb",
+      "fr_source": "game_text #x07bb"
+    },
+    "jakb-c": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x07bb (jakb-c-lod0-mg is Jak's mesh: jak3/engine/target/target-util.gc)",
+      "fr_source": "game_text #x07bb"
+    },
+    "jakc-highres": {
+      "en": "Jak",
+      "fr": "Jak",
+      "en_source": "game_text #x07bb",
+      "fr_source": "game_text #x07bb"
+    },
+    "jinx": {
+      "en": "Jinx",
+      "fr": "Jinx",
+      "en_source": "game_text #x0803",
+      "fr_source": "game_text #x0803"
+    },
+    "jinx-highres": {
+      "en": "Jinx",
+      "fr": "Jinx",
+      "en_source": "game_text #x0803",
+      "fr_source": "game_text #x0803"
+    },
+    "kanga-lizard": {
+      "en": "Kanga-Rat",
+      "fr": "Kangou-rat",
+      "en_source": "game_text #x0448",
+      "fr_source": "game_text #x0448"
+    },
+    "keira-highres": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x07fa",
+      "fr_source": "game_text #x07fa"
+    },
+    "keira-simple": {
+      "en": "Keira",
+      "fr": "Keira",
+      "en_source": "game_text #x07fa",
+      "fr_source": "game_text #x07fa"
+    },
+    "kg-fighter": {
+      "en": "KG Fighter",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/KG_fighter",
+      "fr_source": null
+    },
+    "kg-fighter-explode": {
+      "en": "KG Fighter",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/KG_fighter",
+      "fr_source": null
+    },
+    "kg-grunt": {
+      "en": "Robo-Goon",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Robo-goon",
+      "fr_source": null
+    },
+    "kg-hopper": {
+      "en": "Hopper Bot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Hopper_bot",
+      "fr_source": null
+    },
+    "kg-robot-transport": {
+      "en": "KG Robot Transport",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/KG_robot_transport",
+      "fr_source": null
+    },
+    "kg-robot-transport-break": {
+      "en": "KG Robot Transport",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/KG_robot_transport",
+      "fr_source": null
+    },
+    "kid": {
+      "en": "Young Jak",
+      "fr": "Le jeune Jak",
+      "en_source": "game_text #x082e",
+      "fr_source": "game_text #x082e"
+    },
+    "kid-highres": {
+      "en": "Young Jak",
+      "fr": "Le jeune Jak",
+      "en_source": "game_text #x082e",
+      "fr_source": "game_text #x082e"
+    },
+    "king-highres": {
+      "en": "Damas",
+      "fr": "Damas",
+      "en_source": "game_text #x0802",
+      "fr_source": "game_text #x0802"
+    },
+    "king-rider": {
+      "en": "Damas",
+      "fr": "Damas",
+      "en_source": "game_text #x0802",
+      "fr_source": "game_text #x0802"
+    },
+    "kleever-highres": {
+      "en": "Kleiver",
+      "fr": "Kleiver",
+      "en_source": "game_text #x07f7",
+      "fr_source": "game_text #x07f7"
+    },
+    "kleever-rider": {
+      "en": "Kleiver",
+      "fr": "Kleiver",
+      "en_source": "game_text #x07f7",
+      "fr_source": "game_text #x07f7"
+    },
+    "kor-highres": {
+      "en": "Kor",
+      "fr": "Kor",
+      "en_source": "game_text #x082f",
+      "fr_source": "game_text #x082f"
+    },
+    "krew": {
+      "en": "Krew",
+      "fr": "Krew",
+      "en_source": "game_text #x0893",
+      "fr_source": "game_text #x0893"
+    },
+    "leggings": {
+      "en": "Greaves",
+      "fr": "Armure de jambe",
+      "en_source": "game_text #x06ed",
+      "fr_source": "game_text #x06ed"
+    },
+    "leggings-fma": {
+      "en": "Greaves",
+      "fr": "Armure de jambe",
+      "en_source": "game_text #x06ed",
+      "fr_source": "game_text #x06ed"
+    },
+    "manta": {
+      "en": "Manta",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Manta",
+      "fr_source": null
+    },
+    "mantis": {
+      "en": "Mantis",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Mantis",
+      "fr_source": null
+    },
+    "marauder-male": {
+      "en": "Marauder",
+      "fr": "Maraudeur",
+      "en_source": "game_text #x0458",
+      "fr_source": "game_text #x0458"
+    },
+    "mayor": {
+      "en": "Mayor",
+      "fr": "Le maire",
+      "en_source": "game_text #x081b",
+      "fr_source": "game_text #x081b"
+    },
+    "mh-bat": {
+      "en": "Bat",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Bat_(metal_head)",
+      "fr_source": null
+    },
+    "mh-centipede": {
+      "en": "Metal-pede",
+      "fr": "Metalpode",
+      "en_source": "game_text #x0557",
+      "fr_source": "game_text #x0557"
+    },
+    "mh-centipede-explode": {
+      "en": "Metal-pede",
+      "fr": "Metalpode",
+      "en_source": "game_text #x0557",
+      "fr_source": "game_text #x0557"
+    },
+    "mh-flyer": {
+      "en": "Metal Head Flyer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Metal_head_flyer",
+      "fr_source": null
+    },
+    "mhcity-eco-dark-tower": {
+      "en": "Dark Eco Tank",
+      "fr": "Réservoir d'Éco noire",
+      "en_source": "game_text #x054f",
+      "fr_source": "game_text #x054f"
+    },
+    "min-bomb-train": {
+      "en": "Bomb Train",
+      "fr": "Explotrain",
+      "en_source": "game_text #x0444",
+      "fr_source": "game_text #x0444"
+    },
+    "minershort": {
+      "en": "Gordy",
+      "fr": "Gordy",
+      "en_source": "game_text #x0823",
+      "fr_source": "game_text #x0823"
+    },
+    "minertall": {
+      "en": "Willard",
+      "fr": "Willard",
+      "en_source": "game_text #x0824",
+      "fr_source": "game_text #x0824"
+    },
+    "missile-bot": {
+      "en": "Missile Bot",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Missile_bot",
+      "fr_source": null
+    },
+    "monk": {
+      "en": "Monk",
+      "fr": "Moine",
+      "en_source": "game_text #x0463",
+      "fr_source": "game_text #x0463"
+    },
+    "monk-mummy": {
+      "en": "Monk",
+      "fr": "Moine",
+      "en_source": "game_text #x0463",
+      "fr_source": "game_text #x0463"
+    },
+    "monster-frog": {
+      "en": "Fodder",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Fodder",
+      "fr_source": null
+    },
+    "needle-fish": {
+      "en": "Needle Fish",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Needle_fish",
+      "fr_source": null
+    },
+    "neo-grenadier": {
+      "en": "Sling Blaster",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Sling_blaster",
+      "fr_source": null
+    },
+    "neo-juicer": {
+      "en": "Juice Goon",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Juice_goon",
+      "fr_source": null
+    },
+    "neo-satellite": {
+      "en": "Dark Satellite",
+      "fr": "Satellite noir",
+      "en_source": "game_text #x0633",
+      "fr_source": "game_text #x0633"
+    },
+    "neo-satellite-fma": {
+      "en": "Dark Satellite",
+      "fr": "Satellite noir",
+      "en_source": "game_text #x0633",
+      "fr_source": "game_text #x0633"
+    },
+    "neo-wasp": {
+      "en": "Wasp",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasp",
+      "fr_source": null
+    },
+    "neo-wasp-b": {
+      "en": "Hornet",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Hornet",
+      "fr_source": null
+    },
+    "neo-wasp-explode": {
+      "en": "Wasp",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Wasp",
+      "fr_source": null
+    },
+    "ogreboss": {
+      "en": "Klaww",
+      "fr": "Klaww",
+      "en_source": "game_text #x0825",
+      "fr_source": "game_text #x0825"
+    },
+    "onin-highres": {
+      "en": "Onin",
+      "fr": "Onin",
+      "en_source": "game_text #x0801",
+      "fr_source": "game_text #x0801"
+    },
+    "onin-simple": {
+      "en": "Onin",
+      "fr": "Onin",
+      "en_source": "game_text #x0801",
+      "fr_source": "game_text #x0801"
+    },
+    "ottsel-daxpants": {
+      "en": "Daxter",
+      "fr": "Daxter",
+      "en_source": "game_text #x07be",
+      "fr_source": "game_text #x07be"
+    },
+    "ottsel-dummy": {
+      "en": "Ottsel Dummy",
+      "fr": "Ottsel Dummy",
+      "en_source": "game_text #x07fb",
+      "fr_source": "game_text #x07fb"
+    },
+    "ottsel-tess": {
+      "en": "Ottsel Tess",
+      "fr": "Ottsel Tess",
+      "en_source": "game_text #x07fc",
+      "fr_source": "game_text #x07fc"
+    },
+    "pecker-highres": {
+      "en": "Pecker",
+      "fr": "Pecker",
+      "en_source": "game_text #x07bf",
+      "fr_source": "game_text #x07bf"
+    },
+    "pecker-ingame": {
+      "en": "Pecker",
+      "fr": "Pecker",
+      "en_source": "game_text #x07bf",
+      "fr_source": "game_text #x07bf"
+    },
+    "prebot": {
+      "en": "Precursor Robot",
+      "fr": "Robot Précurseur",
+      "en_source": "game_text #x0462",
+      "fr_source": "game_text #x0462"
+    },
+    "predator": {
+      "en": "Cloaker",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Cloaker",
+      "fr_source": null
+    },
+    "purple-one": {
+      "en": "Peace Maker",
+      "fr": "Pacificateur",
+      "en_source": "game_text #x06e9",
+      "fr_source": "game_text #x06e9"
+    },
+    "purple-three": {
+      "en": "Super Nova",
+      "fr": "Supernova",
+      "en_source": "game_text #x06eb",
+      "fr_source": "game_text #x06eb"
+    },
+    "purple-two": {
+      "en": "Mass Inverter",
+      "fr": "Superimploseur",
+      "en_source": "game_text #x06ea",
+      "fr_source": "game_text #x06ea"
+    },
+    "quantum-reflector": {
+      "en": "Quantum Reflector",
+      "fr": "Réflecteur quantique",
+      "en_source": "game_text #x0706",
+      "fr_source": "game_text #x0706"
+    },
+    "rat": {
+      "en": "Mine Rat",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Mine_rat",
+      "fr_source": null
+    },
+    "red-crimson-guard-highres": {
+      "en": "Krimzon Guard",
+      "fr": "Grenagarde",
+      "en_source": "game_text #x0819",
+      "fr_source": "game_text #x0819"
+    },
+    "red-gun-mod-three": {
+      "en": "Plasmite RPG",
+      "fr": "RPG plasmique",
+      "en_source": "game_text #x06e2",
+      "fr_source": "game_text #x06e2"
+    },
+    "red-gun-mod-two": {
+      "en": "Wave Concussor",
+      "fr": "Déferlonator",
+      "en_source": "game_text #x06e1",
+      "fr_source": "game_text #x06e1"
+    },
+    "redsage": {
+      "en": "Red Sage",
+      "fr": "Sage rouge",
+      "en_source": "game_text #x081c",
+      "fr_source": "game_text #x081c"
+    },
+    "rhino": {
+      "en": "Slam Dozer",
+      "fr": "Sprinteur",
+      "en_source": "game_text #x06c8",
+      "fr_source": "game_text #x06c8"
+    },
+    "robo-hover": {
+      "en": "Hover Guard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard#Hover_guard",
+      "fr_source": null
+    },
+    "roboguard": {
+      "en": "Roboguard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard",
+      "fr_source": null
+    },
+    "roboguard-city": {
+      "en": "Roboguard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard",
+      "fr_source": null
+    },
+    "roboguard-explode": {
+      "en": "Roboguard",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Roboguard",
+      "fr_source": null
+    },
+    "saberfish": {
+      "en": "Saw Fish",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Saw_fish",
+      "fr_source": null
+    },
+    "samos-effect": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x07f8",
+      "fr_source": "game_text #x07f8"
+    },
+    "samos-highres": {
+      "en": "Samos",
+      "fr": "Samos",
+      "en_source": "game_text #x07f8",
+      "fr_source": "game_text #x07f8"
+    },
+    "scorpion": {
+      "en": "Gila Stomper",
+      "fr": "Écrabouille-tout du désert",
+      "en_source": "game_text #x06c5",
+      "fr_source": "game_text #x06c5"
+    },
+    "sculptor": {
+      "en": "Sculptor",
+      "fr": "Sculpteur",
+      "en_source": "game_text #x081d",
+      "fr_source": "game_text #x081d"
+    },
+    "seem-highres": {
+      "en": "Seem",
+      "fr": "Seem",
+      "en_source": "game_text #x07f9",
+      "fr_source": "game_text #x07f9"
+    },
+    "sewer-frog": {
+      "en": "Sewer Frog",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Sewer_frog",
+      "fr_source": null
+    },
+    "shoulder-plates": {
+      "en": "Shoulder Guards",
+      "fr": "Armure d'épaule",
+      "en_source": "game_text #x06ee",
+      "fr_source": "game_text #x06ee"
+    },
+    "sidekick-human": {
+      "en": "Original Daxter",
+      "fr": "Daxter avant",
+      "en_source": "game_text #x081e",
+      "fr_source": "game_text #x081e"
+    },
+    "sig-highres": {
+      "en": "Sig",
+      "fr": "Sig",
+      "en_source": "game_text #x07fd",
+      "fr_source": "game_text #x07fd"
+    },
+    "sig-rider": {
+      "en": "Sig",
+      "fr": "Sig",
+      "en_source": "game_text #x07fd",
+      "fr_source": "game_text #x07fd"
+    },
+    "snake": {
+      "en": "Sand Shark",
+      "fr": "Requin des sables",
+      "en_source": "game_text #x06c4",
+      "fr_source": "game_text #x06c4"
+    },
+    "spiky-frog": {
+      "en": "Spiny Toad Hound",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spiny_toad_hound",
+      "fr_source": null
+    },
+    "spyder": {
+      "en": "Spyder Gunner",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spyder_gunner",
+      "fr_source": null
+    },
+    "spydroid": {
+      "en": "Spydroid",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spydroid",
+      "fr_source": null
+    },
+    "spydroid-orig": {
+      "en": "Spydroid",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spydroid",
+      "fr_source": null
+    },
+    "spydroid-orig-exploding": {
+      "en": "Spydroid",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spydroid",
+      "fr_source": null
+    },
+    "tentacle": {
+      "en": "Tentacle",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Tentacle",
+      "fr_source": null
+    },
+    "terraformer": {
+      "en": "Terraformer",
+      "fr": null,
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Terraformer",
+      "fr_source": null
+    },
+    "tess-highres": {
+      "en": "Tess",
+      "fr": "Tess",
+      "en_source": "game_text #x07c2",
+      "fr_source": "game_text #x07c2"
+    },
+    "time-map": {
+      "en": "Time Map",
+      "fr": "Carte du temps",
+      "en_source": "game_text #x0709",
+      "fr_source": "game_text #x0709"
+    },
+    "toad": {
+      "en": "Dune Hopper",
+      "fr": "Puce des dunes",
+      "en_source": "game_text #x06c6",
+      "fr_source": "game_text #x06c6"
+    },
+    "torn-effect": {
+      "en": "Torn",
+      "fr": "Torn",
+      "en_source": "game_text #x07c0",
+      "fr_source": "game_text #x07c0"
+    },
+    "torn-highres": {
+      "en": "Torn",
+      "fr": "Torn",
+      "en_source": "game_text #x07c0",
+      "fr_source": "game_text #x07c0"
+    },
+    "torn-simple": {
+      "en": "Torn",
+      "fr": "Torn",
+      "en_source": "game_text #x07c0",
+      "fr_source": "game_text #x07c0"
+    },
+    "tpl-glider": {
+      "en": "Monk Glider",
+      "fr": "Planeur",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Monk_glider",
+      "fr_source": "game_text #x05a3"
+    },
+    "tpl-glider-break": {
+      "en": "Monk Glider",
+      "fr": "Planeur",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Monk_glider",
+      "fr_source": "game_text #x05a3"
+    },
+    "tpl-glider-broken": {
+      "en": "Monk Glider",
+      "fr": "Planeur",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Monk_glider",
+      "fr_source": "game_text #x05a3"
+    },
+    "turtle": {
+      "en": "Tough Puppy",
+      "fr": "Sacré joujou",
+      "en_source": "game_text #x06c3",
+      "fr_source": "game_text #x06c3"
+    },
+    "veger-highres": {
+      "en": "Count Veger",
+      "fr": "Count Veger",
+      "en_source": "game_text #x0805",
+      "fr_source": "game_text #x0805"
+    },
+    "vin": {
+      "en": "Vin",
+      "fr": "Vin",
+      "en_source": "game_text #x0894",
+      "fr_source": "game_text #x0894"
+    },
+    "vin-effect": {
+      "en": "Vin",
+      "fr": "Vin",
+      "en_source": "game_text #x0894",
+      "fr_source": "game_text #x0894"
+    },
+    "warrior": {
+      "en": "Warrior",
+      "fr": "Guerrier",
+      "en_source": "game_text #x0820",
+      "fr_source": "game_text #x0820"
+    },
+    "wascity-turret": {
+      "en": "Spargus Gun Turret",
+      "fr": "Tourelle de Spargus",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spargus_gun_turret",
+      "fr_source": "game_text #x0879"
+    },
+    "wascity-turret-explode": {
+      "en": "Spargus Gun Turret",
+      "fr": "Tourelle de Spargus",
+      "en_source": "https://jakanddaxter.fandom.com/wiki/Spargus_gun_turret",
+      "fr_source": "game_text #x0879"
+    },
+    "wland-driver": {
+      "en": "Wastelander",
+      "fr": "Renégat",
+      "en_source": "game_text #x045a",
+      "fr_source": "game_text #x045a"
+    },
+    "wland-passenger": {
+      "en": "Wastelander",
+      "fr": "Renégat",
+      "en_source": "game_text #x045a",
+      "fr_source": "game_text #x045a"
+    },
+    "wlander-female": {
+      "en": "Wastelander",
+      "fr": "Renégat",
+      "en_source": "game_text #x045a",
+      "fr_source": "game_text #x045a"
+    },
+    "wlander-male": {
+      "en": "Wastelander",
+      "fr": "Renégat",
+      "en_source": "game_text #x045a",
+      "fr_source": "game_text #x045a"
+    },
+    "wstd-gate-pass": {
+      "en": "Gate Pass to Spargus",
+      "fr": "Passe pour Spargus",
+      "en_source": "game_text #x0702",
+      "fr_source": "game_text #x0702"
+    },
+    "yellowsage": {
+      "en": "Yellow Sage",
+      "fr": "Sage jaune",
+      "en_source": "game_text #x081f",
+      "fr_source": "game_text #x081f"
+    },
+    "youngsamos-highres": {
+      "en": "Young Samos",
+      "fr": "Le jeune Samos",
+      "en_source": "game_text #x0817",
+      "fr_source": "game_text #x0817"
+    }
+  }
+}
