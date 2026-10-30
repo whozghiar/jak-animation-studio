@@ -197,7 +197,11 @@ const en = {
   "core_weights-removed": "{anim}: morph target (weights) keys removed",
   "core_node-dropped": "{anim}: keys of node {node} (not a joint) dropped",
   "core_made-linear": "{anim}: {kind} keys made linear",
-  core_renamed: "{anim} renamed {to}",
+  "core_rest-keyed": "{anim}: joints without keys keyed at their rest pose",
+  "core_animations-too-big":
+    "The animations take {size} KB once built, the mesh not counted: more than a level of any game loads an art group into (2048 KB in Jak and Daxter, 1750 KB in Jak II and Jak 3). Remove or shorten animations.",
+  "core_animations-too-big-23":
+    "The animations take {size} KB once built, the mesh not counted: more than a level of Jak II or Jak 3 loads an art group into (1750 KB; 2048 KB in Jak and Daxter). Remove or shorten animations for those games.",
   core_unreadable: "{file} is not a usable .glb",
   "core_not-an-entity":
     "{file} is not an entity: an entity has one armature (skin).",
@@ -415,7 +419,11 @@ const fr: Record<Key, string> = {
   "core_weights-removed": "{anim} : clés de morphing (weights) retirées",
   "core_node-dropped": "{anim} : clés du nœud {node} (pas un joint) retirées",
   "core_made-linear": "{anim} : clés {kind} rendues linéaires",
-  core_renamed: "{anim} renommée {to}",
+  "core_rest-keyed": "{anim} : joints sans clés mis à leur pose de repos",
+  "core_animations-too-big":
+    "Les animations prennent {size} Ko une fois construites, sans compter le maillage : plus que ce qu'un niveau de n'importe quel jeu charge pour un art group (2048 Ko dans Jak and Daxter, 1750 Ko dans Jak II et Jak 3). Retirez ou raccourcissez des animations.",
+  "core_animations-too-big-23":
+    "Les animations prennent {size} Ko une fois construites, sans compter le maillage : plus que ce qu'un niveau de Jak II ou Jak 3 charge pour un art group (1750 Ko ; 2048 Ko dans Jak and Daxter). Retirez ou raccourcissez des animations pour ces jeux.",
   core_unreadable: "{file} n'est pas un .glb utilisable",
   "core_not-an-entity":
     "{file} n'est pas une entité : une entité a une seule armature (skin).",

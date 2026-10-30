@@ -11,6 +11,13 @@ use crate::{glb::Glb, model};
 pub const MAX_JOINTS: usize = 2 + 14 * 8;
 /// One frame of compressed data, and the constant part, each fit in 133 quadwords.
 pub const MAX_FRAME_BYTES: usize = 133 * 16;
+/// A level loads each file of its DGO, an art group whole, into one of two buffers (level.gc): 2 MB
+/// in Jak 1, #x1b5800 bytes in Jak 2 and Jak 3 (less in Jak 3's smallest levels). Nothing checks it:
+/// a bigger file overwrites the memory after the buffer.
+pub const JAK1_DGO_BUFFER: usize = 2 * 1024 * 1024;
+pub const DGO_BUFFER: usize = 0x1b5800;
+/// build-actor samples every animation at 60 frames per second (`framerate` of build_actor.h).
+const FRAMERATE: f32 = 60.0;
 /// Beyond, a joint's translation takes the big encoding (s16 steps of 4/4096 m otherwise).
 const SMALL_TRANS_LIMIT: f32 = 32767.0 * 4.0 / 4096.0;
 
@@ -88,7 +95,7 @@ pub fn short_name<'a>(name: &'a str, actor: &str) -> &'a str {
     .unwrap_or(name)
 }
 
-fn is_identity(path: &str, v: &[f32]) -> bool {
+pub(crate) fn is_identity(path: &str, v: &[f32]) -> bool {
   let near = |a: f32, b: f32| (a - b).abs() < 1e-5;
   match path {
     "translation" => v.iter().all(|x| near(*x, 0.0)),
@@ -117,7 +124,7 @@ fn data_bytes(glb: &Glb, joints: &[model::Joint], anim: &serde_json::Value) -> (
         .map_or(3, |(_, n)| *n)
     };
     let animated =
-      |path: &str| keys(path).is_some_and(|(_, v)| v.chunks(n(path)).any(|k| k != &v[..n(path)]));
+      |path: &str| keys(path).is_some_and(|(t, v)| varies(t, v, n(path), path == "rotation"));
     let mut add = |bytes: usize, moving: bool| {
       if moving {
         frame += bytes
@@ -138,6 +145,49 @@ fn data_bytes(glb: &Glb, joints: &[model::Joint], anim: &serde_json::Value) -> (
     add(6, animated("scale"));
   }
   (frame, fixed)
+}
+
+/// Whether the frames build-actor makes of a channel change, as it makes them (compute_keyframes of
+/// animation_processing.cpp): a sample each 1/60 s blending the keys around it, in 32-bit floats. A
+/// blend of equal keys can come out a rounding apart: then the channel takes room in every frame.
+fn varies(times: &[f32], values: &[f32], n: usize, quaternion: bool) -> bool {
+  let last = times[times.len() - 1];
+  if times.len() == 1 || last <= 0.0 {
+    return false;
+  }
+  let (mut i, mut t, mut first) = (0, 0.0f32, None);
+  while t < last {
+    while i + 1 < times.len() && times[i + 1] < t {
+      i += 1;
+    }
+    let f = (t - times[i]) / (times[i + 1] - times[i]);
+    let (a, b) = (&values[i * n..i * n + n], &values[(i + 1) * n..(i + 2) * n]);
+    let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+    let sign = if quaternion && dot < 0.0 { -1.0 } else { 1.0 };
+    let frame: Vec<f32> = (0..n).map(|c| a[c] * (1.0 - f) + b[c] * f * sign).collect();
+    match &first {
+      None => first = Some(frame),
+      Some(first) if *first != frame => return true,
+      _ => {}
+    }
+    t += 1.0 / FRAMERATE;
+  }
+  false
+}
+
+/// How many frames build-actor makes of an animation: one each 1/60 s up to its last key, at least
+/// one (compute_keyframes of animation_processing.cpp).
+fn frames(glb: &Glb, anim: &serde_json::Value) -> usize {
+  let last = model::channels(glb, anim)
+    .into_iter()
+    .filter_map(|c| c.keys.ok()?.0.last().copied())
+    .fold(0.0, f32::max);
+  let (mut t, mut n) = (0.0, 0);
+  while t < last {
+    n += 1;
+    t += 1.0 / FRAMERATE;
+  }
+  n.max(1)
 }
 
 /// How many weights of the skinned meshes go to a joint past the skin's last, and the highest one.
@@ -326,6 +376,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
     );
   }
   let mut names = HashSet::new();
+  let mut animation_bytes = 0;
   for (i, anim) in anims.iter().enumerate() {
     let name = model::animation_name(anim, i);
     let a = Some(name.as_str());
@@ -449,6 +500,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
     }
 
     let (frame, fixed) = data_bytes(glb, &joints, anim);
+    animation_bytes += fixed + frames(glb, anim) * frame;
     let max = ("max", MAX_FRAME_BYTES.to_string());
     if frame > MAX_FRAME_BYTES {
       push(
@@ -472,6 +524,28 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
         a,
       );
     }
+  }
+  let size = ("size", (animation_bytes / 1024).to_string());
+  if animation_bytes > JAK1_DGO_BUFFER {
+    push(
+      Error,
+      text(
+        "animations-too-big",
+        "The animations take {size} KB once built, the mesh not counted: more than a level of any game loads an art group into (2048 KB in Jak and Daxter, 1750 KB in Jak II and Jak 3). Remove or shorten animations.",
+        &[size],
+      ),
+      None,
+    );
+  } else if animation_bytes > DGO_BUFFER {
+    push(
+      Warning,
+      text(
+        "animations-too-big-23",
+        "The animations take {size} KB once built, the mesh not counted: more than a level of Jak II or Jak 3 loads an art group into (1750 KB; 2048 KB in Jak and Daxter). Remove or shorten animations for those games.",
+        &[size],
+      ),
+      None,
+    );
   }
   issues
 }

@@ -5,13 +5,13 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use anyhow::{Context, Result, bail, ensure};
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::{
   glb::Glb,
   math,
   model::{self, Joint, PATHS},
-  rules::{Text, goal_name, short_name},
+  rules::{Text, goal_name, is_identity, short_name},
 };
 
 /// The keys of one joint channel: `values` holds 3 numbers per time (4 for a rotation, x y z w),
@@ -60,7 +60,7 @@ fn collapse(times: &[f32], values: &[f32], n: usize) -> (Vec<f32>, Vec<f32>) {
   }
 }
 
-fn write(glb: &mut Glb, joints: &[Joint], name: &str, channels: &[Channel]) -> Result<()> {
+fn build(glb: &mut Glb, joints: &[Joint], name: &str, channels: &[Channel]) -> Result<Value> {
   for c in channels {
     let n = PATHS
       .iter()
@@ -110,13 +110,7 @@ fn write(glb: &mut Glb, joints: &[Joint], name: &str, channels: &[Channel]) -> R
       }));
     }
   }
-  let anim = json!({ "name": name, "samplers": samplers, "channels": targets });
-  match index_of(glb, name) {
-    // the place of an animation is its slot in the art group: kept when it is replaced
-    Some(i) => glb.array_mut("animations")[i] = anim,
-    None => glb.array_mut("animations").push(anim),
-  }
-  Ok(())
+  Ok(json!({ "name": name, "samplers": samplers, "channels": targets }))
 }
 
 /// Writes animation `name` (replacing the one of that name, in its place). Joints without keys in
@@ -127,7 +121,12 @@ pub fn set_animation(glb: &mut Glb, name: &str, channels: &[Channel]) -> Result<
     Text::new("animation-unnamed", "An animation needs a name.", &[])
   );
   let joints = model::skeleton(glb)?;
-  write(glb, &joints, name, channels)?;
+  let anim = build(glb, &joints, name, channels)?;
+  match index_of(glb, name) {
+    // the place of an animation is its slot in the art group: kept when it is replaced
+    Some(i) => glb.array_mut("animations")[i] = anim,
+    None => glb.array_mut("animations").push(anim),
+  }
   glb.compact();
   Ok(())
 }
@@ -285,16 +284,28 @@ pub fn rename_animation(glb: &mut Glb, name: &str, new_name: &str) -> Result<()>
   Ok(())
 }
 
-/// Makes what build-actor needs of the animations: morph (weights) keys removed, keys on nodes
-/// outside the armature dropped, cubic spline and step keys made linear, every joint keyed, names
-/// `<actor>-<animation>`. Returns what it changed.
+/// Makes what build-actor needs of the animations that lack it: morph (weights) keys removed, keys
+/// on nodes outside the armature dropped, cubic spline and step keys made linear, every joint keyed.
+/// The others, their names and the rest of the model are left as they are. Returns what it changed.
 pub fn normalize(glb: &mut Glb, actor: &str) -> Result<Vec<Text>> {
   let joints = model::skeleton(glb)?;
   let mut notes = Vec::new();
-  let mut rebuilt = Vec::new();
-  for (i, anim) in glb.array("animations").iter().enumerate() {
+  let mut symbols = HashSet::new();
+  for (i, anim) in glb.array("animations").to_vec().iter().enumerate() {
     let name = model::animation_name(anim, i);
+    // def-actor names each slot <actor>-<short name>-ja
+    let symbol = format!("{actor}-{}", goal_name(short_name(&name, actor)));
+    ensure!(
+      symbols.insert(symbol.clone()),
+      Text::new(
+        "game-name-taken",
+        "Two animations would be named '{name}' in game: rename one.",
+        &[("name", symbol)]
+      )
+    );
+    let before = notes.len();
     let mut channels = Vec::new();
+    let mut keyed = HashSet::new();
     for c in model::channels(glb, anim) {
       if c.path == "weights" {
         notes.push(Text::new(
@@ -323,6 +334,7 @@ pub fn normalize(glb: &mut Glb, actor: &str) -> Result<Vec<Text>> {
         ));
       }
       let (times, values) = c.keys.with_context(|| format!("{name} cannot be read"))?;
+      keyed.insert((joint, c.path.clone()));
       channels.push(Channel {
         joint,
         path: c.path,
@@ -330,32 +342,26 @@ pub fn normalize(glb: &mut Glb, actor: &str) -> Result<Vec<Text>> {
         values,
       });
     }
-    let short = goal_name(short_name(&name, actor));
-    let game_name = format!("{actor}-{short}");
-    if game_name != name {
+    // build-actor gives a joint without keys identity values: only a joint resting elsewhere needs them
+    let unkeyed = joints.iter().enumerate().any(|(j, joint)| {
+      PATHS
+        .iter()
+        .any(|(p, _)| !keyed.contains(&(j, p.to_string())) && !is_identity(p, joint.rest(p)))
+    });
+    if unkeyed {
       notes.push(Text::new(
-        "renamed",
-        "{anim} renamed {to}",
-        &[("anim", name.clone()), ("to", game_name.clone())],
+        "rest-keyed",
+        "{anim}: joints without keys keyed at their rest pose",
+        &[("anim", name.clone())],
       ));
     }
-    ensure!(
-      rebuilt.iter().all(|(n, _)| *n != game_name),
-      Text::new(
-        "game-name-taken",
-        "Two animations would be named '{name}' in game: rename one.",
-        &[("name", game_name.clone())]
-      )
-    );
-    rebuilt.push((game_name, channels));
+    if notes.len() > before {
+      glb.array_mut("animations")[i] = build(glb, &joints, &name, &channels)?;
+    }
   }
-  if let Some(root) = glb.json.as_object_mut() {
-    root.remove("animations");
+  if !notes.is_empty() {
+    glb.compact();
   }
-  for (name, channels) in &rebuilt {
-    write(glb, &joints, name, channels)?;
-  }
-  glb.compact();
   notes.dedup();
   Ok(notes)
 }

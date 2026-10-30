@@ -11,10 +11,8 @@ use crate::{
 
 /// A chain of `n` joints ("align", then "j1", "j2"... 10 cm above each other) skinning a triangle.
 fn skinned(n: usize) -> Glb {
-  let mut glb = Glb {
-    json: json!({ "asset": { "version": "2.0" } }),
-    bin: Vec::new(),
-  };
+  let mut glb = Glb::default();
+  glb.json = json!({ "asset": { "version": "2.0" } });
   let positions = glb.push_floats(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0], "VEC3");
   let ibm: Vec<f32> = (0..n)
     .flat_map(|i| {
@@ -142,14 +140,16 @@ fn a_foreign_animation_is_flagged_then_fixed_by_normalize() {
     assert!(found.contains(&code), "{code} in {found:?}");
   }
   let notes = edit::normalize(&mut glb, "chain").unwrap();
-  assert!(
-    notes
-      .iter()
-      .any(|n| n.code == "renamed" && n.args["to"] == "chain-wave"),
-    "{notes:?}"
-  );
+  for code in [
+    "made-linear",
+    "weights-removed",
+    "node-dropped",
+    "rest-keyed",
+  ] {
+    assert!(notes.iter().any(|n| n.code == code), "{code} in {notes:?}");
+  }
   assert!(errors(&glb, "chain").is_empty());
-  assert_eq!(model::animations(&glb)[0].name, "chain-wave");
+  assert_eq!(model::animations(&glb)[0].name, "Wave", "names are kept");
 }
 
 #[test]
@@ -184,6 +184,21 @@ fn the_game_limits_are_checked() {
     .collect();
   edit::set_animation(&mut glb, "everything", &channels).unwrap();
   assert!(errors(&glb, "big").contains(&"frame-too-big"));
+
+  // 98 joints turning for a minute: 3600 frames of 784 bytes, more than a level of any game loads
+  let mut glb = skinned(100);
+  let turning =
+    |seconds: f32| -> Vec<Channel> { (2..100).map(|j| rotation(j, &[0.0, seconds])).collect() };
+  edit::set_animation(&mut glb, "long", &turning(60.0)).unwrap();
+  assert!(errors(&glb, "big").contains(&"animations-too-big"));
+  // 40 s: 1.9 MB, too big for Jak 2 and Jak 3 only
+  edit::set_animation(&mut glb, "long", &turning(40.0)).unwrap();
+  assert!(errors(&glb, "big").is_empty());
+  assert!(
+    rules::check(&glb, "big")
+      .iter()
+      .any(|i| i.text.code == "animations-too-big-23")
+  );
 }
 
 #[test]
@@ -215,15 +230,9 @@ fn a_creation_is_a_copy_and_exports_for_the_game() {
   std::fs::create_dir_all(&models).unwrap();
   let source = models.join("My Crab.glb");
   skinned(4).write(&source).unwrap();
-  std::fs::write(
-    models.join("rock.glb"),
-    Glb {
-      json: json!({ "asset": { "version": "2.0" } }),
-      bin: vec![],
-    }
-    .to_bytes(),
-  )
-  .unwrap();
+  let mut rock = Glb::default();
+  rock.json = json!({ "asset": { "version": "2.0" } });
+  rock.write(&models.join("rock.glb")).unwrap();
 
   let listed = library::list_models(&models, "jak2", true);
   assert_eq!(listed.len(), 1, "only the entity is listed");
@@ -241,6 +250,12 @@ fn a_creation_is_a_copy_and_exports_for_the_game() {
   );
 
   let export = library::export(&creation, "jak2", None, "en").unwrap();
+  assert!(export.notes.is_empty(), "{:?}", export.notes);
+  assert_eq!(
+    std::fs::read(&export.glb).unwrap(),
+    std::fs::read(&creation).unwrap(),
+    "a model build-actor takes as it is is exported byte for byte"
+  );
   assert!(
     export
       .glb
@@ -456,4 +471,166 @@ fn a_twin_skeleton_completes_the_animations() {
     "an animation it has is not added again"
   );
   std::fs::remove_dir_all(&root).unwrap();
+}
+
+/// A .glb of `json`, written as is, and `bin`.
+fn glb_bytes(json: &str, bin: &[u8]) -> Vec<u8> {
+  let mut json = json.as_bytes().to_vec();
+  while !json.len().is_multiple_of(4) {
+    json.push(b' ');
+  }
+  let total = 12 + 8 + json.len() + 8 + bin.len();
+  let mut out = Vec::new();
+  for word in [0x4654_6C67, 2, total as u32, json.len() as u32, 0x4E4F_534A] {
+    out.extend(u32::to_le_bytes(word));
+  }
+  out.extend(json);
+  out.extend((bin.len() as u32).to_le_bytes());
+  out.extend(0x004E_4942u32.to_le_bytes());
+  out.extend(bin);
+  out
+}
+
+#[test]
+fn a_model_left_as_it_was_is_written_back_byte_for_byte() {
+  let model = skinned(3);
+  // laid out as serde_json never would: keys out of order, spaces, numbers as another tool wrote them
+  let text = serde_json::to_string_pretty(&model.json).unwrap().replacen(
+    '{',
+    r#"{ "extras": { "tiny": 1E-5, "one": 1.0 },"#,
+    1,
+  );
+  let bytes = glb_bytes(&text, &model.bin);
+  let mut glb = Glb::parse(&bytes).unwrap();
+  assert_eq!(glb.to_bytes(), bytes);
+  assert!(edit::normalize(&mut glb, "chain").unwrap().is_empty());
+  assert_eq!(glb.to_bytes(), bytes, "nothing to fix: nothing touched");
+}
+
+#[test]
+fn an_added_animation_leaves_the_rest_as_it_was() {
+  let mut glb = skinned(4);
+  edit::set_animation(&mut glb, "a", &[rotation(1, &[0.0, 1.0])]).unwrap();
+  let before = Glb::parse(&glb.to_bytes()).unwrap();
+  let mut twin = skinned(4);
+  edit::set_animation(&mut twin, "c", &[rotation(2, &[0.0, 0.5, 1.0])]).unwrap();
+
+  edit::set_animation(&mut glb, "b", &[rotation(3, &[0.0, 1.0])]).unwrap();
+  assert_eq!(edit::copy_animations(&mut glb, &twin).unwrap(), 1);
+  let names: Vec<_> = model::animations(&glb)
+    .into_iter()
+    .map(|a| a.name)
+    .collect();
+  assert_eq!(
+    names,
+    ["a", "b", "c"],
+    "added after the others: their slots stay"
+  );
+  for key in ["asset", "nodes", "meshes", "skins", "scene", "scenes"] {
+    assert_eq!(glb.json[key], before.json[key], "{key}");
+  }
+  let keys = |g: &Glb| {
+    let anim = &g.array("animations")[0];
+    model::channels(g, anim)
+      .into_iter()
+      .map(|c| (c.node, c.path, c.keys.unwrap()))
+      .collect::<Vec<_>>()
+  };
+  assert_eq!(keys(&glb), keys(&before));
+  let mesh = |g: &Glb| {
+    g.numbers(&g.json["meshes"][0]["primitives"][0]["attributes"]["POSITION"])
+      .unwrap()
+  };
+  assert_eq!(mesh(&glb), mesh(&before));
+}
+
+/// The extraction's own models, as the studio meets them: `OGAS_MODELS=<folder> cargo test -p
+/// animation-studio-core -- --ignored --nocapture` (decompiler_out/<game>/levels, say).
+#[test]
+#[ignore = "needs the models of a game: OGAS_MODELS=<folder>"]
+fn the_games_models_survive_the_studio() {
+  let dir = std::path::PathBuf::from(std::env::var("OGAS_MODELS").expect("OGAS_MODELS"));
+  let mut stack = vec![dir];
+  let (mut models, mut fixed) = (0, std::collections::BTreeMap::<String, usize>::new());
+  while let Some(d) = stack.pop() {
+    for e in std::fs::read_dir(&d).unwrap().flatten() {
+      let path = e.path();
+      if path.is_dir() {
+        stack.push(path);
+        continue;
+      }
+      if path.extension().is_none_or(|x| x != "glb") {
+        continue;
+      }
+      let bytes = std::fs::read(&path).unwrap();
+      let Ok(mut glb) = Glb::parse(&bytes) else {
+        continue;
+      };
+      let Ok(joints) = model::skeleton(&glb) else {
+        continue;
+      };
+      models += 1;
+      assert_eq!(glb.to_bytes(), bytes, "{}", path.display());
+      let actor = rules::goal_name(&library::model_name(&path));
+      let notes =
+        edit::normalize(&mut glb, &actor).unwrap_or_else(|e| panic!("{}: {e:#}", path.display()));
+      for n in &notes {
+        *fixed.entry(n.code.to_owned()).or_default() += 1;
+      }
+      if notes.is_empty() {
+        assert_eq!(glb.to_bytes(), bytes, "{}", path.display());
+      }
+
+      let mut glb = Glb::parse(&bytes).unwrap();
+      let before = Glb::parse(&bytes).unwrap();
+      let wave: Vec<Channel> = vec![Channel {
+        joint: joints.len() - 1,
+        path: "rotation".into(),
+        times: vec![0.0, 1.0],
+        values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, FRAC_1_SQRT_2, FRAC_1_SQRT_2],
+      }];
+      edit::set_animation(&mut glb, "studio-test", &wave).unwrap();
+      let old = before.array("animations");
+      assert_eq!(&glb.array("animations")[..old.len()].len(), &old.len());
+      for (i, anim) in old.iter().enumerate() {
+        let keys = |g: &Glb, a: &serde_json::Value| {
+          model::channels(g, a)
+            .into_iter()
+            .map(|c| (c.node, c.path, c.keys.ok()))
+            .collect::<Vec<_>>()
+        };
+        assert_eq!(
+          keys(&glb, &glb.array("animations")[i]),
+          keys(&before, anim),
+          "{} {i}",
+          path.display()
+        );
+      }
+      for key in [
+        "nodes",
+        "meshes",
+        "skins",
+        "materials",
+        "textures",
+        "images",
+        "samplers",
+      ] {
+        assert_eq!(glb.json[key], before.json[key], "{} {key}", path.display());
+      }
+      for (i, image) in before.array("images").iter().enumerate() {
+        // an image in a data: uri is part of the JSON compared above
+        let data = |g: &Glb, image: &serde_json::Value| {
+          let v = &g.array("bufferViews")[image["bufferView"].as_u64()? as usize];
+          let at = v["byteOffset"].as_u64().unwrap_or(0) as usize;
+          Some(g.bin[at..at + v["byteLength"].as_u64()? as usize].to_vec())
+        };
+        assert!(
+          data(&glb, &glb.array("images")[i]) == data(&before, image),
+          "{} image {i}",
+          path.display()
+        );
+      }
+    }
+  }
+  println!("{models} models read and written back byte for byte; fixed by the export: {fixed:?}");
 }

@@ -13,9 +13,12 @@ const CHUNK_JSON: u32 = 0x4E4F_534A;
 const CHUNK_BIN: u32 = 0x004E_4942;
 const FLOAT: u64 = 5126;
 
+#[derive(Default)]
 pub struct Glb {
   pub json: Value,
   pub bin: Vec<u8>,
+  /// the file as it was read: written back as it is while nothing changed
+  read: Vec<u8>,
 }
 
 fn components(ty: &str) -> Option<usize> {
@@ -164,7 +167,7 @@ impl Glb {
     file.read_exact(&mut json)?;
     Ok(Glb {
       json: serde_json::from_slice(&json)?,
-      bin: Vec::new(),
+      ..Glb::default()
     })
   }
 
@@ -195,10 +198,17 @@ impl Glb {
     if buffers.len() > 1 || buffers.iter().any(|b| b.get("uri").is_some()) {
       bail!("its data is in separate files: export it as a single .glb");
     }
-    Ok(Glb { json, bin })
+    Ok(Glb {
+      json,
+      bin,
+      read: bytes.to_vec(),
+    })
   }
 
   pub fn to_bytes(&self) -> Vec<u8> {
+    if Glb::parse(&self.read).is_ok_and(|g| g.json == self.json && g.bin == self.bin) {
+      return self.read.clone();
+    }
     let mut json = self.json.clone();
     if self.bin.is_empty() {
       if let Some(root) = json.as_object_mut() {

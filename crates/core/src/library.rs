@@ -295,13 +295,13 @@ pub fn export(
 
 /// The README of an export, in English or, for `lang` "fr", in French.
 fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang: &str) -> String {
-  let short = |a: &str| rules::short_name(a, actor).to_owned();
+  let short = |a: &str| goal_name(rules::short_name(a, actor));
   let art: Vec<String> = anims.iter().map(|a| format!("{}-ja", short(a))).collect();
   let art = art.join(" ");
   let rows: String = anims
     .iter()
     .enumerate()
-    .map(|(i, a)| format!("| {} | `{a}` | `{a}-ja` |\n", i + 2))
+    .map(|(i, a)| format!("| {} | `{a}` | `{actor}-{}-ja` |\n", i + 2, short(a)))
     .collect();
   let first = anims.first().map_or("idle".to_owned(), |a| short(a));
   if lang.starts_with("fr") {
