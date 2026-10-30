@@ -4,6 +4,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use serde::Serialize;
+use serde_json::json;
 
 use crate::{glb::Glb, model};
 
@@ -237,8 +238,9 @@ fn weights_outside(glb: &Glb, joints: usize) -> (usize, usize) {
     .filter(|n| n.get("skin").is_some())
     .filter_map(|n| n["mesh"].as_u64())
     .collect();
-  let mut seen = HashSet::new();
-  let (mut outside, mut highest) = (0, 0);
+  // the points the triangles use, by joints and weights: the extraction gives every primitive the
+  // level's whole buffer of points, of which a model draws a few (None: all of them)
+  let mut drawn: BTreeMap<(u64, u64), Option<HashSet<usize>>> = BTreeMap::new();
   for mesh in meshes {
     for prim in glb
       .array("meshes")
@@ -248,20 +250,25 @@ fn weights_outside(glb: &Glb, joints: usize) -> (usize, usize) {
       .flatten()
     {
       let attrs = &prim["attributes"];
-      if !seen.insert((attrs["JOINTS_0"].as_u64(), attrs["WEIGHTS_0"].as_u64())) {
-        continue;
-      }
-      let (Ok(index), Ok(weight)) = (
-        glb.numbers(&attrs["JOINTS_0"]),
-        glb.numbers(&attrs["WEIGHTS_0"]),
-      ) else {
+      let (Some(j), Some(w)) = (attrs["JOINTS_0"].as_u64(), attrs["WEIGHTS_0"].as_u64()) else {
         continue;
       };
-      for (j, w) in index.iter().zip(&weight) {
-        if *w > 0.0 && *j as usize >= joints {
-          outside += 1;
-          highest = highest.max(*j as usize);
-        }
+      let points = drawn.entry((j, w)).or_insert_with(|| Some(HashSet::new()));
+      match (glb.numbers(&prim["indices"]), points.as_mut()) {
+        (Ok(indices), Some(set)) => set.extend(indices.iter().map(|i| *i as usize)),
+        _ => *points = None,
+      }
+    }
+  }
+  let (mut outside, mut highest) = (0, 0);
+  for ((j, w), points) in drawn {
+    let (Ok(index), Ok(weight)) = (glb.numbers(&json!(j)), glb.numbers(&json!(w))) else {
+      continue;
+    };
+    for (k, (j, w)) in index.iter().zip(&weight).enumerate() {
+      if points.as_ref().is_none_or(|p| p.contains(&(k / 4))) && *w > 0.0 && *j as usize >= joints {
+        outside += 1;
+        highest = highest.max(*j as usize);
       }
     }
   }

@@ -562,6 +562,26 @@ fn two_animations_never_share_a_name_in_the_game() {
   std::fs::remove_dir_all(&root).unwrap();
 }
 
+/// The extraction gives each model its level's whole buffer of points: the weights check looks at
+/// the points the triangles use only.
+#[test]
+fn only_the_points_drawn_are_checked() {
+  // 4 points, the triangle uses the first 3; the 4th weighs on joint 9, which the skin lacks
+  let mut glb = with_joint_numbers(
+    skinned(3),
+    &[1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 9, 0, 0, 0],
+  );
+  let weights = glb.push_floats(&[[1.0, 0.0, 0.0, 0.0]; 4].concat(), "VEC4");
+  glb.json["meshes"][0]["primitives"][0]["attributes"]["WEIGHTS_0"] = json!(weights);
+  let mut draw = |points: &[f32]| {
+    let indices = glb.push_floats(points, "SCALAR");
+    glb.json["meshes"][0]["primitives"][0]["indices"] = json!(indices);
+    errors(&glb, "chain").contains(&"skin-joints")
+  };
+  assert!(!draw(&[0.0, 1.0, 2.0]), "the 4th point is not drawn");
+  assert!(draw(&[1.0, 2.0, 3.0]));
+}
+
 /// The extraction writes a model out of each level that loads it, each copy with that level's unused
 /// vertices: copies with the same joints and animations are listed once (the smallest file), copies
 /// with other animations apart.
