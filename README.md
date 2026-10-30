@@ -5,7 +5,7 @@ Jak and Daxter, Jak II and Jak 3, and shows them in the game itself. It works wi
 [OpenGOAL](https://github.com/open-goal/jak-project), the project that runs these games natively on
 PC.
 
-![Babak, a lurker of Jak and Daxter, walking in the studio](docs/screenshots/studio-overview.png)
+![Babak, a lurker of Jak and Daxter, walking in the studio](docs/screenshots/studio-overview.gif)
 
 ## What it does
 
@@ -13,7 +13,8 @@ PC.
 - Makes new animations from a video, a motion capture file, by hand, or from a description given to
   an AI assistant.
 - Checks every model against what the game accepts.
-- Exports the model for your mod, with the lines to add to the game's code.
+- Exports the model for your mod, with the lines to add to the game's code, and shows how to make
+  it an entity of your level that plays its animations.
 - Tries the model in the game, next to Jak, in a minute or two.
 - Speaks English and French.
 
@@ -36,8 +37,13 @@ The studio is one program, which you can use in two ways:
 ## Learn it
 
 The [tutorial](docs/tutorial.md) goes, with screenshots, from the first start to a new animation:
-Babak walks with a motion capture, waves at the request of an AI assistant, and a Jak 3 Marauder
-celebrates next to Jak in the game.
+Babak walks with a motion capture, an AI assistant makes Jak do a backflip in the three games,
+and a Jak 3 Marauder celebrates next to Jak in the game.
+
+[Put your model in the game](docs/in-game-importation.md) then takes the exported model into your
+own mod: the files to change, where they are, and the code that makes the model an entity of your
+level that plays its animations, a new one included. The studio's **In-game guide** page shows the
+same steps, written for the model you opened.
 
 ## Animate with an AI assistant (MCP)
 

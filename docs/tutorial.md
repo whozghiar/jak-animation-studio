@@ -1,8 +1,8 @@
 # Tutorial
 
 This tutorial takes you from the first start of Jak Animation Studio to new animations. Babak, a
-lurker of Jak and Daxter, gets a walk from a motion capture file and a wave from an AI assistant,
-and a Marauder of Jak 3 celebrates next to Jak in the game.
+lurker of Jak and Daxter, gets a walk from a motion capture file, an AI assistant makes Jak do a
+backflip in the three games, and a Marauder of Jak 3 celebrates next to Jak in the game.
 
 - [1. Install the studio](#1-install-the-studio)
 - [2. Extract the game's models](#2-extract-the-games-models)
@@ -68,7 +68,7 @@ Click the cog at the bottom left to open the settings.
 
 ## 4. Watch a model
 
-![Babak walking, with his animations on the right](screenshots/studio-overview.png)
+![Babak walking, with his animations on the right](screenshots/studio-overview.gif)
 
 1. Choose the game in the tabs at the top left: **Jak and Daxter**, **Jak II** or **Jak 3**.
 2. **Models** lists the game's characters, creatures and enemies. A character the game splits into
@@ -98,7 +98,7 @@ it, listed in **Creations**.
 2. Choose the file (here `walk.bvh`, a walk) and name the animation `stroll`.
 3. Click **Extract the movement**. The orange figure is the capture; Babak copies it next to it.
 
-   ![A walk from a BVH file, put on Babak](screenshots/new-animation-mocap.png)
+   ![A walk from a BVH file, put on Babak](screenshots/new-animation-mocap.gif)
 
 4. Adjust it if needed: **Smoothing** calms a shaky capture, **Face forward** turns the movement to
    face the model's front, **Bone mapping** says which of Babak's joints plays which body part.
@@ -142,7 +142,9 @@ animation** when done.
 build-actor.** in green, as for Babak, or the problems the game would have, in red.
 
 Click **Export for Jak and Daxter**. The studio writes the model for the game and a README with the
-lines to add to the game's code; **Open the README** shows them.
+lines to add to the game's code; **Open the README** shows them. The **In-game guide** page, in
+the sidebar, takes it further: the code that makes Babak an entity of your level, playing his
+animations ([Put your model in the game](in-game-importation.md) explains each step).
 
 ![Babak exported, with the try in the game below](screenshots/export.png)
 
@@ -160,7 +162,7 @@ The studio shows the model in the game itself, without building or changing your
 2. Click **Try in the game**. The button tells each step; the first time takes a minute or two.
 3. The game opens in its test level: the Marauder plays his animation next to Jak, again and again.
 
-   ![The Marauder of Jak 3 celebrating next to Jak, in the game](screenshots/try-in-game.png)
+   ![The Marauder of Jak 3 celebrating next to Jak, in the game](screenshots/try-in-game.gif)
 
 4. Pick another animation in the studio: the Marauder plays it in the game too.
 
@@ -179,11 +181,19 @@ The studio's MCP server lets an AI assistant, such as Claude Code, make animatio
 (the [README](../README.md#animate-with-an-ai-assistant-mcp) explains how).
 
 1. In **Settings > AI assistant (MCP)**, click **Copy** and run the command in a terminal, once.
-2. Ask the assistant: _"Make babak-lod0 wave with its right arm, then play it."_
-3. The assistant writes the poses, and the studio comes to the front playing `wave`, Babak's right
-   arm raised:
+2. Ask the assistant: _"Make Jak do a backflip in Jak and Daxter, Jak II and Jak 3, then play it."_
+3. The assistant writes the poses of a backflip (crouch, jump, a full turn backwards, landing) on
+   Jak's model of each game, and the studio comes to the front playing `backflip`:
 
-   ![Babak playing the wave the assistant made](screenshots/mcp-wave.png)
+   | Jak and Daxter (`eichar-lod0`)                                                 | Jak II (`jakb-lod0`)                                                   | Jak 3 (`jakb-c-lod0`)                                                 |
+   | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+   | ![Jak of Jak and Daxter doing the backflip](screenshots/mcp-backflip-jak1.gif) | ![Jak of Jak II doing the backflip](screenshots/mcp-backflip-jak2.gif) | ![Jak of Jak 3 doing the backflip](screenshots/mcp-backflip-jak3.gif) |
 
-4. Ask for changes in words (_"slower"_, _"higher"_), or refine it by hand (step 6). The wave is
-   in Babak's creation, ready to export (step 7).
+   The same poses fit the three games: the assistant turns each joint about the model's own axes
+   (left, up, forward), and the three Jaks share their main joints (`main`, the thighs, the knees,
+   the arms).
+
+4. Ask for changes in words (_"slower"_, _"higher"_), or refine it by hand (step 6). The backflip
+   is in Jak's creation of each game. In Jak 3 it is the model's only animation, ready to export
+   (step 7). In Jak and Daxter and Jak II, the model keeps all of Jak's animations: the **Game
+   check** says what the game would refuse before you export.

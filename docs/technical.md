@@ -165,11 +165,23 @@ game's code. For Babak with a new `wave`, in Jak and Daxter:
 | The level's `.gd` file | `"babak-lod0-ag.go"`, before the level's own `.go`       |
 | The new animation      | Slot 16, named `babak-lod0-wave-ja`                      |
 
-The export changes two things only:
+The export changes only what the game needs:
 
 - **What the game would refuse**, in the animations that need it: it removes morph keys, makes
   curved keys straight, and keys the joints that had none.
+- **Joints with a single key**: a joint whose keys are all at 0 s gets a second key 1/60 s later.
+  OpenGOAL v0.3.9's build-actor makes no frame of such a joint and puts it at the origin: a `wave`
+  made by an assistant, which keys the joints that do not move once, folds the Marauder into a ball.
+  On a still pose, where every joint has a single key (the Marauder's `ragdoll`), it stops; the
+  export says so in its notes.
+- **The points no triangle draws**: the extraction gives each model the whole buffer of points of
+  its level, and build-actor would put them all in your level. Babak draws 3 545 of the 17 753 his
+  smallest copy holds; Jak 3's Marauder, tried in the game, made the test level 13 MB without this,
+  1 MB with it.
 - **The skin**, in every model, so that the game draws it right (below).
+
+[Put your model in the game](in-game-importation.md) then shows how to make the exported model an
+entity of your level.
 
 Everything else is written as it was read. Your creation itself never changes on export: a model
 the studio opens and saves again stays identical, byte for byte, which a test checks on the 3384
@@ -215,8 +227,8 @@ Good to know:
 
 - One game at a time: the game listens on port 8112 (Jak and Daxter), 8113 (Jak II) or 8114 (Jak
   3), and a try does not start while another game holds it.
-- An animation whose keys are all at 0 s (a still pose) gets a second key 1/60 s later in the
-  try's copy: OpenGOAL v0.3.9's build-actor stops on it otherwise.
+- A joint whose keys are all at 0 s gets a second key 1/60 s later in the try's copy, as in the
+  export: OpenGOAL v0.3.9's build-actor puts it at the origin otherwise.
 - Jak and Daxter closes when its test level loads a character with a skeleton added this way.
 
 ## 8. The MCP server

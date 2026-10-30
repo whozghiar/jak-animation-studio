@@ -28,7 +28,7 @@ with its active tooling).
     - `looks.rs`: a model's parts (runs of primitives drawing the same vertices: the extraction does not keep which merc effect a primitive was) and blend shapes; a look applied (parts removed, shapes baked).
     - `names.rs`, `names.json`: the official English and French names of the entities, by game and art group, each with its source.
     - `living.json`: per game, the models that are living entities and those that are objects (every skeleton of `goal_src/<game>/engine/data/art-elts.gc`). Made from the code (the model's type derives from `nav-enemy`, `enemy` or `process-taskable`), then checked by hand; the Models list hides the objects.
-    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `for_build_actor`, the skin set so that any `build-actor` builds the model right (export and try); `copy_animations` from a twin.
+    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `for_build_actor`, the skin set so that any `build-actor` builds the model right, `trim_points`, the points no triangle draws dropped, and `hold_still_keys`, keys all at 0 s given a second one (all three in the export and the try); `copy_animations` from a twin.
     - `library.rs`: settings (a models folder per game), the models listed (one copy of each model the extraction wrote out of several levels), the creations folder (by game; `edit_creation` refuses a change that gives two animations one name in the game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
     - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back.
   - `crates/mcp/`: the MCP server (JSON-RPC over stdio), on the files and the settings.
@@ -122,8 +122,12 @@ The try in the game (`game_test.rs`) relies on these, each seen in the games:
 - Jak 2 and 3 look for a process's art groups in its level only: the viewer takes test-zone's;
 - goalc compiles the code of `GAME.CGO` in `game.gd`'s order (the viewer's dependencies): another
   order fails (`*pc-settings*` unknown in `pad.gc`, Jak 1);
-- `build-actor` of OpenGOAL v0.3.9 dies on an animation whose keys are all at 0 s;
-- Jak 1 closes when a level loads a custom actor with a skeleton (jak-project of October 2026).
+- `build-actor` of OpenGOAL v0.3.9 makes no frame of a joint whose keys are all at 0 s (a single
+  key): the joint goes to the origin (a wave folds the Marauder into a ball), and an animation with
+  no frame at all (a still pose) makes it die;
+- Jak 1 closes when a level loads a custom actor with a skeleton (jak-project of October 2026);
+- a level made by hand has no visibility data: with `ps2-actor-vis?` on (PS2 actor vis in the debug
+  menu), its actors are never born, the game's own `test-actor` included (the in-game guide says so).
 
 The `custom-actors-levels` and `goal-lisp` skills in `.agents/skills/` explain the whole pipeline.
 
@@ -141,5 +145,7 @@ in `docs/technical.md` is the model: the files written, the lines to add, the sl
 gets. Run the example before writing it down.
 
 The README presents the studio briefly, without technical detail; `docs/tutorial.md` teaches it
-step by step with screenshots (`docs/screenshots/`); `docs/technical.md` explains how it works, one
+step by step with screenshots (`docs/screenshots/`); `docs/in-game-importation.md` takes an exported
+model into a mod (the **In-game guide** page, `components/Guide.svelte`, shows the same steps with
+the lines of `library::game_names` for the model opened); `docs/technical.md` explains how it works, one
 concept at a time with an example each, without going into the code.
