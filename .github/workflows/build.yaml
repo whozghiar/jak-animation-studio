@@ -51,4 +51,4 @@ jobs:
       - name: Build the studio (no installer) and the MCP server
         run: |
           yarn tauri build --no-bundle
-          cargo build --release -p opengoal-animation-studio-mcp
+          cargo build --release -p jak-animation-studio-mcp

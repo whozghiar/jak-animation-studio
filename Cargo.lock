@@ -1765,6 +1765,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "jak-animation-studio"
+version = "0.1.0"
+dependencies = [
+ "animation-studio-core",
+ "anyhow",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-opener",
+]
+
+[[package]]
+name = "jak-animation-studio-mcp"
+version = "0.1.0"
+dependencies = [
+ "animation-studio-core",
+ "anyhow",
+ "serde_json",
+]
+
+[[package]]
 name = "javascriptcore-rs"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2376,28 +2398,6 @@ dependencies = [
  "dunce",
  "is-wsl",
  "libc",
-]
-
-[[package]]
-name = "opengoal-animation-studio"
-version = "0.1.0"
-dependencies = [
- "animation-studio-core",
- "anyhow",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-opener",
-]
-
-[[package]]
-name = "opengoal-animation-studio-mcp"
-version = "0.1.0"
-dependencies = [
- "animation-studio-core",
- "anyhow",
- "serde_json",
 ]
 
 [[package]]

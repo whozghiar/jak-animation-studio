@@ -471,7 +471,7 @@ fn viewer_code(game: &str) -> String {
     )
   };
   format!(
-    ";; OpenGOAL Animation Studio's try in the game: the model tried, in front of Jak.
+    ";; Jak Animation Studio's try in the game: the model tried, in front of Jak.
 
 (def-actor {ACTOR} :bounds (0 0 0 10))
 
@@ -688,7 +688,7 @@ impl GameTest {
     std::fs::write(
       &gp,
       format!(
-        ";; the game's project, the model as a custom actor and its viewer (OpenGOAL Animation Studio)\n\
+        ";; the game's project, the model as a custom actor and its viewer (Jak Animation Studio)\n\
          (load-file \"goal_src/{game}/game.gp\")\n\
          (build-actor \"{ACTOR}\")\n\
          (defstep :in \"{}\" :tool 'goalc :out '(\"$OUT/obj/ogas-viewer.o\") :dep '({engine}))\n",

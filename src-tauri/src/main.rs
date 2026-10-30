@@ -3,8 +3,8 @@
   windows_subsystem = "windows"
 )]
 
-// OpenGOAL Animation Studio, with its command line:
-//   opengoal-animation-studio [--lang <code>] [--default-library=<folder>] [--models=<folder>]
+// Jak Animation Studio, with its command line:
+//   jak-animation-studio [--lang <code>] [--default-library=<folder>] [--models=<folder>]
 //                             [--game-install=<game>=<folder>]... [--tooling-version=<version>]
 // --lang, --default-library and --game-install are what the OpenGOAL Launcher gives the programs it
 // starts (Jak Level Editor's way): the default library becomes the creations folder when none is
@@ -87,16 +87,16 @@ async fn modified(path: PathBuf) -> Option<u64> {
 #[tauri::command]
 fn mcp_command() -> String {
   let name = if cfg!(windows) {
-    "opengoal-animation-studio-mcp.exe"
+    "jak-animation-studio-mcp.exe"
   } else {
-    "opengoal-animation-studio-mcp"
+    "jak-animation-studio-mcp"
   };
   let path = std::env::current_exe()
     .ok()
     .and_then(|exe| exe.parent().map(|dir| dir.join(name)))
     .unwrap_or_else(|| name.into());
   format!(
-    "claude mcp add opengoal-animation-studio -- \"{}\"",
+    "claude mcp add jak-animation-studio -- \"{}\"",
     path.display()
   )
 }
@@ -411,7 +411,7 @@ fn main() {
       stop_game_test,
     ])
     .build(tauri::generate_context!())
-    .expect("OpenGOAL Animation Studio could not start")
+    .expect("Jak Animation Studio could not start")
     .run(|app, event| {
       // the game of the tries closes with the studio, and the game's files go back
       if let tauri::RunEvent::Exit = event {

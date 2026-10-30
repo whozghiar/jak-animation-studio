@@ -1,6 +1,6 @@
 [package]
 name = "animation-studio-core"
-description = "OpenGOAL Animation Studio: reads, checks and writes the animations of skinned .glb models for build-actor"
+description = "Jak Animation Studio: reads, checks and writes the animations of skinned .glb models for build-actor"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

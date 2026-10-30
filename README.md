@@ -1,6 +1,6 @@
-# OpenGOAL Animation Studio
+# Jak Animation Studio
 
-OpenGOAL Animation Studio plays, makes and checks the animations of the entities of the Jak and
+Jak Animation Studio plays, makes and checks the animations of the entities of the Jak and
 Daxter games, for [OpenGOAL](https://github.com/open-goal/jak-project), the project that runs the
 PlayStation 2 games natively on PC. An entity is a model with a skeleton: a character, a creature,
 a moving platform. You give the studio a folder of such models (`.glb` files) for each game, and it
@@ -247,7 +247,7 @@ Options it does not know are skipped. For example, with the Launcher installed i
 the tooling `v0.3.9` active and Jak 3 installed with it, the Launcher runs:
 
 ```powershell
-opengoal-animation-studio.exe --lang en "--default-library=D:\OpenGOAL\animation-studio" "--game-install=jak3=D:\OpenGOAL" --tooling-version=v0.3.9
+jak-animation-studio.exe --lang en "--default-library=D:\OpenGOAL\animation-studio" "--game-install=jak3=D:\OpenGOAL" --tooling-version=v0.3.9
 ```
 
 The settings are kept in `settings.json`, in `%APPDATA%\OpenGOAL\animation-studio` on Windows,
@@ -257,7 +257,7 @@ The settings are kept in `settings.json`, in `%APPDATA%\OpenGOAL\animation-studi
 ## 4. The MCP server
 
 **MCP** (Model Context Protocol) lets an AI assistant use the tools of a program. The studio's MCP
-server, `opengoal-animation-studio-mcp`, lets an assistant such as Claude Code define animations
+server, `jak-animation-studio-mcp`, lets an assistant such as Claude Code define animations
 that follow the game's rules: you describe the movement, the assistant writes it as a list of poses,
 and the server checks it against the rules on every write.
 
@@ -293,14 +293,14 @@ first time, it copies the model there.
 
 **Set it up.**
 
-1. Build it (`cargo build --release -p opengoal-animation-studio-mcp`) and put
-   `opengoal-animation-studio-mcp` next to the studio's program. A build of the whole workspace
+1. Build it (`cargo build --release -p jak-animation-studio-mcp`) and put
+   `jak-animation-studio-mcp` next to the studio's program. A build of the whole workspace
    already puts both in `target/release/` (or `target/debug/`).
 2. Register it with Claude Code: **Settings > AI assistant (MCP)** shows the command, with the path
    of the program next to the studio's, for example:
 
    ```bash
-   claude mcp add opengoal-animation-studio -- "D:\tools\animation-studio\opengoal-animation-studio-mcp.exe"
+   claude mcp add jak-animation-studio -- "D:\tools\animation-studio\jak-animation-studio-mcp.exe"
    ```
 
 `--models <folder>` and `--creations <folder>` after the program override the settings.
@@ -336,7 +336,7 @@ Install [Rust](https://www.rust-lang.org/tools/install) and Node.js 22, then fro
 | `OGAS_MODELS=<folder> cargo test --release -p animation-studio-core -- --ignored the_games_models --nocapture`                              | Reads and writes back every model of an extraction (`D:\jak-project\decompiler_out\jak1\levels`, say) and adds an animation to each: all must come back unchanged. |
 | `OGAS_GAME_INSTALL=<folder> OGAS_TRY_GAME=jak3 OGAS_TRY_MODEL=<model.glb> cargo test -p animation-studio-core -- --ignored try_in_the_game` | A whole try in a game installed: two animations played, then the game closed and its files put back.                                                               |
 | `npx yarn tauri build`                                                                                                                      | Builds the installers.                                                                                                                                             |
-| `cargo build --release -p opengoal-animation-studio-mcp`                                                                                    | Builds the MCP server.                                                                                                                                             |
+| `cargo build --release -p jak-animation-studio-mcp`                                                                                         | Builds the MCP server.                                                                                                                                             |
 
 **Formatting.** The code is formatted on its own: before each commit, the hook
 [`.githooks/pre-commit`](.githooks/pre-commit) formats the files of the commit (rustfmt for Rust,
@@ -346,12 +346,12 @@ Prettier for the rest) and stages them again. `npx yarn install` turns it on;
 **GitHub Actions.** The workflows of [`.github/workflows/`](.github/workflows/), in the Actions tab
 of the repository:
 
-| Workflow    | Runs                                          | What it does                                                                                                                                                                                                                                 |
-| ----------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Lint**    | at every push, on every pull request, by hand | Rust formatting (`cargo fmt --check`), Clippy without warnings, the interface's formatting (Prettier) and types (svelte-check).                                                                                                              |
-| **Build**   | the same                                      | On Windows, Linux and macOS: the core's tests, the interface's checks, the studio and its MCP server built.                                                                                                                                  |
-| **Release** | by hand, with `patch`, `minor` or `major`     | The next version `vX.Y.Z` written, committed and tagged, then a draft release with each platform's installers, a portable zip (`opengoal-animation-studio-portable-<platform>.zip`: the studio and its MCP server) and the MCP server alone. |
-| **Format**  | by hand, on a branch                          | Formats the branch's code and commits the result, for changes made without the hook.                                                                                                                                                         |
+| Workflow    | Runs                                          | What it does                                                                                                                                                                                                                            |
+| ----------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lint**    | at every push, on every pull request, by hand | Rust formatting (`cargo fmt --check`), Clippy without warnings, the interface's formatting (Prettier) and types (svelte-check).                                                                                                         |
+| **Build**   | the same                                      | On Windows, Linux and macOS: the core's tests, the interface's checks, the studio and its MCP server built.                                                                                                                             |
+| **Release** | by hand, with `patch`, `minor` or `major`     | The next version `vX.Y.Z` written, committed and tagged, then a draft release with each platform's installers, a portable zip (`jak-animation-studio-portable-<platform>.zip`: the studio and its MCP server) and the MCP server alone. |
+| **Format**  | by hand, on a branch                          | Formats the branch's code and commits the result, for changes made without the hook.                                                                                                                                                    |
 
 A release is a draft until you publish it: check its files in the repository's Releases, then
 **Publish release**.

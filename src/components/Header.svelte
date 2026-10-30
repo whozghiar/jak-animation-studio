@@ -23,8 +23,7 @@
 >
   <div class="pointer-events-none flex items-center gap-2">
     <img src={logo} alt="" class="h-6 w-6" />
-    <span class="font-title text-sm text-neutral-100"
-      >OpenGOAL Animation Studio</span
+    <span class="font-title text-sm text-neutral-100">Jak Animation Studio</span
     >
   </div>
   <div class="h-6 shrink-0 border-l border-neutral-800"></div>

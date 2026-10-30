@@ -79,7 +79,7 @@ impl Settings {
     self.creations_dir.clone().unwrap_or_else(|| {
       dirs::document_dir()
         .unwrap_or_default()
-        .join("OpenGOAL Animation Studio")
+        .join("Jak Animation Studio")
     })
   }
 }
@@ -314,7 +314,7 @@ fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang
     };
     return format!(
       "# {actor} pour {game}\n\n\
-       Fait avec OpenGOAL Animation Studio. Le modèle et ses animations suivent ce que demande \
+       Fait avec Jak Animation Studio. Le modèle et ses animations suivent ce que demande \
        build-actor d'OpenGOAL.\n\n\
        1. {copy}\n\
        2. Construisez son art group : ajoutez cette ligne à `goal_src/{game}/game.gp`.\n\n   \
@@ -337,7 +337,7 @@ fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang
   };
   format!(
     "# {actor} for {game}\n\n\
-     Made with OpenGOAL Animation Studio. The model and its animations follow what OpenGOAL's \
+     Made with Jak Animation Studio. The model and its animations follow what OpenGOAL's \
      build-actor needs.\n\n\
      1. {copy}\n\
      2. Build its art group: add this line to `goal_src/{game}/game.gp`.\n\n   \

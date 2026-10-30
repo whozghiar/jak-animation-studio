@@ -5,7 +5,7 @@ name: Release
 # into package.json, Cargo.toml, Cargo.lock and src-tauri/tauri.conf.json, commits that to the
 # branch, tags the commit, then makes a draft release with, per platform (Windows, Linux, macOS),
 # the installers, a portable zip (the studio and its MCP server side by side, what the OpenGOAL
-# Launcher will download: opengoal-animation-studio-portable-<platform>.zip) and the MCP server
+# Launcher will download: jak-animation-studio-portable-<platform>.zip) and the MCP server
 # alone. Check the draft, then publish it.
 
 on:
@@ -85,7 +85,7 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           # the id from the answer itself: a draft just made may not be listed yet
-          id=$(gh api -X POST "repos/$GH_REPO/releases" -f tag_name="$TAG" -f name="OpenGOAL Animation Studio $TAG" \
+          id=$(gh api -X POST "repos/$GH_REPO/releases" -f tag_name="$TAG" -f name="Jak Animation Studio $TAG" \
             -F draft=true -F generate_release_notes=true --jq .id)
           echo "release $id"
           echo "release_id=$id" >> "$GITHUB_OUTPUT"
@@ -152,14 +152,14 @@ jobs:
           if [ "$RUNNER_OS" = macOS ]; then
             # both Macs' programs in one (as the studio's universal-apple-darwin)
             for arch in aarch64 x86_64; do
-              cargo build --release -p opengoal-animation-studio-mcp --target "$arch-apple-darwin"
+              cargo build --release -p jak-animation-studio-mcp --target "$arch-apple-darwin"
             done
             mkdir -p target/universal-apple-darwin/release
-            lipo -create -output target/universal-apple-darwin/release/opengoal-animation-studio-mcp \
-              target/aarch64-apple-darwin/release/opengoal-animation-studio-mcp \
-              target/x86_64-apple-darwin/release/opengoal-animation-studio-mcp
+            lipo -create -output target/universal-apple-darwin/release/jak-animation-studio-mcp \
+              target/aarch64-apple-darwin/release/jak-animation-studio-mcp \
+              target/x86_64-apple-darwin/release/jak-animation-studio-mcp
           else
-            cargo build --release -p opengoal-animation-studio-mcp
+            cargo build --release -p jak-animation-studio-mcp
           fi
 
       - name: Make the zips and upload them
@@ -177,9 +177,9 @@ jobs:
           rm -rf stage && mkdir -p stage/portable stage/mcp stage/dist
           out="$PWD/stage/dist"
           # the MCP server next to the studio: its settings show the command to register it from there
-          cp "$bin/opengoal-animation-studio$exe" "$bin/opengoal-animation-studio-mcp$exe" stage/portable/
-          cp "$bin/opengoal-animation-studio-mcp$exe" stage/mcp/
-          zip_dir stage/portable "$out/opengoal-animation-studio-portable-$ASSET_PLATFORM.zip"
-          zip_dir stage/mcp "$out/opengoal-animation-studio-mcp-$ASSET_PLATFORM.zip"
+          cp "$bin/jak-animation-studio$exe" "$bin/jak-animation-studio-mcp$exe" stage/portable/
+          cp "$bin/jak-animation-studio-mcp$exe" stage/mcp/
+          zip_dir stage/portable "$out/jak-animation-studio-portable-$ASSET_PLATFORM.zip"
+          zip_dir stage/mcp "$out/jak-animation-studio-mcp-$ASSET_PLATFORM.zip"
           ls -l stage/dist
           gh release upload "$TAG" stage/dist/*.zip --clobber

@@ -1,4 +1,4 @@
-//! opengoal-animation-studio-mcp [--models <folder>] [--creations <folder>]: an MCP server (Model
+//! jak-animation-studio-mcp [--models <folder>] [--creations <folder>]: an MCP server (Model
 //! Context Protocol: JSON-RPC 2.0, one message per line on stdin and stdout) that lets an assistant
 //! such as Claude define the animations of an entity so that they follow what OpenGOAL's
 //! build-actor needs, and play them in the studio's window. It works on the files, with the
@@ -21,7 +21,7 @@ use animation_studio_core::{
 use anyhow::{Context, Result, bail, ensure};
 use serde_json::{Value, json};
 
-const INSTRUCTIONS: &str = "OpenGOAL Animation Studio edits the animations of Jak and Daxter \
+const INSTRUCTIONS: &str = "Jak Animation Studio edits the animations of Jak and Daxter \
 entities (skinned .glb models) for OpenGOAL's build-actor, game by game (jak1, jak2, jak3: the \
 studio's game by default). Start with get_settings and list_models, then inspect_model: it lists the \
 joints with their parent and rest position in the armature's space, where Y is up, the model faces \
@@ -155,7 +155,7 @@ fn arg<'a>(args: &'a Value, key: &str) -> Result<&'a str> {
 fn studio() -> Option<PathBuf> {
   let exe = std::env::current_exe().ok()?;
   let path = exe.parent()?.join(format!(
-    "opengoal-animation-studio{}",
+    "jak-animation-studio{}",
     std::env::consts::EXE_SUFFIX
   ));
   path.is_file().then_some(path)
@@ -378,7 +378,7 @@ impl Server {
       "initialize" => json!({
         "protocolVersion": msg["params"]["protocolVersion"].as_str().unwrap_or("2025-06-18"),
         "capabilities": { "tools": {} },
-        "serverInfo": { "name": "opengoal-animation-studio", "version": env!("CARGO_PKG_VERSION") },
+        "serverInfo": { "name": "jak-animation-studio", "version": env!("CARGO_PKG_VERSION") },
         "instructions": INSTRUCTIONS,
       }),
       "ping" => json!({}),

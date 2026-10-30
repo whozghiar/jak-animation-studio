@@ -1,6 +1,6 @@
 [package]
-name = "opengoal-animation-studio-mcp"
-description = "The MCP server of OpenGOAL Animation Studio: an AI assistant defines game-ready animations"
+name = "jak-animation-studio-mcp"
+description = "The MCP server of Jak Animation Studio: an AI assistant defines game-ready animations"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -10,7 +10,7 @@
 
 ## 1. Overview & Architecture
 
-**OpenGOAL Animation Studio** plays, makes and checks the animations of Jak and Daxter entities
+**Jak Animation Studio** plays, makes and checks the animations of Jak and Daxter entities
 (skinned `.glb` models) for OpenGOAL's `build-actor`. It runs on its own, and the OpenGOAL Launcher
 installs and starts it the way it does Jak Level Editor (`--lang`, `--default-library=`,
 `--game-install=`, `--tooling-version=`: started so, it tries models in the Launcher's games only,

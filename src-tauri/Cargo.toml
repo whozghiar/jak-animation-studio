@@ -1,12 +1,12 @@
 [package]
-name = "opengoal-animation-studio"
-description = "OpenGOAL Animation Studio: plays, makes and checks the animations of Jak and Daxter entities"
+name = "jak-animation-studio"
+description = "Jak Animation Studio: plays, makes and checks the animations of Jak and Daxter entities"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-default-run = "opengoal-animation-studio"
+default-run = "jak-animation-studio"
 
 [build-dependencies]
 tauri-build = { version = "2.5.1", features = [] }
