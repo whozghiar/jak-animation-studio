@@ -617,10 +617,9 @@ impl GameTest {
         let _ = std::fs::write(dir.join(name), p.since(0));
       }
     }
-    if r.is_err()
-      && let Some(mut gk) = s.gk.take()
-    {
-      gk.kill();
+    // a failed try frees what it started: goalc (its memory), the game, the game's files
+    if r.is_err() {
+      s.stop();
     }
     r
   }
