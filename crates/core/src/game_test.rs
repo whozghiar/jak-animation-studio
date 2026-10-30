@@ -840,7 +840,10 @@ fn project(install: &Install, dir: &Path) -> Result<PathBuf> {
 2",
     data.display()
   );
-  if std::fs::read_to_string(&marker).ok().as_deref() != Some(made_for.as_str()) {
+  // made again for another game folder, or when its links to the game's folders are gone
+  if std::fs::read_to_string(&marker).ok().as_deref() != Some(made_for.as_str())
+    || !proj.join("goal_src").join(game).is_dir()
+  {
     let _ = std::fs::remove_file(&marker);
     let _ = std::fs::remove_dir_all(proj.join("out"));
     let _ = std::fs::remove_dir_all(proj.join("custom_assets"));
