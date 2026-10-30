@@ -112,11 +112,16 @@ pub fn model_name(path: &Path) -> String {
     .unwrap_or_default()
 }
 
+/// What tells a model's copies apart: its name, its joints, its animations.
+type CopyKey = (String, Vec<String>, Vec<String>);
+
 /// The entities (models with an armature) of a folder and its subfolders, with their official names
 /// in `game`; the game's objects (props, platforms, vehicles...) only when `objects` is set. Exports
-/// are skipped: they are copies of the creations next to them.
+/// are skipped: they are copies of the creations next to them. The extraction writes a model out of
+/// each level that loads it (Babak out of 11 levels of Jak and Daxter), each copy with that level's
+/// unused vertices: one copy is listed per name, joints and animations, the smallest file.
 pub fn list_models(dir: &Path, game: &str, objects: bool) -> Vec<ModelEntry> {
-  let mut out = Vec::new();
+  let mut copies: HashMap<CopyKey, (u64, ModelEntry)> = HashMap::new();
   let mut stack = vec![dir.to_path_buf()];
   while let Some(d) = stack.pop() {
     let Ok(entries) = std::fs::read_dir(&d) else {
@@ -132,21 +137,36 @@ pub fn list_models(dir: &Path, game: &str, objects: bool) -> Vec<ModelEntry> {
         .extension()
         .is_some_and(|x| x.eq_ignore_ascii_case("glb"))
         && (objects || !names::is_object(game, &model_name(&path)))
-        && let Ok(glb) = Glb::read(&path)
+        && let Ok(glb) = Glb::read_json(&path)
         && let Ok(joints) = model::skeleton(&glb)
       {
         let name = model_name(&path);
-        out.push(ModelEntry {
+        let anims: Vec<String> = glb
+          .array("animations")
+          .iter()
+          .enumerate()
+          .map(|(i, a)| model::animation_name(a, i))
+          .collect();
+        let size = e.metadata().map_or(u64::MAX, |m| m.len());
+        let entry = ModelEntry {
           title: names::title(game, &name),
-          name,
+          name: name.clone(),
           joints: joints.len(),
-          animations: glb.array("animations").len(),
+          animations: anims.len(),
           path,
-        });
+        };
+        let key = (name, joints.into_iter().map(|j| j.name).collect(), anims);
+        match copies.get(&key) {
+          Some((s, kept)) if (*s, &kept.path) <= (size, &entry.path) => {}
+          _ => {
+            copies.insert(key, (size, entry));
+          }
+        }
       }
     }
   }
-  out.sort_by_key(|m| m.name.to_lowercase());
+  let mut out: Vec<ModelEntry> = copies.into_values().map(|(_, m)| m).collect();
+  out.sort_by(|a, b| (a.name.to_lowercase(), &a.path).cmp(&(b.name.to_lowercase(), &b.path)));
   out
 }
 

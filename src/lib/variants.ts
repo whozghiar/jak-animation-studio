@@ -28,8 +28,9 @@ const KINDS: Record<string, Exclude<Tag, { text: string }>["kind"]> = {
 
 /** The tags of each variant (file names without .glb), in their order: what its name says of its
  * use, and the part of its name the others do not share ("beach" for bird-lady-beach beside
- * bird-lady, which is the main one). */
-export function variantTags(names: string[]): Tag[][] {
+ * bird-lady, which is the main one). Copies of one name, each with the animations of the level it
+ * comes from, also show that level (`folders`, the folder of each). */
+export function variantTags(names: string[], folders: string[] = []): Tag[][] {
   const words = names.map((n) => n.replace(/-lod\d+$/, "").split("-"));
   let common = 0;
   while (
@@ -48,6 +49,8 @@ export function variantTags(names: string[]): Tag[][] {
     const lod = /-lod([1-9]\d*)$/.exec(name);
     if (lod) tags.push({ text: `LOD ${lod[1]}` });
     if (!tags.length) tags.push({ kind: "main" });
+    if (folders[i] && names.indexOf(name) !== names.lastIndexOf(name))
+      tags.push({ text: folders[i] });
     return tags;
   });
 }

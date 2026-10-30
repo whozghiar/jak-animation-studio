@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { variantTags } from "./variants.ts";
 
-const tags = (names: string[]) =>
-  variantTags(names).map((t) =>
+const tags = (names: string[], folders?: string[]) =>
+  variantTags(names, folders).map((t) =>
     t.map((tag) => ("kind" in tag ? tag.kind : tag.text)),
   );
 
@@ -32,4 +32,11 @@ assert.deepEqual(tags(["bt-sig", "sig-highres", "sig-rider"]), [
   ["cutscene", "sig"],
   ["rider", "sig"],
 ]);
+// copies of one name, each with its level's animations (Jak II's grunt-lod0): their level tells them
+// apart
+assert.deepEqual(tags(["grunt-lod0", "grunt-lod0"], ["atoll", "sewer"]), [
+  ["main", "atoll"],
+  ["main", "sewer"],
+]);
+assert.deepEqual(tags(["bird-lady-lod0"], ["beach"]), [["main"]]);
 console.log("variants: the tags check out");

@@ -105,7 +105,14 @@
       entries.sort(
         (a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name),
       );
-      return { key, entries, tags: variantTags(entries.map((m) => m.name)) };
+      return {
+        key,
+        entries,
+        tags: variantTags(
+          entries.map((m) => m.name),
+          entries.map((m) => m.path.split(/[\\/]/).at(-2) ?? ""),
+        ),
+      };
     });
   });
   const currentTags = $derived(

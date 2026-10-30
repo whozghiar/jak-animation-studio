@@ -498,6 +498,33 @@ fn glb_bytes(json: &str, bin: &[u8]) -> Vec<u8> {
   out
 }
 
+/// The extraction writes a model out of each level that loads it, each copy with that level's unused
+/// vertices: copies with the same joints and animations are listed once (the smallest file), copies
+/// with other animations apart.
+#[test]
+fn copies_of_a_model_are_listed_once() {
+  let root = std::env::temp_dir().join(format!("ogas-copies-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  let write = |level: &str, unused: usize, anims: &[&str]| {
+    let mut glb = skinned(3);
+    for a in anims {
+      edit::set_animation(&mut glb, a, &[rotation(1, &[0.0, 1.0])]).unwrap();
+    }
+    glb.push_floats(&vec![0.0; unused], "SCALAR");
+    std::fs::create_dir_all(root.join(level)).unwrap();
+    glb.write(&root.join(level).join("babak-lod0.glb")).unwrap();
+  };
+  write("beach", 3000, &["idle"]);
+  write("jungle", 30, &["idle"]);
+  write("misty", 3000, &["idle", "wave"]);
+  let levels: Vec<_> = library::list_models(&root, "jak1", false)
+    .iter()
+    .map(|m| m.path.parent().unwrap().file_name().unwrap().to_owned())
+    .collect();
+  assert_eq!(levels, ["jungle", "misty"]);
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
 /// The triangle's points following `numbers` (4 joint numbers per point, as bytes).
 fn with_joint_numbers(mut glb: Glb, numbers: &[u8]) -> Glb {
   let offset = glb.bin.len();
