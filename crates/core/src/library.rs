@@ -299,8 +299,15 @@ pub fn export(
   }
   let actor = goal_name(&model_name(creation));
   let mut glb = Glb::read(creation)?;
-  let notes = edit::normalize(&mut glb, &actor)?;
+  let mut notes = edit::normalize(&mut glb, &actor)?;
   let issues = rules::check(&glb, &actor);
+  for anim in edit::hold_still_keys(&mut glb)? {
+    notes.push(Text::new(
+      "still-pose-held",
+      "{anim}: a still pose, given a second key 1/60 s later (build-actor stops on it otherwise)",
+      &[("anim", anim)],
+    ));
+  }
   edit::trim_points(&mut glb)?;
   edit::for_build_actor(&mut glb)?;
   let folder = creation

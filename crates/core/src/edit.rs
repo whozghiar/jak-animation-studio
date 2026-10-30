@@ -638,3 +638,45 @@ pub fn trim_points(glb: &mut Glb) -> Result<()> {
   glb.compact();
   Ok(())
 }
+
+/// The keys of a joint all at 0 s (a single key, as tools write a joint that does not move) given a
+/// second key 1/60 s later: the build-actor of OpenGOAL's releases (v0.3.9 tried) makes no frame of
+/// them and puts the joint at the origin (a wave whose other joints hold one key each folds the
+/// model into a ball), and on an animation with no frame at all (a still pose, as the extraction
+/// writes the game's one-frame animations) it dies. Returns the still poses' names.
+pub fn hold_still_keys(glb: &mut Glb) -> Result<Vec<String>> {
+  let mut held = Vec::new();
+  for i in 0..glb.array("animations").len() {
+    let samplers = glb.array("animations")[i]["samplers"]
+      .as_array()
+      .cloned()
+      .unwrap_or_default();
+    let times: Vec<Vec<f32>> = samplers
+      .iter()
+      .map(|s| glb.floats(&s["input"]))
+      .collect::<Result<_>>()?;
+    let still: Vec<usize> = (0..samplers.len())
+      .filter(|&j| !times[j].last().is_some_and(|t| *t > 0.0))
+      .collect();
+    if still.is_empty() {
+      continue;
+    }
+    if still.len() == samplers.len() {
+      held.push(model::animation_name(&glb.array("animations")[i], i));
+    }
+    let input = glb.push_floats(&[0.0, 1.0 / 60.0], "SCALAR");
+    for j in still {
+      let s = &samplers[j];
+      let values = glb.floats(&s["output"])?;
+      let n = values.len() / times[j].len().max(1);
+      let key = values[..n].to_vec();
+      let ty = if n == 4 { "VEC4" } else { "VEC3" };
+      let output = glb.push_floats(&[key.clone(), key].concat(), ty);
+      let sampler = &mut glb.json["animations"][i]["samplers"][j];
+      sampler["input"] = json!(input);
+      sampler["output"] = json!(output);
+      sampler["interpolation"] = json!("LINEAR");
+    }
+  }
+  Ok(held)
+}

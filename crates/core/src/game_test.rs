@@ -653,7 +653,7 @@ impl GameTest {
     let mut glb = Glb::read(model)?;
     // what the game would show wrong, it shows: a try is there to see it
     edit::normalize(&mut glb, ACTOR)?;
-    hold_still_poses(&mut glb)?;
+    edit::hold_still_keys(&mut glb)?;
     edit::trim_points(&mut glb)?;
     edit::for_build_actor(&mut glb)?;
     let models = proj
@@ -792,38 +792,6 @@ impl GameTest {
     step("play");
     goalc.wait_value(&format!("(ogas-play {anim})"), Duration::from_secs(20))
   }
-}
-
-/// The animations whose keys are all at 0 s (a still pose, as the extraction writes the game's
-/// one-frame animations) given a second key 1/60 s later: the build-actor of OpenGOAL's releases
-/// (v0.3.9 tried) makes no frame of them, then dies.
-fn hold_still_poses(glb: &mut Glb) -> Result<()> {
-  for i in 0..glb.array("animations").len() {
-    let samplers = glb.array("animations")[i]["samplers"]
-      .as_array()
-      .cloned()
-      .unwrap_or_default();
-    let times: Vec<Vec<f32>> = samplers
-      .iter()
-      .map(|s| glb.floats(&s["input"]))
-      .collect::<Result<_>>()?;
-    if times.iter().any(|t| t.last().is_some_and(|t| *t > 0.0)) {
-      continue;
-    }
-    let input = glb.push_floats(&[0.0, 1.0 / 60.0], "SCALAR");
-    for (j, s) in samplers.iter().enumerate() {
-      let values = glb.floats(&s["output"])?;
-      let n = values.len() / times[j].len().max(1);
-      let key = values[..n].to_vec();
-      let ty = if n == 4 { "VEC4" } else { "VEC3" };
-      let output = glb.push_floats(&[key.clone(), key].concat(), ty);
-      let sampler = &mut glb.json["animations"][i]["samplers"][j];
-      sampler["input"] = json!(input);
-      sampler["output"] = json!(output);
-      sampler["interpolation"] = json!("LINEAR");
-    }
-  }
-  Ok(())
 }
 
 /// goalc's project, made again for another installation: links to the installed game's sources
@@ -1009,28 +977,34 @@ mod tests {
   }
 
   #[test]
-  fn a_still_pose_gets_a_second_key() {
+  fn keys_all_at_0_s_get_a_second_key() {
     let mut glb = Glb::default();
     glb.json = json!({ "asset": { "version": "2.0" } });
     let t = glb.push_floats(&[0.0], "SCALAR");
     let q = glb.push_floats(&[0.0, 0.0, 0.0, 1.0], "VEC4");
     let t2 = glb.push_floats(&[0.0, 1.0], "SCALAR");
     let q2 = glb.push_floats(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0], "VEC4");
+    // a still pose, then a wave: one joint moves, another holds a single key
     glb.json["animations"] = json!([
       { "name": "still", "samplers": [{ "input": t, "output": q }], "channels": [] },
-      { "name": "moving", "samplers": [{ "input": t2, "output": q2 }], "channels": [] }
+      { "name": "wave", "samplers": [{ "input": t2, "output": q2 }, { "input": t, "output": q }], "channels": [] }
     ]);
-    hold_still_poses(&mut glb).unwrap();
-    let keys = |a: usize| {
-      let s = &glb.json["animations"][a]["samplers"][0];
+    assert_eq!(edit::hold_still_keys(&mut glb).unwrap(), ["still"]);
+    let keys = |a: usize, s: usize| {
+      let s = &glb.json["animations"][a]["samplers"][s];
       (
         glb.floats(&s["input"]).unwrap(),
         glb.floats(&s["output"]).unwrap(),
       )
     };
-    assert_eq!(keys(0).0, [0.0, 1.0 / 60.0]);
-    assert_eq!(keys(0).1, [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
-    assert_eq!(keys(1).0, [0.0, 1.0], "a moving one is left as it is");
+    assert_eq!(keys(0, 0).0, [0.0, 1.0 / 60.0]);
+    assert_eq!(keys(0, 0).1, [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
+    assert_eq!(keys(1, 0).0, [0.0, 1.0], "a moving joint is left as it is");
+    assert_eq!(
+      keys(1, 1).0,
+      [0.0, 1.0 / 60.0],
+      "the joint beside it is held"
+    );
   }
 
   /// The whole try, in a game installed: `OGAS_GAME_INSTALL=<folder> OGAS_TRY_GAME=jak1

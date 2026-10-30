@@ -210,6 +210,8 @@ const en = {
   "core_node-dropped": "{anim}: keys of node {node} (not a joint) dropped",
   "core_made-linear": "{anim}: {kind} keys made linear",
   "core_rest-keyed": "{anim}: joints without keys keyed at their rest pose",
+  "core_still-pose-held":
+    "{anim}: a still pose, given a second key 1/60 s later (build-actor stops on it otherwise)",
   "core_no-game-folder":
     "Choose the game to try in: the jak-project folder in the settings, or start the studio from the OpenGOAL Launcher.",
   "core_game-not-in-launcher":
@@ -458,6 +460,8 @@ const fr: Record<Key, string> = {
   "core_node-dropped": "{anim} : clés du nœud {node} (pas un joint) retirées",
   "core_made-linear": "{anim} : clés {kind} rendues linéaires",
   "core_rest-keyed": "{anim} : joints sans clés mis à leur pose de repos",
+  "core_still-pose-held":
+    "{anim} : une pose fixe, avec une seconde clé 1/60 s plus tard (build-actor s'y arrête sinon)",
   "core_no-game-folder":
     "Choisissez le jeu où essayer : le dossier jak-project dans les réglages, ou lancez le studio depuis l'OpenGOAL Launcher.",
   "core_game-not-in-launcher":
