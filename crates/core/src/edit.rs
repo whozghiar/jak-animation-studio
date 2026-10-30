@@ -547,3 +547,94 @@ pub fn for_build_actor(glb: &mut Glb) -> Result<()> {
   glb.compact();
   Ok(())
 }
+
+/// Drops the points no triangle draws. The extraction gives every primitive of a model its level's
+/// whole buffer of points (Babak draws 3 545 of the 17 753 to 78 578 his copies hold), and
+/// build-actor puts them all in the level. The primitives that share points keep sharing them,
+/// numbered again.
+pub fn trim_points(glb: &mut Glb) -> Result<()> {
+  // the primitives by the accessors of their points: attributes, then morph targets
+  let mut groups: BTreeMap<Vec<u64>, Vec<(usize, usize)>> = BTreeMap::new();
+  for (m, mesh) in glb.array("meshes").iter().enumerate() {
+    for (p, prim) in mesh["primitives"]
+      .as_array()
+      .into_iter()
+      .flatten()
+      .enumerate()
+    {
+      let points = |v: &Value| -> Vec<u64> {
+        let mut a: Vec<(&String, u64)> = v
+          .as_object()
+          .into_iter()
+          .flatten()
+          .filter_map(|(k, i)| Some((k, i.as_u64()?)))
+          .collect();
+        a.sort();
+        a.into_iter().map(|(_, i)| i).collect()
+      };
+      let mut key = points(&prim["attributes"]);
+      for t in prim["targets"].as_array().into_iter().flatten() {
+        key.extend(points(t));
+      }
+      groups.entry(key).or_default().push((m, p));
+    }
+  }
+  for (key, prims) in groups {
+    let prim = |glb: &Glb, (m, p): (usize, usize)| glb.array("meshes")[m]["primitives"][p].clone();
+    let Some(&first) = key.first() else {
+      continue;
+    };
+    let count = glb.array("accessors")[first as usize]["count"]
+      .as_u64()
+      .unwrap_or(0) as usize;
+    let mut indices = Vec::new();
+    for &at in &prims {
+      // a primitive without indices draws all its points
+      let Ok(i) = glb.numbers(&prim(glb, at)["indices"]) else {
+        indices.clear();
+        break;
+      };
+      indices.push(i.into_iter().map(|v| v as usize).collect::<Vec<_>>());
+    }
+    let used: std::collections::BTreeSet<usize> = indices.iter().flatten().copied().collect();
+    if indices.is_empty() || used.len() == count || used.iter().any(|&i| i >= count) {
+      continue;
+    }
+    let keep: Vec<usize> = used.into_iter().collect();
+    let mut number = vec![0u32; count];
+    for (new, &old) in keep.iter().enumerate() {
+      number[old] = new as u32;
+    }
+    let mut picked = HashMap::new();
+    for &a in &key {
+      if let std::collections::hash_map::Entry::Vacant(e) = picked.entry(a) {
+        e.insert(glb.pick(a as usize, &keep)? as u64);
+      }
+    }
+    for (&(m, p), old) in prims.iter().zip(&indices) {
+      // the indices keep their size: the new numbers are no bigger than the old ones
+      let old_accessor = prim(glb, (m, p))["indices"].as_u64().unwrap_or(0) as usize;
+      let kind = glb.array("accessors")[old_accessor]["componentType"]
+        .as_u64()
+        .unwrap_or(5125);
+      let renumbered: Vec<u32> = old.iter().map(|&i| number[i]).collect();
+      let new = glb.push_indices(&renumbered, kind);
+      let target = &mut glb.array_mut("meshes")[m]["primitives"][p];
+      target["indices"] = json!(new);
+      for (_, a) in target["attributes"].as_object_mut().into_iter().flatten() {
+        if let Some(n) = a.as_u64().and_then(|i| picked.get(&i)) {
+          *a = json!(n);
+        }
+      }
+      for t in target["targets"].as_array_mut().into_iter().flatten() {
+        for (_, a) in t.as_object_mut().into_iter().flatten() {
+          if let Some(n) = a.as_u64().and_then(|i| picked.get(&i)) {
+            *a = json!(n);
+          }
+        }
+      }
+    }
+  }
+  glb.compact();
+  Ok(())
+}

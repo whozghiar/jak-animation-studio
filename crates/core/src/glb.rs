@@ -358,6 +358,111 @@ impl Glb {
     accessors.len() - 1
   }
 
+  /// A new accessor holding the elements `keep` of accessor `index`, in that order: same type,
+  /// component type and normalization; the bounds of a float accessor made again (glTF requires
+  /// those of POSITION). Each element starts on 4 bytes, as glTF wants a vertex attribute's.
+  pub fn pick(&mut self, index: usize, keep: &[usize]) -> Result<usize> {
+    let a = self
+      .array("accessors")
+      .get(index)
+      .with_context(|| format!("accessor {index} does not exist"))?
+      .clone();
+    if a.get("sparse").is_some() {
+      bail!("accessor {index} is sparse");
+    }
+    let n = a["type"]
+      .as_str()
+      .and_then(components)
+      .with_context(|| format!("accessor {index} has an unknown type"))?;
+    let size = match a["componentType"].as_u64() {
+      Some(5120 | 5121) => 1,
+      Some(5122 | 5123) => 2,
+      Some(5125 | FLOAT) => 4,
+      _ => bail!("accessor {index} has an unknown component type"),
+    };
+    let view = a["bufferView"].as_u64().context("no buffer view")? as usize;
+    let v = self
+      .array("bufferViews")
+      .get(view)
+      .with_context(|| format!("buffer view {view} does not exist"))?;
+    let start = v["byteOffset"].as_u64().unwrap_or(0) as usize
+      + a["byteOffset"].as_u64().unwrap_or(0) as usize;
+    let element = n * size;
+    let stride = v["byteStride"].as_u64().map_or(element, |s| s as usize);
+    let step = element.next_multiple_of(4);
+    let mut data = Vec::with_capacity(keep.len() * step);
+    for &k in keep {
+      let at = start + k * stride;
+      let bytes = self
+        .bin
+        .get(at..at + element)
+        .with_context(|| format!("accessor {index} reads past the end of the data"))?;
+      data.extend_from_slice(bytes);
+      data.resize(data.len() + step - element, 0);
+    }
+    align4(&mut self.bin);
+    let offset = self.bin.len();
+    self.bin.extend(&data);
+    let mut view = json!({ "buffer": 0, "byteOffset": offset, "byteLength": data.len() });
+    if step != element {
+      view["byteStride"] = json!(step);
+    }
+    let views = self.array_mut("bufferViews");
+    views.push(view);
+    let mut accessor = json!({
+      "bufferView": views.len() - 1, "componentType": a["componentType"], "count": keep.len(),
+      "type": a["type"]
+    });
+    if a["normalized"].as_bool() == Some(true) {
+      accessor["normalized"] = json!(true);
+    }
+    let accessors = self.array_mut("accessors");
+    accessors.push(accessor);
+    let new = accessors.len() - 1;
+    if a.get("min").is_some() && a["componentType"].as_u64() == Some(FLOAT) && !keep.is_empty() {
+      let values = self.numbers(&json!(new))?;
+      let bound = |pick: fn(f32, f32) -> f32| -> Vec<f32> {
+        (0..n)
+          .map(|c| {
+            values
+              .iter()
+              .skip(c)
+              .step_by(n)
+              .copied()
+              .reduce(pick)
+              .unwrap_or(0.0)
+          })
+          .collect()
+      };
+      let (lo, hi) = (bound(f32::min), bound(f32::max));
+      self.array_mut("accessors")[new]["min"] = json!(lo);
+      self.array_mut("accessors")[new]["max"] = json!(hi);
+    }
+    Ok(new)
+  }
+
+  /// Appends `values` as a new accessor of indices of `component_type` (5121, 5123 or 5125).
+  pub fn push_indices(&mut self, values: &[u32], component_type: u64) -> usize {
+    align4(&mut self.bin);
+    let offset = self.bin.len();
+    for &v in values {
+      match component_type {
+        5121 => self.bin.push(v as u8),
+        5123 => self.bin.extend((v as u16).to_le_bytes()),
+        _ => self.bin.extend(v.to_le_bytes()),
+      }
+    }
+    let length = self.bin.len() - offset;
+    let views = self.array_mut("bufferViews");
+    views.push(json!({ "buffer": 0, "byteOffset": offset, "byteLength": length }));
+    let view = views.len() - 1;
+    let accessors = self.array_mut("accessors");
+    accessors.push(json!({
+      "bufferView": view, "componentType": component_type, "count": values.len(), "type": "SCALAR"
+    }));
+    accessors.len() - 1
+  }
+
   /// Drops the accessors and buffer views nothing uses any more (those of a replaced or deleted
   /// animation) and packs the data again. Left as is when an extension could point at data itself.
   pub fn compact(&mut self) {

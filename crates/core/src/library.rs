@@ -301,6 +301,7 @@ pub fn export(
   let mut glb = Glb::read(creation)?;
   let notes = edit::normalize(&mut glb, &actor)?;
   let issues = rules::check(&glb, &actor);
+  edit::trim_points(&mut glb)?;
   edit::for_build_actor(&mut glb)?;
   let folder = creation
     .parent()

@@ -562,6 +562,56 @@ fn two_animations_never_share_a_name_in_the_game() {
   std::fs::remove_dir_all(&root).unwrap();
 }
 
+/// The extraction gives each model its level's whole buffer of points: what build-actor gets keeps
+/// the points the triangles draw, the primitives that shared them still sharing them.
+#[test]
+fn the_points_no_triangle_draws_are_dropped() {
+  let mut glb = skinned(3);
+  // 5 points, shared by two primitives drawing 1, 2, 4 and 2, 3, 4: point 0 is drawn by none
+  let positions: Vec<f32> = (0..5).flat_map(|i| [i as f32, 0.0, 0.0]).collect();
+  let position = glb.push_floats(&positions, "VEC3");
+  glb.array_mut("accessors")[position]["min"] = json!([0.0, 0.0, 0.0]);
+  glb.array_mut("accessors")[position]["max"] = json!([4.0, 0.0, 0.0]);
+  let mut glb = with_joint_numbers(
+    glb,
+    &[0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0],
+  );
+  let joints = glb.json["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"].clone();
+  let (a, b) = (
+    glb.push_indices(&[1, 2, 4], 5123),
+    glb.push_indices(&[2, 3, 4], 5123),
+  );
+  glb.json["meshes"][0]["primitives"] = json!([
+    { "attributes": { "POSITION": position, "JOINTS_0": joints }, "indices": a },
+    { "attributes": { "POSITION": position, "JOINTS_0": joints }, "indices": b },
+  ]);
+  edit::trim_points(&mut glb).unwrap();
+  let glb = Glb::parse(&glb.to_bytes()).unwrap();
+
+  let prims = glb.json["meshes"][0]["primitives"].as_array().unwrap();
+  assert_eq!(
+    prims[0]["attributes"], prims[1]["attributes"],
+    "still shared"
+  );
+  let attribute = |k: &str| glb.numbers(&prims[0]["attributes"][k]).unwrap();
+  assert_eq!(
+    attribute("POSITION"),
+    [1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0, 4.0, 0.0, 0.0]
+  );
+  assert_eq!(
+    attribute("JOINTS_0"),
+    [1u8, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0].map(f32::from)
+  );
+  assert_eq!(glb.numbers(&prims[0]["indices"]).unwrap(), [0.0, 1.0, 3.0]);
+  assert_eq!(glb.numbers(&prims[1]["indices"]).unwrap(), [1.0, 2.0, 3.0]);
+  let bounds =
+    &glb.array("accessors")[prims[0]["attributes"]["POSITION"].as_u64().unwrap() as usize];
+  assert_eq!(
+    (&bounds["min"], &bounds["max"]),
+    (&json!([1.0, 0.0, 0.0]), &json!([4.0, 0.0, 0.0]))
+  );
+}
+
 /// The extraction gives each model its level's whole buffer of points: the weights check looks at
 /// the points the triangles use only.
 #[test]
@@ -790,6 +840,7 @@ fn the_games_models_survive_the_studio() {
   let dir = std::path::PathBuf::from(std::env::var("OGAS_MODELS").expect("OGAS_MODELS"));
   let mut stack = vec![dir];
   let (mut models, mut fixed) = (0, std::collections::BTreeMap::<String, usize>::new());
+  let (mut read, mut exported) = (0, 0);
   while let Some(d) = stack.pop() {
     for e in std::fs::read_dir(&d).unwrap().flatten() {
       let path = e.path();
@@ -808,6 +859,7 @@ fn the_games_models_survive_the_studio() {
         continue;
       };
       models += 1;
+      read += bytes.len();
       assert_eq!(glb.to_bytes(), bytes, "{}", path.display());
       let actor = rules::goal_name(&library::model_name(&path));
       let notes =
@@ -818,7 +870,22 @@ fn the_games_models_survive_the_studio() {
       if notes.is_empty() {
         assert_eq!(glb.to_bytes(), bytes, "{}", path.display());
       }
-      // what the export writes: the skin set for build-actor, a joint fewer
+      // what the export writes: the points drawn only, the skin set for build-actor, a joint fewer
+      let drawn = |g: &Glb| {
+        let p = &g.json["meshes"][0]["primitives"][0];
+        let (points, indices) = (
+          g.numbers(&p["attributes"]["POSITION"]).unwrap(),
+          g.numbers(&p["indices"]).unwrap_or_default(),
+        );
+        indices
+          .iter()
+          .flat_map(|&i| points[i as usize * 3..i as usize * 3 + 3].to_vec())
+          .collect::<Vec<f32>>()
+      };
+      let triangles = drawn(&glb);
+      edit::trim_points(&mut glb).unwrap_or_else(|e| panic!("{}: {e:#}", path.display()));
+      assert_eq!(drawn(&glb), triangles, "{}", path.display());
+      exported += glb.to_bytes().len();
       edit::for_build_actor(&mut glb).unwrap_or_else(|e| panic!("{}: {e:#}", path.display()));
       assert_eq!(
         model::skeleton(&glb).unwrap().len(),
@@ -879,4 +946,9 @@ fn the_games_models_survive_the_studio() {
     }
   }
   println!("{models} models read and written back byte for byte; fixed by the export: {fixed:?}");
+  println!(
+    "{} MB read, {} MB once the points no triangle draws are dropped",
+    read / 1_000_000,
+    exported / 1_000_000
+  );
 }
