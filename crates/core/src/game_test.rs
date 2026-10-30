@@ -655,6 +655,7 @@ impl GameTest {
     // what the game would show wrong, it shows: a try is there to see it
     edit::normalize(&mut glb, ACTOR)?;
     hold_still_poses(&mut glb)?;
+    edit::for_build_actor(&mut glb)?;
     let models = proj
       .join("custom_assets")
       .join(game)

@@ -365,3 +365,191 @@ pub fn normalize(glb: &mut Glb, actor: &str) -> Result<Vec<Text>> {
   notes.dedup();
   Ok(notes)
 }
+
+/// The value of linear keys at time `t`, held before the first key and after the last.
+pub(crate) fn sample(times: &[f32], values: &[f32], t: f32) -> Vec<f32> {
+  let n = values.len() / times.len();
+  let i = times.partition_point(|&k| k <= t);
+  if i == 0 || i == times.len() {
+    let k = i.saturating_sub(1);
+    return values[k * n..k * n + n].to_vec();
+  }
+  let f = (t - times[i - 1]) / (times[i] - times[i - 1]);
+  let (a, b) = (&values[(i - 1) * n..i * n], &values[i * n..i * n + n]);
+  // a rotation and its opposite are the same: blend towards the one on a's side
+  let dot: f32 = a.iter().zip(b).map(|(x, y)| x * y).sum();
+  let sign = if n == 4 && dot < 0.0 { -1.0 } else { 1.0 };
+  let v: Vec<f32> = a
+    .iter()
+    .zip(b)
+    .map(|(x, y)| x + (sign * y - x) * f)
+    .collect();
+  if n == 4 {
+    math::normalize([v[0], v[1], v[2], v[3]]).to_vec()
+  } else {
+    v
+  }
+}
+
+/// The pose of `align` (its rest and its keys) carried by its children, in the animations where
+/// it is not the identity: the model moves the same once `align` has left the skin.
+fn lift_align(glb: &mut Glb, joints: &[Joint]) -> Result<()> {
+  let children: Vec<usize> = (1..joints.len())
+    .filter(|&j| joints[j].parent == Some(0))
+    .collect();
+  let at_rest = PATHS.iter().all(|(p, _)| is_identity(p, joints[0].rest(p)));
+  for i in 0..glb.array("animations").len() {
+    let anim = glb.array("animations")[i].clone();
+    let channels: Vec<Channel> = model::channels(glb, &anim)
+      .into_iter()
+      .filter_map(|c| {
+        let joint = joints.iter().position(|j| j.node == c.node)?;
+        let (times, values) = c.keys.ok()?;
+        Some(Channel {
+          joint,
+          path: c.path,
+          times,
+          values,
+        })
+      })
+      .collect();
+    let moves = channels.iter().any(|c| {
+      let n = if c.path == "rotation" { 4 } else { 3 };
+      c.joint == 0 && c.values.chunks(n).any(|v| !is_identity(&c.path, v))
+    });
+    if at_rest && !moves {
+      continue;
+    }
+    let at = |j: usize, path: &str, t: f32| {
+      channels
+        .iter()
+        .find(|c| c.joint == j && c.path == path)
+        .map_or_else(
+          || joints[j].rest(path).to_vec(),
+          |c| sample(&c.times, &c.values, t),
+        )
+    };
+    let quat = |v: Vec<f32>| [v[0], v[1], v[2], v[3]];
+    let mut out: Vec<Channel> = channels
+      .iter()
+      .filter(|c| c.joint != 0 && !children.contains(&c.joint))
+      .cloned()
+      .collect();
+    for &child in &children {
+      let mut times: Vec<f32> = channels
+        .iter()
+        .filter(|c| c.joint == 0 || c.joint == child)
+        .flat_map(|c| c.times.iter().copied())
+        .collect();
+      times.sort_by(f32::total_cmp);
+      times.dedup();
+      if times.is_empty() {
+        times.push(0.0);
+      }
+      let mut keys = [Vec::new(), Vec::new(), Vec::new()];
+      for &t in &times {
+        let (ta, ra, sa) = (
+          at(0, "translation", t),
+          quat(at(0, "rotation", t)),
+          at(0, "scale", t),
+        );
+        let (tc, rc, sc) = (
+          at(child, "translation", t),
+          quat(at(child, "rotation", t)),
+          at(child, "scale", t),
+        );
+        let moved = math::rotate(ra, [0, 1, 2].map(|k| sa[k] * tc[k]));
+        keys[0].extend([0, 1, 2].map(|k| ta[k] + moved[k]));
+        keys[1].extend(math::mul(ra, rc));
+        keys[2].extend([0, 1, 2].map(|k| sa[k] * sc[k]));
+      }
+      for ((path, _), values) in PATHS.iter().zip(keys) {
+        out.push(Channel {
+          joint: child,
+          path: path.to_string(),
+          times: times.clone(),
+          values,
+        });
+      }
+    }
+    let name = model::animation_name(&anim, i);
+    glb.array_mut("animations")[i] = build(glb, joints, &name, &out)?;
+  }
+  Ok(())
+}
+
+/// Every point's joint numbers (JOINTS_0) raised by one.
+fn raise_joint_numbers(glb: &mut Glb) -> Result<()> {
+  let mut accessors: Vec<u64> = glb
+    .array("meshes")
+    .iter()
+    .flat_map(|m| m["primitives"].as_array().into_iter().flatten())
+    .filter_map(|p| p["attributes"]["JOINTS_0"].as_u64())
+    .collect();
+  accessors.sort_unstable();
+  accessors.dedup();
+  for a in accessors {
+    let acc = &glb.array("accessors")[a as usize];
+    let size = match acc["componentType"].as_u64() {
+      Some(5121) => 1,
+      Some(5123) => 2,
+      _ => bail!("the joint numbers of accessor {a} are neither bytes nor shorts"),
+    };
+    let count = acc["count"].as_u64().unwrap_or(0) as usize;
+    let view =
+      &glb.array("bufferViews")[acc["bufferView"].as_u64().context("no buffer view")? as usize];
+    let start = view["byteOffset"].as_u64().unwrap_or(0) as usize
+      + acc["byteOffset"].as_u64().unwrap_or(0) as usize;
+    let stride = view["byteStride"].as_u64().map_or(4 * size, |s| s as usize);
+    for at in (0..count).flat_map(|i| (0..4).map(move |c| start + i * stride + c * size)) {
+      let b = glb
+        .bin
+        .get_mut(at..at + size)
+        .context("joint numbers past the end of the data")?;
+      if size == 1 {
+        b[0] = b[0].checked_add(1).context("more than 255 joints")?;
+      } else {
+        let v = u16::from_le_bytes([b[0], b[1]]) + 1;
+        b.copy_from_slice(&v.to_le_bytes());
+      }
+    }
+  }
+  Ok(())
+}
+
+/// Sets the skin so that any build-actor builds the model right. build-actor puts an `align` of its
+/// own in front of the skeleton (OpenGOAL v0.3.9 always, whozghiar's tooling when the skin does not
+/// start with one), while the mesh gives each point the matrix of its joint's number + 1, which the
+/// game moves with the joint before it (common/util/gltf_util.cpp; bones.gc: matrix k follows joint
+/// k - 1): every point would follow the joint listed before its own, and the model looks stretched.
+/// So the model's `align` leaves the skin, its pose carried by its children: every build-actor then
+/// adds its own, and the joints and the points keep their numbers. A skin without `align` gets its
+/// points' joint numbers raised by one instead. Written for build-actor only: other tools read the
+/// points' joints one joint off.
+pub fn for_build_actor(glb: &mut Glb) -> Result<()> {
+  let joints = model::skeleton(glb)?;
+  let skin = *model::skins(glb).first().context("no skin")?;
+  if joints[0].name != "align" {
+    raise_joint_numbers(glb)?;
+    return Ok(());
+  }
+  lift_align(glb, &joints)?;
+  let align = joints[0].node as u64;
+  for anim in glb.array_mut("animations") {
+    if let Some(channels) = anim["channels"].as_array_mut() {
+      // build-actor stops on the keys of a node outside the skin
+      channels.retain(|c| c["target"]["node"].as_u64() != Some(align));
+    }
+  }
+  let ibm = glb.array("skins")[skin]["inverseBindMatrices"].clone();
+  if !ibm.is_null() {
+    let matrices = glb.floats(&ibm)?;
+    let kept = glb.push_floats(&matrices[16..], "MAT4");
+    glb.array_mut("skins")[skin]["inverseBindMatrices"] = json!(kept);
+  }
+  if let Some(j) = glb.array_mut("skins")[skin]["joints"].as_array_mut() {
+    j.remove(0);
+  }
+  glb.compact();
+  Ok(())
+}

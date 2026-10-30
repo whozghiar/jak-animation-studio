@@ -28,7 +28,7 @@ with its active tooling).
     - `looks.rs`: a model's parts (runs of primitives drawing the same vertices: the extraction does not keep which merc effect a primitive was) and blend shapes; a look applied (parts removed, shapes baked).
     - `names.rs`, `names.json`: the official English and French names of the entities, by game and art group, each with its source.
     - `living.json`: per game, the models that are living entities and those that are objects (every skeleton of `goal_src/<game>/engine/data/art-elts.gc`). Made from the code (the model's type derives from `nav-enemy`, `enemy` or `process-taskable`), then checked by hand; the Models list hides the objects.
-    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `copy_animations` from a twin.
+    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `for_build_actor`, the skin set so that any `build-actor` builds the model right (export and try); `copy_animations` from a twin.
     - `library.rs`: settings (a models folder per game), the creations folder (by game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
     - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back.
   - `crates/mcp/`: the MCP server (JSON-RPC over stdio), on the files and the settings.
@@ -98,6 +98,11 @@ The source of truth is jak-project's `goalc/build_actor/` (`common/animation_pro
 `edit.rs`, read the code there. The facts the studio relies on:
 
 - one skin per model; joints topologically sorted; joint 0 `align` (else one is added in front);
+- `build-actor` of OpenGOAL v0.3.9 adds its own `align` in front even when the skin has one
+  (whozghiar's tooling only when it has none), while the mesh gives each point the matrix of its
+  joint's number + 1, which the game moves with joint `k - 1` (`common/util/gltf_util.cpp`,
+  `bones.gc`): points follow the joint before theirs. `edit::for_build_actor` takes `align` out of
+  the skin (its pose to its children) so that every `build-actor` builds the model right;
 - a joint without keys in an animation gets identity (origin) values, not its rest pose;
 - channels other than translation, rotation and scale stop the build; keys are read as linear floats;
 - at most 2 + 14 × 8 joints; at most 133 quadwords per frame and for the constant part;

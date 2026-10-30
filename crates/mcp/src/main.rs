@@ -132,7 +132,7 @@ fn tools() -> Value {
     ),
     tool(
       "export_for_game",
-      "Writes the creation as build-actor wants it (in the animations that need it: keys made linear, joints keyed; nothing else changed) at custom_assets/<game>/models/custom_levels/<model>.glb, in the jak-project folder of the settings or in the creation's export folder, with a README giving the lines to add to the game.",
+      "Writes the creation as build-actor wants it (in the animations that need it: keys made linear, joints keyed; the skin set so that any build-actor builds it right) at custom_assets/<game>/models/custom_levels/<model>.glb, in the jak-project folder of the settings or in the creation's export folder, with a README giving the lines to add to the game.",
       json!({ "model": model, "game": game }),
       &["model"],
     ),

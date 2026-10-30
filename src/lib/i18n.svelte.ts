@@ -119,7 +119,7 @@ const en = {
   faceForward: "Face forward",
   inPlace: "In place",
   inPlaceHint:
-    "Off: the travel goes to the align joint, which moves the entity in game.",
+    "Unticked: the model travels during the animation, then goes back to its start at each loop.",
   mapping: "Bone mapping",
   extract: "Extract the movement",
   extracting: "Reading the video... {p}%",
@@ -364,7 +364,7 @@ const fr: Record<Key, string> = {
   faceForward: "Face à l'avant",
   inPlace: "Sur place",
   inPlaceHint:
-    "Désactivé : le déplacement va sur le joint align, qui déplace l'entité dans le jeu.",
+    "Décoché : le modèle avance pendant l'animation, puis revient au départ à chaque boucle.",
   mapping: "Correspondance des os",
   extract: "Extraire le mouvement",
   extracting: "Lecture de la vidéo... {p} %",

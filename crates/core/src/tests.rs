@@ -251,10 +251,17 @@ fn a_creation_is_a_copy_and_exports_for_the_game() {
 
   let export = library::export(&creation, "jak2", None, "en").unwrap();
   assert!(export.notes.is_empty(), "{:?}", export.notes);
+  let names = |g: &Glb| {
+    model::skeleton(g)
+      .unwrap()
+      .into_iter()
+      .map(|j| j.name)
+      .collect::<Vec<_>>()
+  };
   assert_eq!(
-    std::fs::read(&export.glb).unwrap(),
-    std::fs::read(&creation).unwrap(),
-    "a model build-actor takes as it is is exported byte for byte"
+    names(&Glb::read(&export.glb).unwrap()),
+    names(&Glb::read(&creation).unwrap())[1..],
+    "only the skin changes: align leaves it, for build-actor"
   );
   assert!(
     export
@@ -491,6 +498,126 @@ fn glb_bytes(json: &str, bin: &[u8]) -> Vec<u8> {
   out
 }
 
+/// The triangle's points following `numbers` (4 joint numbers per point, as bytes).
+fn with_joint_numbers(mut glb: Glb, numbers: &[u8]) -> Glb {
+  let offset = glb.bin.len();
+  glb.bin.extend(numbers);
+  let views = glb.array_mut("bufferViews");
+  views.push(json!({ "buffer": 0, "byteOffset": offset, "byteLength": numbers.len() }));
+  let view = views.len() - 1;
+  let accessors = glb.array_mut("accessors");
+  accessors.push(json!({
+    "bufferView": view, "componentType": 5121, "count": numbers.len() / 4, "type": "VEC4"
+  }));
+  glb.json["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"] = json!(accessors.len() - 1);
+  glb
+}
+
+fn joint_numbers(glb: &Glb) -> Vec<f32> {
+  glb
+    .numbers(&glb.json["meshes"][0]["primitives"][0]["attributes"]["JOINTS_0"])
+    .unwrap()
+}
+
+/// Where each joint of the skin is at time `t` of the first animation, by name.
+fn posed(glb: &Glb, t: f32) -> std::collections::HashMap<String, [f32; 3]> {
+  let joints = model::skeleton(glb).unwrap();
+  let channels = model::channels(glb, &glb.array("animations")[0]);
+  let mut world: Vec<(math::Quat, [f32; 3])> = Vec::new();
+  for j in &joints {
+    let key = |path: &str| {
+      channels
+        .iter()
+        .find(|c| c.node == j.node && c.path == path)
+        .map_or_else(
+          || j.rest(path).to_vec(),
+          |c| {
+            let (times, values) = c.keys.as_ref().unwrap();
+            edit::sample(times, values, t)
+          },
+        )
+    };
+    let (tr, ro) = (key("translation"), key("rotation"));
+    let local = ([ro[0], ro[1], ro[2], ro[3]], [tr[0], tr[1], tr[2]]);
+    world.push(match j.parent {
+      Some(p) => {
+        let (pr, pt) = world[p];
+        let moved = math::rotate(pr, local.1);
+        (math::mul(pr, local.0), [0, 1, 2].map(|k| pt[k] + moved[k]))
+      }
+      None => local,
+    });
+  }
+  joints
+    .into_iter()
+    .zip(world)
+    .map(|(j, (_, at))| (j.name, at))
+    .collect()
+}
+
+/// build-actor puts its own align in front of the skeleton, and the mesh counts the points' joints
+/// one off: the skin is set so that every build-actor builds the model right.
+#[test]
+fn the_skin_is_set_for_any_build_actor() {
+  // align travels 1 m forward while j1 turns: once align has left the skin, j1 carries its travel
+  let numbers = [1, 0, 0, 0, 2, 1, 0, 0, 2, 0, 0, 0];
+  let mut glb = with_joint_numbers(skinned(3), &numbers);
+  let travel = Channel {
+    joint: 0,
+    path: "translation".into(),
+    times: vec![0.0, 1.0],
+    values: vec![0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
+  };
+  edit::set_animation(&mut glb, "walk", &[travel, rotation(1, &[0.0, 1.0])]).unwrap();
+  let before = Glb::parse(&glb.to_bytes()).unwrap();
+  edit::for_build_actor(&mut glb).unwrap();
+  let glb = Glb::parse(&glb.to_bytes()).unwrap();
+
+  let names: Vec<_> = model::skeleton(&glb)
+    .unwrap()
+    .into_iter()
+    .map(|j| j.name)
+    .collect();
+  assert_eq!(names, ["j1", "j2"], "every build-actor adds its own align");
+  let skin = &glb.json["skins"][0];
+  assert_eq!(
+    glb.floats(&skin["inverseBindMatrices"]).unwrap().len(),
+    2 * 16
+  );
+  assert_eq!(
+    joint_numbers(&glb),
+    numbers.map(f32::from),
+    "the points keep their numbers: in the game, joint n is the skin's joint n - 1"
+  );
+  assert!(
+    model::channels(&glb, &glb.array("animations")[0])
+      .iter()
+      .all(|c| c.node != 0),
+    "build-actor stops on keys of a node outside the skin"
+  );
+  for t in [0.0, 0.25, 0.5, 1.0] {
+    let (was, is) = (posed(&before, t), posed(&glb, t));
+    for joint in ["j1", "j2"] {
+      let d = (0..3)
+        .map(|k| (was[joint][k] - is[joint][k]).abs())
+        .fold(0.0, f32::max);
+      assert!(
+        d < 1e-5,
+        "{joint} at {t} s: {:?} became {:?}",
+        was[joint],
+        is[joint]
+      );
+    }
+  }
+
+  // a skin without align: build-actor adds one, the points' numbers go up by one
+  let mut glb = with_joint_numbers(skinned(3), &numbers);
+  glb.json["nodes"][0]["name"] = json!("root");
+  edit::for_build_actor(&mut glb).unwrap();
+  assert_eq!(model::skeleton(&glb).unwrap().len(), 3);
+  assert_eq!(joint_numbers(&glb), numbers.map(|n| f32::from(n + 1)));
+}
+
 #[test]
 fn a_model_left_as_it_was_is_written_back_byte_for_byte() {
   let model = skinned(3);
@@ -580,6 +707,14 @@ fn the_games_models_survive_the_studio() {
       if notes.is_empty() {
         assert_eq!(glb.to_bytes(), bytes, "{}", path.display());
       }
+      // what the export writes: the skin set for build-actor, a joint fewer
+      edit::for_build_actor(&mut glb).unwrap_or_else(|e| panic!("{}: {e:#}", path.display()));
+      assert_eq!(
+        model::skeleton(&glb).unwrap().len(),
+        joints.len() - usize::from(joints[0].name == "align"),
+        "{}",
+        path.display()
+      );
 
       let mut glb = Glb::parse(&bytes).unwrap();
       let before = Glb::parse(&bytes).unwrap();
