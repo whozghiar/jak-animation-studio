@@ -11,8 +11,10 @@
 ## 1. Overview & Architecture
 
 **OpenGOAL Animation Studio** plays, makes and checks the animations of Jak and Daxter entities
-(skinned `.glb` models) for OpenGOAL's `build-actor`. It runs on its own, and is made to be started
-by the OpenGOAL Launcher the way Jak Level Editor is (`--lang`, `--default-library=`).
+(skinned `.glb` models) for OpenGOAL's `build-actor`. It runs on its own, and the OpenGOAL Launcher
+installs and starts it the way it does Jak Level Editor (`--lang`, `--default-library=`,
+`--game-install=`, `--tooling-version=`: started so, it tries models in the Launcher's games only,
+with its active tooling).
 
 ### Technology Stack
 
@@ -20,14 +22,15 @@ by the OpenGOAL Launcher the way Jak Level Editor is (`--lang`, `--default-libra
 - **Interface**: Svelte 5 (runes), Tailwind CSS v4, Flowbite Svelte, Vite, TypeScript, three.js.
 - **Workspace** (`Cargo.toml`):
   - `crates/core/`: everything about models, shared by the program and the MCP server.
-    - `glb.rs`: the `.glb` container, read and written in place (what is not touched is kept as is), compaction of unused data.
+    - `glb.rs`: the `.glb` container, read and written in place (what is not touched is kept as is; a file left as it was is written back byte for byte), compaction of unused data.
     - `model.rs`: the skeleton (the joints of the single skin, in `build-actor`'s order) and the animations.
-    - `rules.rs`: what `build-actor` needs, checked; the issues the interface and the MCP server show, as `Text` (a code, its arguments, the English message).
+    - `rules.rs`: what `build-actor` needs, checked (the size of the animations once built: `varies` replays its sampling); the issues the interface and the MCP server show, as `Text` (a code, its arguments, the English message).
     - `looks.rs`: a model's parts (runs of primitives drawing the same vertices: the extraction does not keep which merc effect a primitive was) and blend shapes; a look applied (parts removed, shapes baked).
     - `names.rs`, `names.json`: the official English and French names of the entities, by game and art group, each with its source.
     - `living.json`: per game, the models that are living entities and those that are objects (every skeleton of `goal_src/<game>/engine/data/art-elts.gc`). Made from the code (the model's type derives from `nav-enemy`, `enemy` or `process-taskable`), then checked by hand; the Models list hides the objects.
-    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export; `copy_animations` from a twin.
+    - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `copy_animations` from a twin.
     - `library.rs`: settings (a models folder per game), the creations folder (by game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
+    - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back.
   - `crates/mcp/`: the MCP server (JSON-RPC over stdio), on the files and the settings.
   - `src-tauri/`: the program's command line, its Tauri commands, and the watch of the play requests (it brings the window up).
 - **Interface (`src/`)**:
@@ -45,18 +48,18 @@ by the OpenGOAL Launcher the way Jak Level Editor is (`--lang`, `--default-libra
 
 ## 2. Local Environment & Tooling
 
-| Tool              | Command                                                                           | Notes                                                               |
-| :---------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
-| Rust              | `cargo`                                                                           | `cargo test -p animation-studio-core` runs the core's tests.        |
-| Node packages     | `npx yarn install`                                                                | Yarn 1, run through npx.                                            |
-| Desktop dev       | `npx yarn tauri dev`                                                              | Vite on port 3002 (the launcher takes 3000, Jak Level Editor 3001). |
-| Typecheck         | `npx yarn typecheck`                                                              | `svelte-check`.                                                     |
-| Retargeting check | `npx yarn check:retarget`, `npx yarn check:variants`                              | Node runs `src/lib/*.check.ts` directly.                            |
-| Formatting        | `npx yarn format`                                                                 | Prettier with the Svelte plugin, then rustfmt (2-space tabs).       |
-| Autoformat        | `.githooks/pre-commit`                                                            | Formats each commit's files; `npx yarn install` turns it on.        |
-| Rust linter       | `cargo clippy --workspace --all-targets -- -D warnings`                           | Needs `dist/` (`npx yarn build`): the program embeds it.            |
-| CI                | `.github/workflows/`                                                              | Lint, Build, Release (by hand: patch, minor, major), Format.        |
-| Agent skills      | `git submodule update --init --remote .agents/skills` then `npx yarn skills:link` | The `opengoal-modding-kb` submodule, linked into `.claude/skills/`. |
+| Tool              | Command                                                                           | Notes                                                                                                                                                    |
+| :---------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust              | `cargo`                                                                           | `cargo test -p animation-studio-core` runs the core's tests; `-- --ignored` runs those on the games' models and the try in a game (README, Development). |
+| Node packages     | `npx yarn install`                                                                | Yarn 1, run through npx.                                                                                                                                 |
+| Desktop dev       | `npx yarn tauri dev`                                                              | Vite on port 3002 (the launcher takes 3000, Jak Level Editor 3001).                                                                                      |
+| Typecheck         | `npx yarn typecheck`                                                              | `svelte-check`.                                                                                                                                          |
+| Retargeting check | `npx yarn check:retarget`, `npx yarn check:variants`                              | Node runs `src/lib/*.check.ts` directly.                                                                                                                 |
+| Formatting        | `npx yarn format`                                                                 | Prettier with the Svelte plugin, then rustfmt (2-space tabs).                                                                                            |
+| Autoformat        | `.githooks/pre-commit`                                                            | Formats each commit's files; `npx yarn install` turns it on.                                                                                             |
+| Rust linter       | `cargo clippy --workspace --all-targets -- -D warnings`                           | Needs `dist/` (`npx yarn build`): the program embeds it.                                                                                                 |
+| CI                | `.github/workflows/`                                                              | Lint, Build, Release (by hand: patch, minor, major), Format.                                                                                             |
+| Agent skills      | `git submodule update --init --remote .agents/skills` then `npx yarn skills:link` | The `opengoal-modding-kb` submodule, linked into `.claude/skills/`.                                                                                      |
 
 ---
 
@@ -99,7 +102,23 @@ The source of truth is jak-project's `goalc/build_actor/` (`common/animation_pro
 - channels other than translation, rotation and scale stop the build; keys are read as linear floats;
 - at most 2 + 14 × 8 joints; at most 133 quadwords per frame and for the constant part;
 - the art group's elements are the joint geometry, the mesh, then the animations in the file's order:
-  animation `i` is slot `i + 2`, which `def-actor :art` names `<actor>-<anim>-ja`.
+  animation `i` is slot `i + 2`, which `def-actor :art` names `<actor>-<anim>-ja`; the names inside
+  the file matter to name lookups only (`lookup-art`);
+- keys are sampled at 60 frames a second, blending neighbouring keys in 32-bit floats: equal keys can
+  come out a rounding apart, and the channel then takes room in every frame;
+- no limit on the number of animations; a level loads each file of its DGO whole into one buffer
+  (2 MB in Jak 1, `#x1b5800` bytes in Jak 2 and 3, less in Jak 3's smallest levels) and checks nothing.
+
+The try in the game (`game_test.rs`) relies on these, each seen in the games:
+
+- gk listens on 8112, 8113 or 8114 (`DECI2_PORT - 1 +` the game) whatever its `--port`, and reads
+  every file of `out/<game>/iso/` when it starts (names of 15 letters at most: nothing else there);
+- a custom actor's mesh is drawn from the level's `.fr3`: the model is in the level's `custom_models`;
+- Jak 2 and 3 look for a process's art groups in its level only: the viewer takes test-zone's;
+- goalc compiles the code of `GAME.CGO` in `game.gd`'s order (the viewer's dependencies): another
+  order fails (`*pc-settings*` unknown in `pad.gc`, Jak 1);
+- `build-actor` of OpenGOAL v0.3.9 dies on an animation whose keys are all at 0 s;
+- Jak 1 closes when a level loads a custom actor with a skeleton (jak-project of October 2026).
 
 The `custom-actors-levels` and `goal-lisp` skills in `.agents/skills/` explain the whole pipeline.
 

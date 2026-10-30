@@ -52,7 +52,10 @@ them.
 - **Keeps your work apart**: a model you change is copied into the creations folder; the original is
   never written.
 - **Exports for the game**: the model at the place a jak-project reads it, with a README giving the
-  lines to add to the game's code.
+  lines to add to the game's code. A model with nothing to fix comes out byte for byte: Jak and
+  Daxter's Yakow (`yakow-lod0.glb`), exported untouched, is the very file the extraction wrote.
+- **Tries a model in the game**: the model in front of Jak, in the game's test level, playing the
+  animation picked (see [the try in the game](#the-try-in-the-game)).
 - **Lets an AI assistant make and play animations** through its MCP server: you describe the
   movement, the assistant writes it and the studio's window plays it (see
   [4](#4-the-mcp-server)).
@@ -96,32 +99,51 @@ then kept by the window's cache.
 What OpenGOAL's `build-actor` (in `goalc/build_actor/` of jak-project, the same for the three games)
 needs, checked on every model:
 
-| Rule                                                             | Why                                                                                                               |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| One armature (skin)                                              | `build-actor` takes one skeleton per model.                                                                       |
-| Joint 0 named `align`, at the origin                             | Without it, `build-actor` adds one and every joint number moves by one. In game, moving `align` moves the entity. |
-| Parents before children in the armature                          | `build-actor` reads the joints in that order.                                                                     |
-| No object parented to a joint                                    | `build-actor` stops on it.                                                                                        |
-| At most 114 joints                                               | 2 joints plus 14 words of 8 joints each describe an animation.                                                    |
-| At most 2128 bytes of data per frame                             | One frame fits in 133 quadwords: about 8 bytes per rotating joint, 6 per moving or scaling one.                   |
-| Only translation, rotation and scale keys, linear, 32-bit floats | `build-actor` stops on morph (weights) keys and misreads cubic spline keys.                                       |
-| Every joint keyed in every animation                             | A joint without keys goes to the origin in game, not to its rest pose.                                            |
-| Vertex weights only on joints of the armature                    | `build-actor` passes them on, and the game moves those vertices with other joints.                                |
+| Rule                                                              | Why                                                                                                               |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| One armature (skin)                                               | `build-actor` takes one skeleton per model.                                                                       |
+| Joint 0 named `align`, at the origin                              | Without it, `build-actor` adds one and every joint number moves by one. In game, moving `align` moves the entity. |
+| Parents before children in the armature                           | `build-actor` reads the joints in that order.                                                                     |
+| No object parented to a joint                                     | `build-actor` stops on it.                                                                                        |
+| At most 114 joints                                                | 2 joints plus 14 words of 8 joints each describe an animation.                                                    |
+| At most 2128 bytes of data per frame                              | One frame fits in 133 quadwords: about 8 bytes per rotating joint, 6 per moving or scaling one.                   |
+| Only translation, rotation and scale keys, linear, 32-bit floats  | `build-actor` stops on morph (weights) keys and misreads cubic spline keys.                                       |
+| Every joint keyed in every animation                              | A joint without keys goes to the origin in game, not to its rest pose.                                            |
+| Vertex weights only on joints of the armature                     | `build-actor` passes them on, and the game moves those vertices with other joints.                                |
+| The animations fit in the buffer a level loads its art group into | 2048 KB in Jak and Daxter, 1750 KB in Jak II and Jak 3 ([below](#how-many-animations)).                           |
 
-The studio writes its animations this way. **Export** also fixes what it can in other animations:
-it removes morph keys, makes keys linear, keys every joint, and names the animations
-`<model>-<animation>`.
+The studio writes its animations this way. **Export** also fixes what it can in the animations that
+need it: it removes morph keys, makes keys linear and keys the joints the game would put at the
+origin. Nothing else changes: the names, the meshes, the textures and the other animations are
+written as they were read, and a model with nothing to fix comes out byte for byte. A test reads and
+writes back the 3384 models with a skeleton of the three games' extraction, and adds an animation to
+each: every byte of each file, and every key of its other animations, comes back unchanged.
+
+#### How many animations
+
+The game sets no limit on their number: an art group holds as many as its file does. What limits
+them is size. A level loads each file of its DGO whole into one of two buffers, and checks nothing:
+a bigger file overwrites the memory after it. The check adds up what `build-actor` will make of each
+animation (60 frames a second, each holding the joints that move) and says when it goes over.
+
+| Model                                       | Animations | Their size once built | Fits                               |
+| ------------------------------------------- | ---------- | --------------------- | ---------------------------------- |
+| Babak (`babak-lod0`) with a `wave`          | 15         | 408 KB                | in every game                      |
+| Jak 3's Jak with the 289 of `jakb-lod0.glb` | 290        | 10 238 KB             | in no game: remove or shorten some |
+
+The games themselves keep part of Jak's animations in other art groups (`jak-dark+0-ag`,
+`jak-board+0-ag`...), linked into the empty slots of his main one when they load.
 
 ## 3. Use it
 
 1. Open **Settings** (the cog at the bottom left) and choose:
 
-   | Setting                       | What it is                                                                                                                                                                           |
-   | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-   | Models folders                | For each game, your `.glb` entity models, subfolders included. They are only read. For Jak 3, the extraction's `D:\jak-project\decompiler_out\jak3\levels`.                          |
-   | Creations folder              | Where the studio keeps a copy of each model you change or import, game by game.                                                                                                      |
-   | jak-project folder (optional) | Exports go straight into its `custom_assets` folder. The eyes and Dark Jak's skin are drawn from its `decompiler_out/<game>/textures`, or from a `textures` folder above the models. |
-   | Language                      | English or French.                                                                                                                                                                   |
+   | Setting                       | What it is                                                                                                                                                                                                                                                    |
+   | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Models folders                | For each game, your `.glb` entity models, subfolders included. They are only read. For Jak 3, the extraction's `D:\jak-project\decompiler_out\jak3\levels`.                                                                                                   |
+   | Creations folder              | Where the studio keeps a copy of each model you change or import, game by game.                                                                                                                                                                               |
+   | jak-project folder (optional) | Exports go straight into its `custom_assets` folder. The eyes and Dark Jak's skin are drawn from its `decompiler_out/<game>/textures`, or from a `textures` folder above the models. Models are tried in its game when the Launcher did not start the studio. |
+   | Language                      | English or French.                                                                                                                                                                                                                                            |
 
 2. Choose the game in the tabs above the list (**Jak and Daxter**, **Jak II**, **Jak 3**): the list,
    the creations and the export follow it. Pick a model in **Models**. It plays its first
@@ -152,28 +174,80 @@ it removes morph keys, makes keys linear, keys every joint, and names the animat
    the `build-actor` and `def-actor` lines to add. For example, Babak (`babak-lod0`, Jak and
    Daxter) with a new `wave` animation gives:
 
-   | What                   | Where, or what it says                                                                |
-   | ---------------------- | ------------------------------------------------------------------------------------- |
-   | The model              | `custom_assets/jak1/models/custom_levels/babak-lod0.glb`                              |
-   | Its art group          | `(build-actor "babak-lod0")`, added to `goal_src/jak1/game.gp`                        |
-   | The level's `.gd` file | `"babak-lod0-ag.go"`, before the level's own `.go`                                    |
-   | The new animation      | `babak-lod0-wave`, slot 16 (after Babak's 14 animations), symbol `babak-lod0-wave-ja` |
+   | What                   | Where, or what it says                                                     |
+   | ---------------------- | -------------------------------------------------------------------------- |
+   | The model              | `custom_assets/jak1/models/custom_levels/babak-lod0.glb`                   |
+   | Its art group          | `(build-actor "babak-lod0")`, added to `goal_src/jak1/game.gp`             |
+   | The level's `.gd` file | `"babak-lod0-ag.go"`, before the level's own `.go`                         |
+   | The new animation      | `wave`, slot 16 (after Babak's 14 animations), symbol `babak-lod0-wave-ja` |
 
-**From the OpenGOAL Launcher.** The studio is a program of its own, made to be installed and started
-by the [OpenGOAL Launcher](https://github.com/whozghiar/open-goal-launcher) the way it starts Jak
-Level Editor. It takes the same command line:
+6. **Try in the game** (under the export) shows the model in the game itself: see below.
 
-| Option                       | Effect                                         |
-| ---------------------------- | ---------------------------------------------- |
-| `--lang <code>`              | The language of the window (`en`, `fr`).       |
-| `--default-library=<folder>` | The creations folder, when none is chosen yet. |
-| `--models=<folder>`          | The models folder of the game chosen last.     |
+### The try in the game
 
-Options it does not know (such as `--game-install=...`) are skipped. For example, this starts the
-studio in French on the creations folder `D:\OpenGOAL\creations`:
+The model goes into the game you installed, as a custom actor, without installing or compiling the
+game: Jak Level Editor's way. You need the game installed and built:
+
+| The studio started       | Games it tries in                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| By the OpenGOAL Launcher | Those installed with the Launcher's active tooling, with that tooling's `gk` and `goalc` (`<Launcher folder>/active/bin`) |
+| On its own               | The one in the jak-project folder of the settings                                                                         |
+
+From the Launcher, a game installed with another tooling is not tried with other tools. For example,
+with the tooling `v0.3.9` active, Jak 3 installed with `v0.3.9` is tried, and Jak II installed with
+`v0.3.9-whozghiar.1` is refused: "This game is not installed with the OpenGOAL Launcher's active
+tooling (v0.3.9): install or update it in the Launcher."
+
+1. Pick a model and one of its animations, then click **Try in the game**. The button says each
+   step: the model written, the game's compiler started (a minute or two the first time: it compiles
+   the game's engine once), the test level built, the game started, Jak taken to the test level.
+2. The game opens in `test-zone`, the test level of every OpenGOAL game. The model stands 4 m in
+   front of Jak and 2 m aside, facing him, playing the animation picked again and again.
+3. Pick another animation in the studio: the model plays it in the game too.
+4. **Close the game** ends the try (closing the studio does too).
+
+For example, in Jak 3, Haven Citizen (`citizen-norm-rider-lod0`) with
+`citizen-norm-rider-bike-stance` picked crouches next to Jak. A try took 40 to 60 s in Jak 3,
+the first one included.
+
+| What                                   | Where                                                                                                         |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| The only files of the game written     | `out/<game>/iso/TSZ.DGO` and `out/<game>/fr3/test-zone.fr3`; the game's own are kept aside and put back after |
+| The game's files kept aside            | `game-test/<game>/kept/`, in the studio's settings folder                                                     |
+| What the compiler and the game printed | `game-test/<game>/goalc.log` and `gk.log`, after each try                                                     |
+
+Good to know:
+
+- One game at a time: gk listens on port 8112 (Jak and Daxter), 8113 (Jak II) or 8114 (Jak 3), and a
+  try does not start while another game holds it.
+- The try shows what the game does, mistakes included: a model the check finds wrong is tried all
+  the same. A model too big for the level's buffer is refused, with its size and the limit.
+- An animation whose keys are all at 0 s (a still pose: the game's one-frame animations, such as
+  some idles) gets a second key 1/60 s later in the try's copy: OpenGOAL v0.3.9's `build-actor`
+  stops on it otherwise.
+- Jak and Daxter: with the jak-project of October 2026, the game closes when `test-zone` loads a
+  custom actor with a skeleton, jak-project's own `test-actor` given a skeleton included. The try
+  says that the game closed, with what it printed.
+
+**From the OpenGOAL Launcher.** The studio is a program of its own, which the
+[OpenGOAL Launcher](https://github.com/whozghiar/open-goal-launcher) installs and starts the way it
+does Jak Level Editor: download a version in its **Settings > Animation Studio**, then click
+**Animation Studio** in its sidebar. Its header shows the studio's version. The studio takes this
+command line:
+
+| Option                           | Effect                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `--lang <code>`                  | The language of the window (`en`, `fr`).                                                       |
+| `--default-library=<folder>`     | The creations folder, when none is chosen yet.                                                 |
+| `--models=<folder>`              | The models folder of the game chosen last.                                                     |
+| `--game-install=<game>=<folder>` | A game installed, where models are tried (one option per game).                                |
+| `--tooling-version=<version>`    | The Launcher's active tooling: the Launcher started the studio, which tries in its games only. |
+
+Options it does not know are skipped. For example, with the Launcher installed in `D:\OpenGOAL`,
+the tooling `v0.3.9` active and Jak 3 installed with it, the Launcher runs:
 
 ```powershell
-opengoal-animation-studio.exe --lang fr --default-library=D:\OpenGOAL\creations
+opengoal-animation-studio.exe --lang en "--default-library=D:\OpenGOAL\animation-studio" "--game-install=jak3=D:\OpenGOAL" --tooling-version=v0.3.9
 ```
 
 The settings are kept in `settings.json`, in `%APPDATA%\OpenGOAL\animation-studio` on Windows,
@@ -248,19 +322,21 @@ first time, it copies the model there.
 
 Install [Rust](https://www.rust-lang.org/tools/install) and Node.js 22, then from the repository:
 
-| Command                                                   | What it does                                                                                     |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `git submodule update --init` then `npx yarn skills:link` | Fetches the OpenGOAL modding knowledge base into `.agents/skills/` and links it for Claude Code. |
-| `npx yarn install`                                        | Installs the interface's packages, and turns on the formatting of every commit (below).          |
-| `npx yarn tauri dev`                                      | Starts the studio with live reload.                                                              |
-| `npx yarn typecheck`                                      | Checks the interface's types.                                                                    |
-| `npx yarn check:retarget`                                 | Checks the retargeting on a test skeleton whose bones have random axes.                          |
-| `npx yarn check:variants`, `npx yarn check:keys`          | Checks the tags of an entity's variants and the editor's key operations.                         |
-| `npx yarn format`                                         | Formats the whole code: Prettier for the interface and the configuration, rustfmt for Rust.      |
-| `cargo clippy --workspace --all-targets -- -D warnings`   | Runs Rust's linter as the Lint workflow does.                                                    |
-| `cargo test -p animation-studio-core`                     | Checks the reading, writing and checking of models, on models made by the tests.                 |
-| `npx yarn tauri build`                                    | Builds the installers.                                                                           |
-| `cargo build --release -p opengoal-animation-studio-mcp`  | Builds the MCP server.                                                                           |
+| Command                                                                                                                                     | What it does                                                                                                                                                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `git submodule update --init` then `npx yarn skills:link`                                                                                   | Fetches the OpenGOAL modding knowledge base into `.agents/skills/` and links it for Claude Code.                                                                   |
+| `npx yarn install`                                                                                                                          | Installs the interface's packages, and turns on the formatting of every commit (below).                                                                            |
+| `npx yarn tauri dev`                                                                                                                        | Starts the studio with live reload.                                                                                                                                |
+| `npx yarn typecheck`                                                                                                                        | Checks the interface's types.                                                                                                                                      |
+| `npx yarn check:retarget`                                                                                                                   | Checks the retargeting on a test skeleton whose bones have random axes.                                                                                            |
+| `npx yarn check:variants`, `npx yarn check:keys`                                                                                            | Checks the tags of an entity's variants and the editor's key operations.                                                                                           |
+| `npx yarn format`                                                                                                                           | Formats the whole code: Prettier for the interface and the configuration, rustfmt for Rust.                                                                        |
+| `cargo clippy --workspace --all-targets -- -D warnings`                                                                                     | Runs Rust's linter as the Lint workflow does.                                                                                                                      |
+| `cargo test -p animation-studio-core`                                                                                                       | Checks the reading, writing and checking of models, on models made by the tests.                                                                                   |
+| `OGAS_MODELS=<folder> cargo test --release -p animation-studio-core -- --ignored the_games_models --nocapture`                              | Reads and writes back every model of an extraction (`D:\jak-project\decompiler_out\jak1\levels`, say) and adds an animation to each: all must come back unchanged. |
+| `OGAS_GAME_INSTALL=<folder> OGAS_TRY_GAME=jak3 OGAS_TRY_MODEL=<model.glb> cargo test -p animation-studio-core -- --ignored try_in_the_game` | A whole try in a game installed: two animations played, then the game closed and its files put back.                                                               |
+| `npx yarn tauri build`                                                                                                                      | Builds the installers.                                                                                                                                             |
+| `cargo build --release -p opengoal-animation-studio-mcp`                                                                                    | Builds the MCP server.                                                                                                                                             |
 
 **Formatting.** The code is formatted on its own: before each commit, the hook
 [`.githooks/pre-commit`](.githooks/pre-commit) formats the files of the commit (rustfmt for Rust,
@@ -285,13 +361,13 @@ The studio is built like the OpenGOAL Launcher and Jak Level Editor: [Tauri v2](
 and [Flowbite Svelte](https://flowbite-svelte.com/) for the interface, with
 [three.js](https://threejs.org/) for the 3D view.
 
-| Folder                               | What is in it                                                                                                                                                 |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`crates/core/`](crates/core/)       | Reads, checks and writes `.glb` models: the skeleton, the animations, the game's rules, the folders and the export. Shared by the program and the MCP server. |
-| [`crates/mcp/`](crates/mcp/)         | The MCP server.                                                                                                                                               |
-| [`src-tauri/`](src-tauri/)           | The program: its command line and the commands the interface calls.                                                                                           |
-| [`src/lib/`](src/lib/)               | The 3D view, the video and mocap readers, the bone mapping and the retargeting.                                                                               |
-| [`src/components/`](src/components/) | The screens.                                                                                                                                                  |
+| Folder                               | What is in it                                                                                                                                                                      |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`crates/core/`](crates/core/)       | Reads, checks and writes `.glb` models: the skeleton, the animations, the game's rules, the folders, the export and the try in the game. Shared by the program and the MCP server. |
+| [`crates/mcp/`](crates/mcp/)         | The MCP server.                                                                                                                                                                    |
+| [`src-tauri/`](src-tauri/)           | The program: its command line and the commands the interface calls.                                                                                                                |
+| [`src/lib/`](src/lib/)               | The 3D view, the video and mocap readers, the bone mapping and the retargeting.                                                                                                    |
+| [`src/components/`](src/components/) | The screens.                                                                                                                                                                       |
 
 ## 6. License
 
