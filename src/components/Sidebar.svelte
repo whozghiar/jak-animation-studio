@@ -1,14 +1,16 @@
 <script lang="ts">
   import { Tooltip } from "flowbite-svelte";
   import IconStudio from "~icons/mdi/human-handsup";
+  import IconGuide from "~icons/mdi/book-open-variant";
   import IconCog from "~icons/mdi/cog";
   import { t } from "$lib/i18n.svelte";
 
-  type Page = "studio" | "settings";
+  type Page = "studio" | "guide" | "settings";
   let { page = $bindable() }: { page: Page } = $props();
 
   const items = [
     { id: "studio", icon: IconStudio, label: "navStudio" },
+    { id: "guide", icon: IconGuide, label: "navGuide" },
     { id: "settings", icon: IconCog, label: "navSettings" },
   ] as const;
 </script>

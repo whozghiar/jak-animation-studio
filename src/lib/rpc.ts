@@ -80,6 +80,14 @@ export type PlayRequest = {
   game: Game;
 };
 
+/** What the game's code calls a model's art: its art group, the `:art` of its def-actor, each
+ * animation's slot and symbol. */
+export type GameNames = {
+  actor: string;
+  art: string[];
+  slots: { slot: number; animation: string; symbol: string }[];
+};
+
 export type Export = {
   glb: string;
   readme: string;
@@ -136,6 +144,8 @@ export const addAnimations = (model: string, sources: string[]) =>
 /** The game's textures of the page holding `beside`, one of the model's, then of common. */
 export const gameTextures = (game: Game, near: string, beside: string) =>
   invoke<string[]>("game_textures", { game, near, beside });
+export const gameNames = (model: string) =>
+  invoke<GameNames>("game_names", { model });
 /** The README is written in `lang`. */
 export const exportForGame = (model: string, lang: string) =>
   invoke<Export>("export_for_game", { model, lang });

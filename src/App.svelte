@@ -4,13 +4,14 @@
   import Sidebar from "./components/Sidebar.svelte";
   import Studio from "./components/Studio.svelte";
   import SettingsPage from "./components/Settings.svelte";
+  import Guide from "./components/Guide.svelte";
   import Toasts from "./components/Toasts.svelte";
   import { listen } from "@tauri-apps/api/event";
   import { getSettings, takePlay } from "$lib/rpc";
   import { app } from "$lib/settings.svelte";
   import { i18n, LANGS, type Lang } from "$lib/i18n.svelte";
 
-  let page = $state<"studio" | "settings">("studio");
+  let page = $state<"studio" | "guide" | "settings">("studio");
 
   async function play() {
     const request = await takePlay();
@@ -38,6 +39,8 @@
       {#if app.settings}
         {#if page === "studio"}
           <Studio />
+        {:else if page === "guide"}
+          <Guide />
         {:else}
           <SettingsPage />
         {/if}

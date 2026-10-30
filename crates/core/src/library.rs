@@ -342,17 +342,65 @@ pub fn export(
   })
 }
 
-/// The README of an export, in English or, for `lang` "fr", in French.
-fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang: &str) -> String {
+/// What the game's code calls a model's art: its art group's name, the `:art` of its `def-actor`
+/// (the animations' short names, in the file's order), and each animation's slot and symbol.
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct GameNames {
+  pub actor: String,
+  pub art: Vec<String>,
+  pub slots: Vec<Slot>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct Slot {
+  pub slot: usize,
+  pub animation: String,
+  pub symbol: String,
+}
+
+pub fn game_names(actor: &str, anims: &[String]) -> GameNames {
   let short = |a: &str| goal_name(rules::short_name(a, actor));
-  let art: Vec<String> = anims.iter().map(|a| format!("{}-ja", short(a))).collect();
-  let art = art.join(" ");
-  let rows: String = anims
+  GameNames {
+    actor: actor.to_owned(),
+    art: anims.iter().map(|a| format!("{}-ja", short(a))).collect(),
+    slots: anims
+      .iter()
+      .enumerate()
+      .map(|(i, a)| Slot {
+        slot: i + 2,
+        animation: a.clone(),
+        symbol: format!("{actor}-{}-ja", short(a)),
+      })
+      .collect(),
+  }
+}
+
+/// The game's names of the model at `path`, as its export calls them.
+pub fn model_game_names(path: &Path) -> Result<GameNames> {
+  let glb = Glb::read_json(path)?;
+  let anims: Vec<String> = glb
+    .array("animations")
     .iter()
     .enumerate()
-    .map(|(i, a)| format!("| {} | `{a}` | `{actor}-{}-ja` |\n", i + 2, short(a)))
+    .map(|(i, a)| model::animation_name(a, i))
     .collect();
-  let first = anims.first().map_or("idle".to_owned(), |a| short(a));
+  Ok(game_names(&goal_name(&model_name(path)), &anims))
+}
+
+/// The README of an export, in English or, for `lang` "fr", in French.
+fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang: &str) -> String {
+  let names = game_names(actor, anims);
+  let art = names.art.join(" ");
+  let rows: String = names
+    .slots
+    .iter()
+    .map(|s| format!("| {} | `{}` | `{}` |\n", s.slot, s.animation, s.symbol))
+    .collect();
+  let first = names
+    .art
+    .first()
+    .map_or("idle".to_owned(), |a| a.trim_end_matches("-ja").to_owned());
   if lang.starts_with("fr") {
     let copy = if in_project {
       "Le modèle est déjà dans votre dossier jak-project.".to_owned()
@@ -368,9 +416,11 @@ fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang
        1. {copy}\n\
        2. Construisez son art group : ajoutez cette ligne à `goal_src/{game}/game.gp`.\n\n   \
        ```lisp\n   (build-actor \"{actor}\")\n   ```\n\n\
-       3. Chargez-le avec le niveau : ajoutez `\"{actor}-ag.go\"` au fichier `.gd` du niveau, avant \
+       3. Mettez son maillage dans le niveau : ajoutez `\"{actor}\"` à la liste `custom_models` du \
+       fichier `.jsonc` du niveau (`custom_assets/{game}/levels/<niveau>/<niveau>.jsonc`).\n\
+       4. Chargez-le avec le niveau : ajoutez `\"{actor}-ag.go\"` au fichier `.gd` du niveau, avant \
        le `.go` du niveau lui-même.\n\
-       4. Déclarez l'art group et ses animations dans le code de l'entité (`:bounds` est une sphère : \
+       5. Déclarez l'art group et ses animations dans le code de l'entité (`:bounds` est une sphère : \
        x y z rayon, en mètres).\n\n   \
        ```lisp\n   (def-actor {actor}\n     :bounds (0 0 0 4)\n     :art ({art}))\n   ```\n\n\
        | Emplacement | Animation | Symbole |\n|---|---|---|\n{rows}\n\
@@ -391,9 +441,11 @@ fn readme_text(actor: &str, game: &str, anims: &[String], in_project: bool, lang
      1. {copy}\n\
      2. Build its art group: add this line to `goal_src/{game}/game.gp`.\n\n   \
      ```lisp\n   (build-actor \"{actor}\")\n   ```\n\n\
-     3. Load it with the level: add `\"{actor}-ag.go\"` to the level's `.gd` file, before the \
+     3. Put its mesh in the level: add `\"{actor}\"` to the `custom_models` list of the level's \
+     `.jsonc` file (`custom_assets/{game}/levels/<level>/<level>.jsonc`).\n\
+     4. Load it with the level: add `\"{actor}-ag.go\"` to the level's `.gd` file, before the \
      level's own `.go`.\n\
-     4. Declare the art group and its animations in the entity's code (`:bounds` is a sphere: x y z \
+     5. Declare the art group and its animations in the entity's code (`:bounds` is a sphere: x y z \
      radius, in metres).\n\n   \
      ```lisp\n   (def-actor {actor}\n     :bounds (0 0 0 4)\n     :art ({art}))\n   ```\n\n\
      | Slot | Animation | Symbol |\n|---|---|---|\n{rows}\n\

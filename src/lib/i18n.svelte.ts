@@ -53,6 +53,44 @@ const en = {
   tryStep_play: "Showing the model",
   inGame: "In the game: the animation picked here plays there too.",
   closeGame: "Close the game",
+  navGuide: "In-game guide",
+  guideTitle: "Put a model in the game",
+  guideIntro:
+    "These steps put {model} in {game}'s test level as an entity of its own, which plays its animations. Every line is made for this model, the one last opened in the studio.",
+  guideIntroExample:
+    "These steps put a model in the game's test level as an entity of its own, which plays its animations. Until you open a model in the studio, they show Jak 3's Marauder with a wave made in the studio.",
+  guideNeed:
+    "You need a jak-project where {game} builds, and the model exported with Export for {game}. The studio's Try in the game does all of this in a copy of the test level: these steps are for your own mod.",
+  guideModel: "Put the model in place",
+  guideModelText:
+    "Copy the export's custom_assets folder into your jak-project: the model lands here. With the jak-project folder set in the settings, the export already put it there.",
+  guideBuild: "Build its art group",
+  guideBuildText:
+    "In goal_src/{gameId}/game.gp, next to the other build-actor lines: the art group holds the model's skeleton and animations.",
+  guideMesh: "Put its mesh in the level",
+  guideMeshText:
+    "In {level}/test-zone.jsonc, add the model to the list custom_models: the level's file holds its mesh.",
+  guideCode: "Write the entity's code",
+  guideCodeText:
+    "A new file, goal_src/{gameId}/levels/test-zone/{type}.gc. def-actor names the animations in the file's order: each symbol is a slot of the art group. The entity loops on its first animation, and plays {anim} once when it gets the event '{event}.",
+  guideEventAnim: "Animation the event plays",
+  guideCompile: "Compile it with the game",
+  guideCompileText:
+    "In goal_src/{gameId}/game.gp: the code becomes an object file, {type}.o.",
+  guideLoad: "Load both with the level",
+  guideLoadText:
+    "In {level}/testzone.gd, the level's list of files: the entity's code first, the art group before the level's own file (the lines already there stay in place of ...).",
+  guidePlace: "Place the entity in the level",
+  guidePlaceText:
+    "In {level}/test-zone.jsonc, add it to the list actors: its etype is the entity's type, its name the one the code finds it by, trans its place in metres.",
+  guidePlay: "Build and play",
+  guidePlayText:
+    "In goalc: build the game with (mi), start it, connect with (lt), go to the test level, then send the event: the entity plays {anim}.",
+  guideNotBorn: "The entity does not appear?",
+  guideNotBornText:
+    "A level made by hand has no visibility data: with the game's PS2 actor visibility on (PS2 actor vis in the debug menu), its entities are never born. Turn it off, or in goalc:",
+  guideJak1:
+    "Jak and Daxter closes when a level loads an entity with a skeleton added this way (jak-project of October 2026): try your models in Jak II or Jak 3.",
   exportedTo: "Written to {path}",
   openReadme: "Open the README",
   savedToCreations: "Saved in the creations.",
@@ -300,6 +338,44 @@ const fr: Record<Key, string> = {
   tryStep_play: "Affichage du modèle",
   inGame: "Dans le jeu : l'animation choisie ici y joue aussi.",
   closeGame: "Fermer le jeu",
+  navGuide: "Guide dans le jeu",
+  guideTitle: "Mettre un modèle dans le jeu",
+  guideIntro:
+    "Ces étapes mettent {model} dans le niveau de test de {game}, comme une entité à part entière qui joue ses animations. Chaque ligne est faite pour ce modèle, le dernier ouvert dans le studio.",
+  guideIntroExample:
+    "Ces étapes mettent un modèle dans le niveau de test du jeu, comme une entité à part entière qui joue ses animations. Tant qu'aucun modèle n'est ouvert dans le studio, elles montrent le Marauder de Jak 3 avec un salut (wave) fait dans le studio.",
+  guideNeed:
+    "Il vous faut un jak-project où {game} se compile, et le modèle exporté avec Exporter pour {game}. L'essai dans le jeu du studio fait tout cela dans une copie du niveau de test : ces étapes sont pour votre propre mod.",
+  guideModel: "Mettre le modèle en place",
+  guideModelText:
+    "Copiez le dossier custom_assets de l'export dans votre jak-project : le modèle arrive ici. Avec le dossier jak-project choisi dans les réglages, l'export l'y a déjà mis.",
+  guideBuild: "Construire son art group",
+  guideBuildText:
+    "Dans goal_src/{gameId}/game.gp, à côté des autres lignes build-actor : l'art group contient le squelette et les animations du modèle.",
+  guideMesh: "Mettre son maillage dans le niveau",
+  guideMeshText:
+    "Dans {level}/test-zone.jsonc, ajoutez le modèle à la liste custom_models : le fichier du niveau contient son maillage.",
+  guideCode: "Écrire le code de l'entité",
+  guideCodeText:
+    "Un nouveau fichier, goal_src/{gameId}/levels/test-zone/{type}.gc. def-actor nomme les animations dans l'ordre du fichier : chaque symbole est un emplacement de l'art group. L'entité joue sa première animation en boucle, et joue {anim} une fois quand elle reçoit l'événement '{event}.",
+  guideEventAnim: "Animation jouée par l'événement",
+  guideCompile: "La compiler avec le jeu",
+  guideCompileText:
+    "Dans goal_src/{gameId}/game.gp : le code devient un fichier objet, {type}.o.",
+  guideLoad: "Charger les deux avec le niveau",
+  guideLoadText:
+    "Dans {level}/testzone.gd, la liste des fichiers du niveau : le code de l'entité en premier, l'art group avant le fichier du niveau lui-même (les lignes déjà présentes restent à la place de ...).",
+  guidePlace: "Placer l'entité dans le niveau",
+  guidePlaceText:
+    "Dans {level}/test-zone.jsonc, ajoutez-la à la liste actors : son etype est le type de l'entité, son nom celui par lequel le code la trouve, trans sa place en mètres.",
+  guidePlay: "Compiler et jouer",
+  guidePlayText:
+    "Dans goalc : compilez le jeu avec (mi), lancez-le, connectez-vous avec (lt), allez au niveau de test, puis envoyez l'événement : l'entité joue {anim}.",
+  guideNotBorn: "L'entité n'apparaît pas ?",
+  guideNotBornText:
+    "Un niveau fait à la main n'a pas de données de visibilité : avec la visibilité PS2 des acteurs activée dans le jeu (PS2 actor vis dans le menu de debug), ses entités ne naissent jamais. Désactivez-la, ou dans goalc :",
+  guideJak1:
+    "Jak and Daxter se ferme quand un niveau charge une entité avec un squelette ajoutée ainsi (jak-project d'octobre 2026) : essayez vos modèles dans Jak II ou Jak 3.",
   exportedTo: "Écrit dans {path}",
   openReadme: "Ouvrir le README",
   savedToCreations: "Enregistré dans les créations.",

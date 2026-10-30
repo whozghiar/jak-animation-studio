@@ -246,6 +246,7 @@
       await viewer.load(model, info.joints);
       lastModified = (await modified(path)) ?? 0;
       current = info;
+      app.model = info.path;
       const keep = anim && info.animations.some((a) => a.name === anim);
       play(keep ? anim : (info.animations[0]?.name ?? null));
       twinAnimations(path, game).then((found) => {

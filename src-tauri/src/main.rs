@@ -20,7 +20,7 @@ use std::time::Duration;
 use animation_studio_core::{
   edit::{self, Channel},
   game_test::GameTest,
-  library::{self, Export, ModelEntry, ModelInfo, PlayRequest, Settings, Twin},
+  library::{self, Export, GameNames, ModelEntry, ModelInfo, PlayRequest, Settings, Twin},
   looks::{self, Looks},
   rules::Text,
 };
@@ -248,6 +248,12 @@ fn take_play() -> Option<PlayRequest> {
   PlayRequest::take(&Settings::dir())
 }
 
+/// The names the game's code gives a model's art (the guide's lines).
+#[tauri::command]
+async fn game_names(model: PathBuf) -> Result<GameNames, Value> {
+  library::model_game_names(&model).map_err(err)
+}
+
 #[tauri::command]
 async fn export_for_game(model: PathBuf, lang: String) -> Result<Export, Value> {
   let settings = Settings::load();
@@ -406,6 +412,7 @@ fn main() {
       find_model,
       take_play,
       export_for_game,
+      game_names,
       test_in_game,
       play_in_game,
       stop_game_test,
