@@ -498,6 +498,70 @@ fn glb_bytes(json: &str, bin: &[u8]) -> Vec<u8> {
   out
 }
 
+/// def-actor names an animation's slot after the model and the animation's short name: Babak's
+/// `babak-walk` and `walk` would share `babak-lod0-walk`. The check says so, and a save that makes
+/// such a pair is refused.
+#[test]
+fn two_animations_never_share_a_name_in_the_game() {
+  let root = std::env::temp_dir().join(format!("ogas-names-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  let (models, creations) = (root.join("models"), root.join("creations"));
+  std::fs::create_dir_all(&models).unwrap();
+  let babak = models.join("babak-lod0.glb");
+  skinned(3).write(&babak).unwrap();
+  let add = |name: &'static str| {
+    move |glb: &mut Glb| edit::set_animation(glb, name, &[rotation(1, &[0.0, 1.0])])
+  };
+  let code = |e: anyhow::Error| e.downcast_ref::<rules::Text>().map(|t| t.code);
+
+  // refused on the first change: no creation is left behind
+  let mut glb = skinned(3);
+  edit::set_animation(&mut glb, "babak-walk", &[rotation(1, &[0.0, 1.0])]).unwrap();
+  glb.write(&babak).unwrap();
+  let e = library::edit_creation(&babak, &creations, "jak1", add("walk")).unwrap_err();
+  assert_eq!(code(e), Some("game-name-shared"));
+  assert!(library::list_models(&creations, "jak1", true).is_empty());
+
+  let creation = library::edit_creation(&babak, &creations, "jak1", add("stroll")).unwrap();
+  let e = library::edit_creation(&creation, &creations, "jak1", |glb| {
+    edit::rename_animation(glb, "stroll", "babak-walk-")
+  })
+  .unwrap_err();
+  assert_eq!(
+    code(e),
+    Some("game-name-shared"),
+    "babak-walk- is babak-walk"
+  );
+  let names: Vec<_> = model::animations(&Glb::read(&creation).unwrap())
+    .into_iter()
+    .map(|a| a.name)
+    .collect();
+  assert_eq!(
+    names,
+    ["babak-walk", "stroll"],
+    "the creation is left as it was"
+  );
+
+  // a model that comes with a clash: the check says so, and other changes still go through
+  let mut clashing = Glb::read(&creation).unwrap();
+  edit::set_animation(&mut clashing, "walk", &[rotation(1, &[0.0, 1.0])]).unwrap();
+  clashing.write(&creation).unwrap();
+  let check = rules::check(&clashing, "babak-lod0");
+  assert!(
+    check
+      .iter()
+      .any(|i| i.text.code == "game-name-shared" && i.animation.as_deref() == Some("walk")),
+    "{check:?}"
+  );
+  library::edit_creation(&creation, &creations, "jak1", add("wave")).unwrap();
+  library::edit_creation(&creation, &creations, "jak1", |glb| {
+    edit::rename_animation(glb, "walk", "march")
+  })
+  .unwrap();
+  assert!(rules::game_name_clashes(&Glb::read(&creation).unwrap(), "babak-lod0").is_empty());
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
 /// The extraction writes a model out of each level that loads it, each copy with that level's unused
 /// vertices: copies with the same joints and animations are listed once (the smallest file), copies
 /// with other animations apart.

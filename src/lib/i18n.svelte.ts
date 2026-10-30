@@ -235,8 +235,8 @@ const en = {
   "core_animation-unnamed": "An animation needs a name.",
   "core_animation-exists": "An animation is already named '{name}'.",
   "core_no-such-animation": "There is no animation '{name}'.",
-  "core_game-name-taken":
-    "Two animations would be named '{name}' in game: rename one.",
+  "core_game-name-shared":
+    "In the game, '{anim}' would be named {name}, as '{other}' is: give it another name.",
 };
 
 type Key = keyof typeof en;
@@ -483,8 +483,8 @@ const fr: Record<Key, string> = {
   "core_animation-unnamed": "Une animation a besoin d'un nom.",
   "core_animation-exists": "Une animation s'appelle déjà « {name} ».",
   "core_no-such-animation": "Il n'y a pas d'animation « {name} ».",
-  "core_game-name-taken":
-    "Deux animations s'appelleraient « {name} » dans le jeu : renommez-en une.",
+  "core_game-name-shared":
+    "Dans le jeu, « {anim} » s'appellerait {name}, comme « {other} » : donnez-lui un autre nom.",
 };
 
 export const LANGS = { en: "English", fr: "Français" } as const;

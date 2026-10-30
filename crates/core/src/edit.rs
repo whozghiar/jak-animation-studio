@@ -11,7 +11,7 @@ use crate::{
   glb::Glb,
   math,
   model::{self, Joint, PATHS},
-  rules::{Text, goal_name, is_identity, short_name},
+  rules::{self, Text, is_identity},
 };
 
 /// The keys of one joint channel: `values` holds 3 numbers per time (4 for a rotation, x y z w),
@@ -290,19 +290,13 @@ pub fn rename_animation(glb: &mut Glb, name: &str, new_name: &str) -> Result<()>
 pub fn normalize(glb: &mut Glb, actor: &str) -> Result<Vec<Text>> {
   let joints = model::skeleton(glb)?;
   let mut notes = Vec::new();
-  let mut symbols = HashSet::new();
+  let mut symbols = HashMap::new();
   for (i, anim) in glb.array("animations").to_vec().iter().enumerate() {
     let name = model::animation_name(anim, i);
-    // def-actor names each slot <actor>-<short name>-ja
-    let symbol = format!("{actor}-{}", goal_name(short_name(&name, actor)));
-    ensure!(
-      symbols.insert(symbol.clone()),
-      Text::new(
-        "game-name-taken",
-        "Two animations would be named '{name}' in game: rename one.",
-        &[("name", symbol)]
-      )
-    );
+    let symbol = rules::game_name(actor, &name);
+    if let Some(other) = symbols.insert(symbol.clone(), name.clone()) {
+      bail!(rules::game_name_shared(&symbol, &other, &name));
+    }
     let before = notes.len();
     let mut channels = Vec::new();
     let mut keyed = HashSet::new();

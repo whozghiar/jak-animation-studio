@@ -238,16 +238,36 @@ pub fn import(model: &Path, creations: &Path, game: &str, replace: bool) -> Resu
   Ok(dest)
 }
 
-/// Applies `change` to the creation of `model` and returns the creation's path.
+/// Applies `change` to the creation of `model` and returns the creation's path. A change that gives
+/// an animation the name another has in the game is refused (the export would be), and leaves no
+/// new creation behind.
 pub fn edit_creation(
   model: &Path,
   creations: &Path,
   game: &str,
   change: impl FnOnce(&mut Glb) -> Result<()>,
 ) -> Result<PathBuf> {
+  let fresh = !model.starts_with(creations) && !creation_path(model, creations, game)?.exists();
   let path = creation_for(model, creations, game)?;
   let mut glb = Glb::read(&path)?;
-  change(&mut glb)?;
+  let actor = goal_name(&model_name(&path));
+  let before = rules::game_name_clashes(&glb, &actor);
+  let changed = change(&mut glb).and_then(|()| {
+    match rules::game_name_clashes(&glb, &actor)
+      .into_iter()
+      .find(|c| !before.contains(c))
+    {
+      Some((name, other, anim)) => Err(rules::game_name_shared(&name, &other, &anim).into()),
+      None => Ok(()),
+    }
+  });
+  if let Err(e) = changed {
+    if fresh {
+      let _ = std::fs::remove_file(&path);
+      let _ = path.parent().map(std::fs::remove_dir);
+    }
+    return Err(e);
+  }
   glb.write(&path)?;
   Ok(path)
 }

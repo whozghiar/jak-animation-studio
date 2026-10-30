@@ -95,6 +95,45 @@ pub fn short_name<'a>(name: &'a str, actor: &str) -> &'a str {
     .unwrap_or(name)
 }
 
+/// The name of an animation's slot in the game, without its `-ja`: def-actor makes it of the
+/// model's name and the animation's short name. Babak's `babak-walk` and `walk` are both
+/// `babak-lod0-walk`.
+pub fn game_name(actor: &str, animation: &str) -> String {
+  format!("{actor}-{}", goal_name(short_name(animation, actor)))
+}
+
+/// The animations that would share a name in the game: (that name, the first one, the other one).
+pub fn game_name_clashes(glb: &Glb, actor: &str) -> Vec<(String, String, String)> {
+  let mut first = BTreeMap::new();
+  let mut clashes = Vec::new();
+  for (i, anim) in glb.array("animations").iter().enumerate() {
+    let name = model::animation_name(anim, i);
+    let symbol = game_name(actor, &name);
+    match first.get(&symbol) {
+      // the same name twice is a clash of its own (duplicate-name)
+      Some(other) if *other != name => clashes.push((symbol, String::clone(other), name)),
+      Some(_) => {}
+      None => {
+        first.insert(symbol, name);
+      }
+    }
+  }
+  clashes
+}
+
+/// The text of a clash: `anim` would get `name` in the game, as `other` does.
+pub fn game_name_shared(name: &str, other: &str, anim: &str) -> Text {
+  Text::new(
+    "game-name-shared",
+    "In the game, '{anim}' would be named {name}, as '{other}' is: give it another name.",
+    &[
+      ("name", name.to_owned()),
+      ("other", other.to_owned()),
+      ("anim", anim.to_owned()),
+    ],
+  )
+}
+
 pub(crate) fn is_identity(path: &str, v: &[f32]) -> bool {
   let near = |a: f32, b: f32| (a - b).abs() < 1e-5;
   match path {
@@ -373,6 +412,13 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
         &[],
       ),
       None,
+    );
+  }
+  for (name, other, anim) in game_name_clashes(glb, &goal_name(model_name)) {
+    push(
+      Error,
+      game_name_shared(&name, &other, &anim),
+      Some(anim.as_str()),
     );
   }
   let mut names = HashSet::new();
