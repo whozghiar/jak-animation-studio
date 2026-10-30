@@ -229,7 +229,11 @@
     paused = false;
   }
 
+  /** each open replaces the ones before: one that ends later (the reload after the MCP server's
+   * change, beside its request to play) is dropped */
+  let opened = 0;
   async function open(path: string, anim?: string | null) {
+    const mine = ++opened;
     loading = true;
     creating = false;
     editing = null;
@@ -237,7 +241,9 @@
     twins = [];
     try {
       const info = await inspectModel(path);
-      await viewer.load(await readModel(path), info.joints);
+      const model = await readModel(path);
+      if (mine !== opened) return;
+      await viewer.load(model, info.joints);
       lastModified = (await modified(path)) ?? 0;
       current = info;
       const keep = anim && info.animations.some((a) => a.name === anim);
@@ -248,7 +254,7 @@
     } catch (e) {
       toast(errorText(e), "error");
     } finally {
-      loading = false;
+      if (mine === opened) loading = false;
     }
   }
 
@@ -343,10 +349,12 @@
     // the MCP server edits the files: what it changes shows here
     poll = setInterval(async () => {
       if (!current || creating || editing || loading) return;
+      const before = opened;
       const m = await modified(current.path);
-      if (m && m !== lastModified) {
+      if (m && m !== lastModified && opened === before) {
         await refresh();
-        await open(current.path, playing);
+        // a request to play may have opened it meanwhile, with its own animation
+        if (current && opened === before) await open(current.path, playing);
       }
     }, 1500);
   });
