@@ -139,3 +139,10 @@ export const gameTextures = (game: Game, near: string, beside: string) =>
 /** The README is written in `lang`. */
 export const exportForGame = (model: string, lang: string) =>
   invoke<Export>("export_for_game", { model, lang });
+/** The model tried in the game: built as a custom actor, shown in the game's test level playing its
+ * animation `animation`; the steps come as "game-test" events. */
+export const testInGame = (model: string, game: Game, animation: number) =>
+  invoke<void>("test_in_game", { model, game, animation });
+export const playInGame = (animation: number) =>
+  invoke<void>("play_in_game", { animation });
+export const stopGameTest = () => invoke<void>("stop_game_test");

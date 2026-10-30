@@ -3,6 +3,7 @@
 //! writes animations that build-actor turns into the game's art group.
 
 pub mod edit;
+pub mod game_test;
 pub mod glb;
 pub mod library;
 pub mod looks;

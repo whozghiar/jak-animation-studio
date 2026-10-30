@@ -41,6 +41,18 @@ const en = {
   gameCheck: "Game check",
   allGood: "Ready for build-actor.",
   exportGame: "Export for {game}",
+  tryInGame: "Try in the game",
+  tryInGameHint:
+    "Builds the model as a custom actor and shows it in {game}, in its test level (test-zone), playing the animation picked. Needs the game installed: the OpenGOAL Launcher's, or the jak-project folder of the settings. The game's own files are put back when the game closes.",
+  tryStep_export: "Writing the model",
+  tryStep_compiler:
+    "Starting the game's compiler (a minute or two the first time)",
+  tryStep_build: "Building the test level",
+  tryStep_start: "Starting the game",
+  tryStep_load: "Taking Jak to the test level",
+  tryStep_play: "Showing the model",
+  inGame: "In the game: the animation picked here plays there too.",
+  closeGame: "Close the game",
   exportedTo: "Written to {path}",
   openReadme: "Open the README",
   savedToCreations: "Saved in the creations.",
@@ -198,6 +210,20 @@ const en = {
   "core_node-dropped": "{anim}: keys of node {node} (not a joint) dropped",
   "core_made-linear": "{anim}: {kind} keys made linear",
   "core_rest-keyed": "{anim}: joints without keys keyed at their rest pose",
+  "core_no-game-folder":
+    "Choose the game to try in: the jak-project folder in the settings, or start the studio from the OpenGOAL Launcher.",
+  "core_game-not-in-launcher":
+    "This game is not installed with the OpenGOAL Launcher's active tooling ({version}): install or update it in the Launcher.",
+  "core_game-not-found":
+    "{folder} holds no game to try in: choose an OpenGOAL Launcher installation, an OpenGOAL release or a jak-project with the game built.",
+  "core_game-incomplete":
+    "The game in {folder} lacks {file}: install or build it again.",
+  "core_game-port-taken":
+    "Another game listens on port {port}: close it first.",
+  "core_game-step-failed": "{step} failed: {output}",
+  "core_game-closed": "The game closed during the try: {output}",
+  "core_art-group-too-big":
+    "The model takes {size} KB once built, more than the {max} KB a level of the game loads it into: remove or shorten animations.",
   "core_animations-too-big":
     "The animations take {size} KB once built, the mesh not counted: more than a level of any game loads an art group into (2048 KB in Jak and Daxter, 1750 KB in Jak II and Jak 3). Remove or shorten animations.",
   "core_animations-too-big-23":
@@ -260,6 +286,18 @@ const fr: Record<Key, string> = {
   gameCheck: "Vérification pour le jeu",
   allGood: "Prêt pour build-actor.",
   exportGame: "Exporter pour {game}",
+  tryInGame: "Essayer dans le jeu",
+  tryInGameHint:
+    "Construit le modèle comme un acteur personnalisé et le montre dans {game}, dans son niveau de test (test-zone), en train de jouer l'animation choisie. Il faut le jeu installé : celui de l'OpenGOAL Launcher, ou le dossier jak-project des réglages. Les fichiers du jeu sont remis en place quand le jeu se ferme.",
+  tryStep_export: "Écriture du modèle",
+  tryStep_compiler:
+    "Démarrage du compilateur du jeu (une à deux minutes la première fois)",
+  tryStep_build: "Construction du niveau de test",
+  tryStep_start: "Démarrage du jeu",
+  tryStep_load: "Jak va au niveau de test",
+  tryStep_play: "Affichage du modèle",
+  inGame: "Dans le jeu : l'animation choisie ici y joue aussi.",
+  closeGame: "Fermer le jeu",
   exportedTo: "Écrit dans {path}",
   openReadme: "Ouvrir le README",
   savedToCreations: "Enregistré dans les créations.",
@@ -420,6 +458,20 @@ const fr: Record<Key, string> = {
   "core_node-dropped": "{anim} : clés du nœud {node} (pas un joint) retirées",
   "core_made-linear": "{anim} : clés {kind} rendues linéaires",
   "core_rest-keyed": "{anim} : joints sans clés mis à leur pose de repos",
+  "core_no-game-folder":
+    "Choisissez le jeu où essayer : le dossier jak-project dans les réglages, ou lancez le studio depuis l'OpenGOAL Launcher.",
+  "core_game-not-in-launcher":
+    "Ce jeu n'est pas installé avec l'outillage actif de l'OpenGOAL Launcher ({version}) : installez-le ou mettez-le à jour dans le Launcher.",
+  "core_game-not-found":
+    "{folder} ne contient pas de jeu où essayer : choisissez une installation de l'OpenGOAL Launcher, une version d'OpenGOAL ou un jak-project avec le jeu compilé.",
+  "core_game-incomplete":
+    "Il manque {file} au jeu de {folder} : réinstallez-le ou recompilez-le.",
+  "core_game-port-taken":
+    "Un autre jeu écoute sur le port {port} : fermez-le d'abord.",
+  "core_game-step-failed": "{step} a échoué : {output}",
+  "core_game-closed": "Le jeu s'est fermé pendant l'essai : {output}",
+  "core_art-group-too-big":
+    "Le modèle prend {size} Ko une fois construit, plus que les {max} Ko dans lesquels un niveau du jeu le charge : retirez ou raccourcissez des animations.",
   "core_animations-too-big":
     "Les animations prennent {size} Ko une fois construites, sans compter le maillage : plus que ce qu'un niveau de n'importe quel jeu charge pour un art group (2048 Ko dans Jak and Daxter, 1750 Ko dans Jak II et Jak 3). Retirez ou raccourcissez des animations.",
   "core_animations-too-big-23":

@@ -5,16 +5,21 @@
 
 // OpenGOAL Animation Studio, with its command line:
 //   opengoal-animation-studio [--lang <code>] [--default-library=<folder>] [--models=<folder>]
-// --lang and --default-library are what the OpenGOAL Launcher gives the programs it starts (Jak
-// Level Editor's way): the default library becomes the creations folder when none is chosen yet.
-// --models is the models folder of the game chosen last. Options it does not know
-// (--game-install=...) are skipped.
+//                             [--game-install=<game>=<folder>]... [--tooling-version=<version>]
+// --lang, --default-library and --game-install are what the OpenGOAL Launcher gives the programs it
+// starts (Jak Level Editor's way): the default library becomes the creations folder when none is
+// chosen yet; a game installed is where models are tried (else the jak-project of the settings).
+// --tooling-version, the Launcher's active tooling, says the Launcher started the studio: models are
+// then tried in its games only. --models is the models folder of the game chosen last. Options it
+// does not know are skipped.
 
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use animation_studio_core::{
   edit::{self, Channel},
+  game_test::GameTest,
   library::{self, Export, ModelEntry, ModelInfo, PlayRequest, Settings, Twin},
   looks::{self, Looks},
   rules::Text,
@@ -24,6 +29,10 @@ use tauri::{Emitter, Manager};
 
 struct Launch {
   lang: Option<String>,
+  /// the games the Launcher installed, by game
+  game_installs: BTreeMap<String, PathBuf>,
+  /// the Launcher's active tooling, when the Launcher started the studio
+  tooling_version: Option<String>,
 }
 
 /// An error for the interface: with the code and arguments of its text when the core gave them, so
@@ -253,10 +262,67 @@ async fn export_for_game(model: PathBuf, lang: String) -> Result<Export, Value> 
   .map_err(err)
 }
 
+/// The model tried in the game (test_in_game): built as a custom actor and shown in `game`'s test
+/// level, playing its animation `animation`; the steps go to the window ("game-test" events).
+#[tauri::command]
+async fn test_in_game(
+  app: tauri::AppHandle,
+  model: PathBuf,
+  game: String,
+  animation: usize,
+) -> Result<(), Value> {
+  let launch = app.state::<Launch>();
+  let root = match (launch.game_installs.get(&game), &launch.tooling_version) {
+    (Some(root), _) => root.clone(),
+    // started by the Launcher: a game built by another tooling than the active one is not tried
+    (None, Some(version)) => {
+      return Err(err(anyhow::Error::new(Text::new(
+        "game-not-in-launcher",
+        "This game is not installed with the OpenGOAL Launcher's active tooling ({version}): install or update it in the Launcher.",
+        &[("version", version.clone())],
+      ))));
+    }
+    (None, None) => Settings::load().jak_project_dir.ok_or_else(|| {
+      err(anyhow::Error::new(Text::new(
+        "no-game-folder",
+        "Choose the game to try in: the jak-project folder in the settings, or start the studio from the OpenGOAL Launcher.",
+        &[],
+      )))
+    })?,
+  };
+  tauri::async_runtime::spawn_blocking(move || {
+    app
+      .state::<GameTest>()
+      .try_model(&model, &root, &game, animation, |step| {
+        let _ = app.emit("game-test", step);
+      })
+  })
+  .await
+  .map_err(|e| json!({ "message": e.to_string() }))?
+  .map_err(err)
+}
+
+/// The model in the game of the last try plays its animation `animation`.
+#[tauri::command]
+async fn play_in_game(app: tauri::AppHandle, animation: usize) -> Result<(), Value> {
+  tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().play(animation))
+    .await
+    .map_err(|e| json!({ "message": e.to_string() }))?
+    .map_err(err)
+}
+
+/// The game of the tries closed, the game's files put back.
+#[tauri::command]
+async fn stop_game_test(app: tauri::AppHandle) {
+  let _ = tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().stop()).await;
+}
+
 fn main() {
   let mut lang = None;
   let mut default_library = None;
   let mut models = None;
+  let mut game_installs = BTreeMap::new();
+  let mut tooling_version = None;
   let mut args = std::env::args().skip(1);
   while let Some(a) = args.next() {
     let (key, value) = match a.split_once('=') {
@@ -268,6 +334,12 @@ fn main() {
       "--lang" => lang = value(),
       "--default-library" => default_library = value().map(PathBuf::from),
       "--models" => models = value().map(PathBuf::from),
+      "--game-install" => {
+        if let Some((game, folder)) = value().as_deref().and_then(|v| v.split_once('=')) {
+          game_installs.insert(game.to_owned(), PathBuf::from(folder));
+        }
+      }
+      "--tooling-version" => tooling_version = value(),
       _ => {}
     }
   }
@@ -286,7 +358,12 @@ fn main() {
   tauri::Builder::default()
     .plugin(tauri_plugin_opener::init())
     .plugin(tauri_plugin_dialog::init())
-    .manage(Launch { lang })
+    .manage(Launch {
+      lang,
+      game_installs,
+      tooling_version,
+    })
+    .manage(GameTest::default())
     .setup(|app| {
       // the MCP server's play_animation leaves a request: the window comes up and takes it (its own
       // timers are slowed down while it is minimized)
@@ -329,7 +406,16 @@ fn main() {
       find_model,
       take_play,
       export_for_game,
+      test_in_game,
+      play_in_game,
+      stop_game_test,
     ])
-    .run(tauri::generate_context!())
-    .expect("OpenGOAL Animation Studio could not start");
+    .build(tauri::generate_context!())
+    .expect("OpenGOAL Animation Studio could not start")
+    .run(|app, event| {
+      // the game of the tries closes with the studio, and the game's files go back
+      if let tauri::RunEvent::Exit = event {
+        app.state::<GameTest>().stop();
+      }
+    });
 }

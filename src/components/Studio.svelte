@@ -2,6 +2,7 @@
   import { onDestroy, onMount, untrack } from "svelte";
   import { ask, open as pickFiles } from "@tauri-apps/plugin-dialog";
   import { join } from "@tauri-apps/api/path";
+  import { listen } from "@tauri-apps/api/event";
   import { openPath, revealItemInDir } from "@tauri-apps/plugin-opener";
   import { Spinner } from "flowbite-svelte";
   import IconPlay from "~icons/mdi/play";
@@ -14,6 +15,7 @@
   import IconPencil from "~icons/mdi/pencil-outline";
   import IconDelete from "~icons/mdi/delete-outline";
   import IconExport from "~icons/mdi/export-variant";
+  import IconGame from "~icons/mdi/gamepad-variant";
   import IconError from "~icons/mdi/close-circle";
   import IconWarning from "~icons/mdi/alert";
   import IconOk from "~icons/mdi/check-circle";
@@ -33,8 +35,11 @@
     inspectModel,
     listModels,
     modified,
+    playInGame,
     readModel,
     renameAnimation,
+    stopGameTest,
+    testInGame,
     twinAnimations,
     type Export,
     type Game,
@@ -271,6 +276,42 @@
     }
   }
 
+  /** the step of the try in the game going on, the model the game shows */
+  type Step = "export" | "compiler" | "build" | "start" | "load" | "play";
+  let trying = $state<Step | null>(null);
+  let inGame = $state<string | null>(null);
+  const animationIndex = () =>
+    Math.max(0, current?.animations.findIndex((a) => a.name === playing) ?? 0);
+
+  async function tryInGame() {
+    if (!current || trying) return;
+    trying = "export";
+    try {
+      await testInGame(current.path, game, animationIndex());
+      inGame = current.path;
+    } catch (e) {
+      inGame = null;
+      toast(errorText(e), "error");
+    } finally {
+      trying = null;
+    }
+  }
+
+  async function closeGame() {
+    inGame = null;
+    await stopGameTest();
+  }
+
+  // the animation picked plays in the game too
+  $effect(() => {
+    const anim = playing;
+    if (!anim || untrack(() => trying || inGame !== current?.path)) return;
+    playInGame(untrack(animationIndex)).catch((e) => {
+      inGame = null;
+      toast(errorText(e), "error");
+    });
+  });
+
   async function exportGame() {
     if (!current) return;
     try {
@@ -282,6 +323,9 @@
   }
 
   onMount(() => {
+    listen<Step>("game-test", (e) => {
+      if (trying) trying = e.payload;
+    });
     viewer = new Viewer(canvas);
     viewer.onTime = (t, d) => {
       time = t;
@@ -745,6 +789,29 @@
           >
             <IconExport />{t("exportGame", { game: GAMES[game] })}
           </button>
+          <button
+            class="flex items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20 disabled:opacity-60"
+            title={t("tryInGameHint", { game: GAMES[game] })}
+            disabled={!!trying}
+            onclick={tryInGame}
+          >
+            {#if trying}
+              <Spinner size="4" color="orange" />{t(`tryStep_${trying}`)}
+            {:else}
+              <IconGame />{t("tryInGame")}
+            {/if}
+          </button>
+          {#if inGame === current.path && !trying}
+            <div
+              class="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-[#1b1b1b] p-3 text-xs"
+            >
+              <span class="text-neutral-300">{t("inGame")}</span>
+              <button
+                class="shrink-0 text-orange-400 hover:text-orange-300"
+                onclick={closeGame}>{t("closeGame")}</button
+              >
+            </div>
+          {/if}
           {#if exported}
             <div
               class="flex flex-col gap-2 rounded-md border border-white/10 bg-[#1b1b1b] p-3 text-xs"
