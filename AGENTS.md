@@ -24,12 +24,12 @@ with its active tooling).
   - `crates/core/`: everything about models, shared by the program and the MCP server.
     - `glb.rs`: the `.glb` container, read and written in place (what is not touched is kept as is; a file left as it was is written back byte for byte), compaction of unused data.
     - `model.rs`: the skeleton (the joints of the single skin, in `build-actor`'s order) and the animations.
-    - `rules.rs`: what `build-actor` needs, checked (the size of the animations once built: `varies` replays its sampling); the issues the interface and the MCP server show, as `Text` (a code, its arguments, the English message).
+    - `rules.rs`: what `build-actor` needs, checked (the size of the animations once built: `varies` replays its sampling; the names the animations get in the game, `game_name`; the weights of the points a model draws only); the issues the interface and the MCP server show, as `Text` (a code, its arguments, the English message).
     - `looks.rs`: a model's parts (runs of primitives drawing the same vertices: the extraction does not keep which merc effect a primitive was) and blend shapes; a look applied (parts removed, shapes baked).
     - `names.rs`, `names.json`: the official English and French names of the entities, by game and art group, each with its source.
     - `living.json`: per game, the models that are living entities and those that are objects (every skeleton of `goal_src/<game>/engine/data/art-elts.gc`). Made from the code (the model's type derives from `nav-enemy`, `enemy` or `process-taskable`), then checked by hand; the Models list hides the objects.
     - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `for_build_actor`, the skin set so that any `build-actor` builds the model right (export and try); `copy_animations` from a twin.
-    - `library.rs`: settings (a models folder per game), the creations folder (by game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
+    - `library.rs`: settings (a models folder per game), the models listed (one copy of each model the extraction wrote out of several levels), the creations folder (by game; `edit_creation` refuses a change that gives two animations one name in the game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
     - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back.
   - `crates/mcp/`: the MCP server (JSON-RPC over stdio), on the files and the settings.
   - `src-tauri/`: the program's command line, its Tauri commands, and the watch of the play requests (it brings the window up).
@@ -48,18 +48,18 @@ with its active tooling).
 
 ## 2. Local Environment & Tooling
 
-| Tool              | Command                                                                           | Notes                                                                                                                                                    |
-| :---------------- | :-------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rust              | `cargo`                                                                           | `cargo test -p animation-studio-core` runs the core's tests; `-- --ignored` runs those on the games' models and the try in a game (README, Development). |
-| Node packages     | `npx yarn install`                                                                | Yarn 1, run through npx.                                                                                                                                 |
-| Desktop dev       | `npx yarn tauri dev`                                                              | Vite on port 3002 (the launcher takes 3000, Jak Level Editor 3001).                                                                                      |
-| Typecheck         | `npx yarn typecheck`                                                              | `svelte-check`.                                                                                                                                          |
-| Retargeting check | `npx yarn check:retarget`, `npx yarn check:variants`                              | Node runs `src/lib/*.check.ts` directly.                                                                                                                 |
-| Formatting        | `npx yarn format`                                                                 | Prettier with the Svelte plugin, then rustfmt (2-space tabs).                                                                                            |
-| Autoformat        | `.githooks/pre-commit`                                                            | Formats each commit's files; `npx yarn install` turns it on.                                                                                             |
-| Rust linter       | `cargo clippy --workspace --all-targets -- -D warnings`                           | Needs `dist/` (`npx yarn build`): the program embeds it.                                                                                                 |
-| CI                | `.github/workflows/`                                                              | Lint, Build, Release (by hand: patch, minor, major), Format.                                                                                             |
-| Agent skills      | `git submodule update --init --remote .agents/skills` then `npx yarn skills:link` | The `opengoal-modding-kb` submodule, linked into `.claude/skills/`.                                                                                      |
+| Tool              | Command                                                                           | Notes                                                                                                                                                                    |
+| :---------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rust              | `cargo`                                                                           | `cargo test -p animation-studio-core` runs the core's tests; `-- --ignored` runs those on the games' models and the try in a game (docs/technical.md, Build the studio). |
+| Node packages     | `npx yarn install`                                                                | Yarn 1, run through npx.                                                                                                                                                 |
+| Desktop dev       | `npx yarn tauri dev`                                                              | Vite on port 3002 (the launcher takes 3000, Jak Level Editor 3001).                                                                                                      |
+| Typecheck         | `npx yarn typecheck`                                                              | `svelte-check`.                                                                                                                                                          |
+| Retargeting check | `npx yarn check:retarget`, `npx yarn check:variants`                              | Node runs `src/lib/*.check.ts` directly.                                                                                                                                 |
+| Formatting        | `npx yarn format`                                                                 | Prettier with the Svelte plugin, then rustfmt (2-space tabs).                                                                                                            |
+| Autoformat        | `.githooks/pre-commit`                                                            | Formats each commit's files; `npx yarn install` turns it on.                                                                                                             |
+| Rust linter       | `cargo clippy --workspace --all-targets -- -D warnings`                           | Needs `dist/` (`npx yarn build`): the program embeds it.                                                                                                                 |
+| CI                | `.github/workflows/`                                                              | Lint, Build, Release (by hand: patch, minor, major), Format.                                                                                                             |
+| Agent skills      | `git submodule update --init --remote .agents/skills` then `npx yarn skills:link` | The `opengoal-modding-kb` submodule, linked into `.claude/skills/`.                                                                                                      |
 
 ---
 
@@ -136,6 +136,10 @@ beginners, short and direct, tables for mappings, numbered lists for steps, rela
 fact checked against the repository.
 
 Teach with a concrete example: each feature, setting or rule shows a real case (an entity, a file,
-a command, a value) next to the general description. The README's export of Babak with a `wave`
-animation is the model: the files written, the lines to add, the slot the animation gets. Run the
-example before writing it down.
+a command, a value) next to the general description. The export of Babak with a `wave` animation
+in `docs/technical.md` is the model: the files written, the lines to add, the slot the animation
+gets. Run the example before writing it down.
+
+The README presents the studio briefly, without technical detail; `docs/tutorial.md` teaches it
+step by step with screenshots (`docs/screenshots/`); `docs/technical.md` explains how it works, one
+concept at a time with an example each, without going into the code.
