@@ -239,5 +239,14 @@
         <p class="text-sm text-neutral-300">{t("guideJak1")}</p>
       {/if}
     </section>
+
+    <section
+      class="flex flex-col gap-2 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4"
+    >
+      <h2 class="text-sm font-semibold text-neutral-200">
+        {t("guideMemory")}
+      </h2>
+      <p class="text-sm text-neutral-300">{t("guideMemoryText", args)}</p>
+    </section>
   </div>
 </div>

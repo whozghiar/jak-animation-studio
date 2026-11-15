@@ -34,9 +34,10 @@ const LIMB =
 
 /** The side of a joint (L, R or none) and its name without it, lowercase. */
 function side(name: string): ["L" | "R" | null, string] {
+  // three.js drops the ':' of Mixamo's names (mixamorig:Hips is read as mixamorigHips)
   const n = name
     .replace(/^.*[:|]/, "")
-    .replace(/^(sk_|bip0?1[ _]?|def[-_]|b_)/i, "");
+    .replace(/^(sk_|bip0?1[ _]?|def[-_]|b_|mixamorig\d*)/i, "");
   const lower = n.toLowerCase();
   const cut = (re: RegExp) => lower.replace(re, "");
   if (/^left/.test(lower)) return ["L", cut(/^left[._ -]?/)];

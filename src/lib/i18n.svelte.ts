@@ -89,6 +89,9 @@ const en = {
   guideNotBorn: "The entity does not appear?",
   guideNotBornText:
     "A level made by hand has no visibility data: with the game's PS2 actor visibility on (PS2 actor vis in the debug menu), its entities are never born. Turn it off, or in goalc:",
+  guideMemory: "Every animation takes the game's memory",
+  guideMemoryText:
+    "A level loads each of its files, the art group whole, into a buffer of 2 MB in Jak and Daxter, 1 750 KB in Jak II and Jak 3, and checks nothing: a bigger art group writes over the memory after it, and the game crashes. Game check gives its size once built: keep the animations your entity plays. Past that, the game itself has to change, probably a mod of yours: the dgo-level-buf-2 buffers of goal_src/{gameId}/engine/level/level.gc, and the level's heap they come from (LEVEL_HEAP_SIZE).",
   guideJak1:
     "Jak and Daxter closes when a level loads an entity with a skeleton added this way (jak-project of October 2026): try your models in Jak II or Jak 3.",
   exportedTo: "Written to {path}",
@@ -205,6 +208,13 @@ const en = {
   welcome: "Choose the models folder of a game to start.",
   videoUnreadable: "{file}: the video cannot be read.",
   noBody: "{file}: no body was found in the video.",
+  mocapNoModel: "{model} could not be opened.",
+  tryNoAnimation: "Pick the animation to try in the game.",
+  holdWeapon: "Hands on the weapon",
+  holdWeaponHint:
+    "The arms keep the pose of the model's first animation, the weapon in both hands; the rest of the body follows the capture. Unticked: the arms follow the capture, the weapon the hand holding it.",
+  noBodyMocap:
+    "{file}: none of its bones was recognised as hips and legs (by their names).",
   notMocap: "{file}: a motion capture file is a .bvh, .fbx, .glb or .gltf.",
   "core_no-skin": "The model has no armature (skin): it is not an entity.",
   "core_several-skins":
@@ -262,6 +272,9 @@ const en = {
     "Another game listens on port {port}: close it first.",
   "core_game-step-failed": "{step} failed: {output}",
   "core_game-closed": "The game closed during the try: {output}",
+  "core_game-not-playing":
+    "The game does not play {anim}: the art group's element {slot} is another animation.",
+  "core_try-animation-missing": "{model} has no animation {anim} to try.",
   "core_art-group-too-big":
     "The model takes {size} KB once built, more than the {max} KB a level of the game loads it into: remove or shorten animations.",
   "core_animations-too-big":
@@ -374,6 +387,9 @@ const fr: Record<Key, string> = {
   guideNotBorn: "L'entité n'apparaît pas ?",
   guideNotBornText:
     "Un niveau fait à la main n'a pas de données de visibilité : avec la visibilité PS2 des acteurs activée dans le jeu (PS2 actor vis dans le menu de debug), ses entités ne naissent jamais. Désactivez-la, ou dans goalc :",
+  guideMemory: "Chaque animation prend de la mémoire du jeu",
+  guideMemoryText:
+    "Un niveau charge chacun de ses fichiers, l'art group en entier, dans un tampon de 2 Mo dans Jak and Daxter, 1 750 Ko dans Jak II et Jak 3, et ne vérifie rien : un art group plus gros écrit par-dessus la mémoire qui suit, et le jeu plante. La Vérification pour le jeu donne sa taille une fois construit : gardez les animations que votre entité joue. Au-delà, c'est le jeu lui-même qu'il faut changer, sans doute un mod de votre part : les tampons dgo-level-buf-2 de goal_src/{gameId}/engine/level/level.gc, et le tas du niveau d'où ils viennent (LEVEL_HEAP_SIZE).",
   guideJak1:
     "Jak and Daxter se ferme quand un niveau charge une entité avec un squelette ajoutée ainsi (jak-project d'octobre 2026) : essayez vos modèles dans Jak II ou Jak 3.",
   exportedTo: "Écrit dans {path}",
@@ -490,6 +506,13 @@ const fr: Record<Key, string> = {
   welcome: "Choisissez le dossier des modèles d'un jeu pour commencer.",
   videoUnreadable: "{file} : la vidéo ne peut pas être lue.",
   noBody: "{file} : aucun corps n'a été trouvé dans la vidéo.",
+  mocapNoModel: "{model} n'a pas pu être ouvert.",
+  tryNoAnimation: "Choisissez l'animation à essayer dans le jeu.",
+  holdWeapon: "Mains sur l'arme",
+  holdWeaponHint:
+    "Les bras gardent la pose de la première animation du modèle, l'arme dans les deux mains ; le reste du corps suit la capture. Décoché : les bras suivent la capture, l'arme la main qui la tient.",
+  noBodyMocap:
+    "{file} : aucun de ses os n'a été reconnu comme hanches et jambes (d'après leurs noms).",
   notMocap:
     "{file} : un fichier de capture de mouvement est un .bvh, .fbx, .glb ou .gltf.",
   "core_no-skin":
@@ -550,6 +573,9 @@ const fr: Record<Key, string> = {
     "Un autre jeu écoute sur le port {port} : fermez-le d'abord.",
   "core_game-step-failed": "{step} a échoué : {output}",
   "core_game-closed": "Le jeu s'est fermé pendant l'essai : {output}",
+  "core_game-not-playing":
+    "Le jeu ne joue pas {anim} : l'élément {slot} du groupe d'art est une autre animation.",
+  "core_try-animation-missing": "{model} n'a pas d'animation {anim} à essayer.",
   "core_art-group-too-big":
     "Le modèle prend {size} Ko une fois construit, plus que les {max} Ko dans lesquels un niveau du jeu le charge : retirez ou raccourcissez des animations.",
   "core_animations-too-big":

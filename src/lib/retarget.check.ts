@@ -5,7 +5,8 @@
 import assert from "node:assert/strict";
 import * as THREE from "three";
 import { retarget } from "./retarget.ts";
-import type { PoseFrame } from "./frames.ts";
+import { autoMap } from "./mapping.ts";
+import { mid, type PoseFrame } from "./frames.ts";
 
 const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
 
@@ -33,6 +34,8 @@ const REST: [string, string | null, THREE.Vector3][] = [
   ["shinR", "thighR", v(-0.1, 0.55, 0)],
   ["footR", "shinR", v(-0.1, 0.1, 0)],
   ["toeR", "footR", v(-0.1, 0.05, 0.15)],
+  // a prop no mapped bone hangs from, in the right hand at rest
+  ["gun", "hips", v(-0.75, 1.5, 0.05)],
 ];
 
 let seed = 7;
@@ -118,7 +121,12 @@ function pose(shift = 0): PoseFrame {
   return f;
 }
 
-const options = { smoothing: 0, inPlace: true, faceForward: false };
+const options = {
+  smoothing: 0,
+  inPlace: true,
+  faceForward: false,
+  holdWeapon: true,
+};
 const r = rig();
 const out = retarget(
   r,
@@ -174,6 +182,101 @@ assert.ok(
   Math.abs(align.values[6] - legs) < 1e-4,
   `align ends at x=${align.values[6]}`,
 );
+// with a base animation, the gun keeps its first keys; a mapped bone does not take them
+const base = new THREE.AnimationClip("idle", 1, [
+  new THREE.QuaternionKeyframeTrack(
+    "gun.quaternion",
+    [0, 1],
+    [0, 0, 1, 0, 0, 0, 0, 1],
+  ),
+  new THREE.VectorKeyframeTrack("gun.position", [0, 1], [1, 2, 3, 0, 0, 0]),
+  new THREE.QuaternionKeyframeTrack(
+    "armL.quaternion",
+    [0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0],
+  ),
+]);
+const held = retarget(
+  rig(),
+  mapping,
+  { fps: 30, frames: [pose(0)], absolute: false },
+  options,
+  base,
+);
+const keys = (joint: string, path: string) =>
+  held.channels.find((c) => c.joint === at(joint) && c.path === path);
+assert.deepEqual(keys("gun", "rotation")?.values, [0, 0, 1, 0]);
+assert.deepEqual(keys("gun", "translation")?.values, [1, 2, 3]);
+assert.notDeepEqual(keys("armL", "rotation")?.values, [1, 0, 0, 0]);
+
+// a base animation that leaves the gun in the right hand: the arms keep their (rest) pose, and the
+// gun keeps its place in the hand at every frame
+const armed = rig();
+// the upper body twists more and more over the hips: the chest turns, the hips do not
+const lean = (k: number): PoseFrame => {
+  const f = pose(0);
+  const neck = mid(f.shoulderL, f.shoulderR)!;
+  const twist = new THREE.Quaternion().setFromAxisAngle(v(0, 1, 0), 0.4 * k);
+  for (const p of ["shoulder", "elbow", "wrist", "hand"])
+    for (const side of ["L", "R"]) {
+      const point = f[`${p}${side}` as keyof PoseFrame]!;
+      point.sub(neck).applyQuaternion(twist).add(neck);
+    }
+  return f;
+};
+const hold = retarget(
+  armed,
+  mapping,
+  { fps: 30, frames: [lean(0), lean(1), lean(2)], absolute: true },
+  options,
+  new THREE.AnimationClip("idle", 1, []),
+);
+assert.ok(hold.weapon, "the gun is held");
+assert.equal(
+  hold.channels.find((c) => c.joint === at("armR") && c.path === "rotation"),
+  undefined,
+  "the arms keep their pose",
+);
+const restOf = armed.joints.map(
+  (j) => [j.position.clone(), j.quaternion.clone()] as const,
+);
+const inHand = (f: number) => {
+  armed.joints.forEach((j, i) => {
+    j.position.copy(restOf[i][0]);
+    j.quaternion.copy(restOf[i][1]);
+  });
+  for (const c of hold.channels) {
+    const k = c.times.length > 1 ? f : 0;
+    if (c.path === "rotation")
+      armed.joints[c.joint].quaternion.fromArray(c.values, k * 4);
+    if (c.path === "translation")
+      armed.joints[c.joint].position.fromArray(c.values, k * 3);
+  }
+  armed.root.updateMatrixWorld(true);
+  return new THREE.Vector3().setFromMatrixPosition(
+    armed.joints[at("handR")].matrixWorld
+      .clone()
+      .invert()
+      .multiply(armed.joints[at("gun")].matrixWorld),
+  );
+};
+for (const f of [1, 2])
+  assert.ok(
+    inHand(f).distanceTo(inHand(0)) < 1e-4,
+    `the gun leaves the hand at frame ${f}`,
+  );
+
+// Mixamo's bones, as three.js's FBXLoader names them (mixamorig:LeftUpLeg loses its ':')
+const mixamo = ["Hips", "LeftUpLeg", "LeftLeg", "RightArm"].map((n, i) => ({
+  name: `mixamorig${n}`,
+  parent: i ? 0 : null,
+}));
+const found = autoMap(mixamo);
+assert.deepEqual(
+  [found.hips, found.thighL, found.shinL, found.upperArmR],
+  [0, 1, 2, 3],
+);
+
 console.log(
   `retarget: ${pairs.length} bone directions and the travel check out`,
 );

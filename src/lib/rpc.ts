@@ -73,11 +73,41 @@ export type Channel = {
 export type Part = { mesh: number; primitives: number[]; materials: string[] };
 export type Looks = { parts: Part[]; targets: number };
 
-/** What the MCP server asked the window to play. */
+/** What the MCP server asked the window to play, the movement to put on the model first, and
+ * whether to try it in the game and check what the game plays. */
 export type PlayRequest = {
   model: string;
   animation: string | null;
   game: Game;
+  at: number;
+  mocap?: {
+    file: string;
+    name: string;
+    fps: number;
+    inPlace: boolean;
+    holdWeapon: boolean;
+  };
+  check?: boolean;
+};
+
+/** What the game of a try shows of an animation (game_test::Check). */
+export type Check = {
+  animation: string;
+  slot: number;
+  frames: number;
+  screenshots: string[];
+};
+
+/** The window's answer to the MCP server: the creation and the joint of each body part of a
+ * movement, what the game plays of a check, or what went wrong. */
+export type McpAnswer = {
+  at: number;
+  creation?: string;
+  animation?: string;
+  duration?: number;
+  mapping?: Record<string, string>;
+  check?: Check;
+  error?: string;
 };
 
 /** What the game's code calls a model's art: its art group, the `:art` of its def-actor, each
@@ -123,6 +153,8 @@ export const renameAnimation = (model: string, name: string, newName: string) =>
 export const importModel = (path: string, game: Game, replace: boolean) =>
   invoke<string>("import_model", { path, game, replace });
 export const takePlay = () => invoke<PlayRequest | null>("take_play");
+export const answerMcp = (result: McpAnswer) =>
+  invoke<void>("answer_mcp", { result });
 export const modelLooks = (path: string) =>
   invoke<Looks>("model_looks", { path });
 /** The look made the creation's own: the hidden primitives ([mesh, primitive]) removed, the blend
@@ -151,8 +183,11 @@ export const exportForGame = (model: string, lang: string) =>
   invoke<Export>("export_for_game", { model, lang });
 /** The model tried in the game: built as a custom actor, shown in the game's test level playing its
  * animation `animation`; the steps come as "game-test" events. */
-export const testInGame = (model: string, game: Game, animation: number) =>
+/** The model tried in the game, playing the animation `animation` again and again. */
+export const testInGame = (model: string, game: Game, animation: string) =>
   invoke<void>("test_in_game", { model, game, animation });
-export const playInGame = (animation: number) =>
-  invoke<void>("play_in_game", { animation });
+export const playInGame = (model: string, animation: string) =>
+  invoke<void>("play_in_game", { model, animation });
+export const checkInGame = (game: Game, animation: string, seconds: number) =>
+  invoke<Check>("check_in_game", { game, animation, seconds });
 export const stopGameTest = () => invoke<void>("stop_game_test");

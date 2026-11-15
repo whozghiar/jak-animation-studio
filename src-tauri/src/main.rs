@@ -19,7 +19,7 @@ use std::time::Duration;
 
 use animation_studio_core::{
   edit::{self, Channel},
-  game_test::GameTest,
+  game_test::{Check, GameTest},
   library::{self, Export, GameNames, ModelEntry, ModelInfo, PlayRequest, Settings, Twin},
   looks::{self, Looks},
   rules::Text,
@@ -248,6 +248,33 @@ fn take_play() -> Option<PlayRequest> {
   PlayRequest::take(&Settings::dir())
 }
 
+/// The window's answer to the MCP server's request (a movement put on, a check in the game), which
+/// waits for this file.
+#[tauri::command]
+fn answer_mcp(result: Value) -> Result<(), Value> {
+  let dir = Settings::dir();
+  let tmp = dir.join("mcp-answer.json.tmp");
+  std::fs::write(&tmp, result.to_string())
+    .and_then(|()| std::fs::rename(&tmp, library::answer_file(&dir)))
+    .map_err(|e| json!({ "message": format!("Unable to answer the MCP server: {e}") }))
+}
+
+/// The index of the animation `name` in `model`: the game plays that one, or the try fails.
+fn animation_index(model: &Path, name: &str) -> Result<usize, Value> {
+  let info = library::inspect(model).map_err(err)?;
+  info
+    .animations
+    .iter()
+    .position(|a| a.name == name)
+    .ok_or_else(|| {
+      err(anyhow::Error::new(Text::new(
+        "try-animation-missing",
+        "{model} has no animation {anim} to try.",
+        &[("model", info.name.clone()), ("anim", name.to_owned())],
+      )))
+    })
+}
+
 /// The names the game's code gives a model's art (the guide's lines).
 #[tauri::command]
 async fn game_names(model: PathBuf) -> Result<GameNames, Value> {
@@ -269,14 +296,16 @@ async fn export_for_game(model: PathBuf, lang: String) -> Result<Export, Value> 
 }
 
 /// The model tried in the game (test_in_game): built as a custom actor and shown in `game`'s test
-/// level, playing its animation `animation`; the steps go to the window ("game-test" events).
+/// level, playing its animation `animation` again and again; the steps go to the window
+/// ("game-test" events).
 #[tauri::command]
 async fn test_in_game(
   app: tauri::AppHandle,
   model: PathBuf,
   game: String,
-  animation: usize,
+  animation: String,
 ) -> Result<(), Value> {
+  let index = animation_index(&model, &animation)?;
   let launch = app.state::<Launch>();
   let root = match (launch.game_installs.get(&game), &launch.tooling_version) {
     (Some(root), _) => root.clone(),
@@ -299,7 +328,7 @@ async fn test_in_game(
   tauri::async_runtime::spawn_blocking(move || {
     app
       .state::<GameTest>()
-      .try_model(&model, &root, &game, animation, |step| {
+      .try_model(&model, &root, &game, index, &animation, |step| {
         let _ = app.emit("game-test", step);
       })
   })
@@ -310,11 +339,33 @@ async fn test_in_game(
 
 /// The model in the game of the last try plays its animation `animation`.
 #[tauri::command]
-async fn play_in_game(app: tauri::AppHandle, animation: usize) -> Result<(), Value> {
-  tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().play(animation))
+async fn play_in_game(
+  app: tauri::AppHandle,
+  model: PathBuf,
+  animation: String,
+) -> Result<(), Value> {
+  let index = animation_index(&model, &animation)?;
+  tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().play(index, &animation))
     .await
     .map_err(|e| json!({ "message": e.to_string() }))?
     .map_err(err)
+}
+
+/// What the game of the last try shows of `animation`: the element it plays, its frames, and
+/// screenshots over `seconds`.
+#[tauri::command]
+async fn check_in_game(
+  app: tauri::AppHandle,
+  game: String,
+  animation: String,
+  seconds: f32,
+) -> Result<Check, Value> {
+  tauri::async_runtime::spawn_blocking(move || {
+    app.state::<GameTest>().check(&game, &animation, seconds, 4)
+  })
+  .await
+  .map_err(|e| json!({ "message": e.to_string() }))?
+  .map_err(err)
 }
 
 /// The game of the tries closed, the game's files put back.
@@ -411,6 +462,8 @@ fn main() {
       apply_looks,
       find_model,
       take_play,
+      answer_mcp,
+      check_in_game,
       export_for_game,
       game_names,
       test_in_game,

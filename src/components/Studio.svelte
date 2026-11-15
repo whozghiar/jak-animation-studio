@@ -26,6 +26,9 @@
   import { Viewer, type Keys } from "$lib/viewer";
   import type { EditStart } from "$lib/keys";
   import { variantTags, type Tag } from "$lib/variants";
+  import { autoMap } from "$lib/mapping";
+  import { captureMocap, loadMocap } from "$lib/pose";
+  import { DEFAULTS, retarget } from "$lib/retarget";
   import {
     addAnimations,
     deleteAnimation,
@@ -34,10 +37,13 @@
     importModel,
     inspectModel,
     listModels,
+    answerMcp,
+    checkInGame,
     modified,
     playInGame,
     readModel,
     renameAnimation,
+    setAnimation,
     stopGameTest,
     testInGame,
     twinAnimations,
@@ -177,7 +183,65 @@
     tab = creations.some((c) => c.path === request.model)
       ? "creations"
       : "models";
-    await open(request.model, request.animation);
+    await open(request.model, request.mocap ? null : request.animation);
+    if (request.mocap) await applyMocap(request);
+    if (request.check) await check(request);
+  }
+
+  /** the MCP server's check: the model tried in the game playing the animation asked, then what
+   * the game plays of it */
+  async function check({ at, model, animation }: PlayRequest) {
+    try {
+      const anim = current?.animations.find((a) => a.name === animation);
+      if (current?.path !== model || !anim)
+        throw new Error(t("mocapNoModel", { model }));
+      await runTry();
+      const shown = await checkInGame(game, anim.name, anim.duration);
+      await answerMcp({ at, check: shown });
+    } catch (e) {
+      toast(errorText(e), "error");
+      await answerMcp({ at, error: errorText(e) });
+    }
+  }
+
+  /** the MCP server's movement, put on the model opened as the New animation panel does it */
+  async function applyMocap({ at, model, mocap: m }: PlayRequest) {
+    if (!m) return;
+    try {
+      // the model asked, not the one shown before when it could not be opened
+      if (current?.path !== model)
+        throw new Error(t("mocapNoModel", { model }));
+      const bytes = await readModel(m.file);
+      const mocap = await loadMocap(
+        new File([bytes], m.file.split(/[\\/]/).pop()!),
+      );
+      const capture = captureMocap(mocap, mocap.clips[0], m.fps);
+      const mapping = autoMap(current.joints);
+      const result = retarget(
+        viewer.rig(),
+        mapping,
+        capture,
+        { ...DEFAULTS, inPlace: m.inPlace, holdWeapon: m.holdWeapon },
+        viewer.clips[0],
+      );
+      const path = await setAnimation(current.path, m.name, result.channels);
+      await edited(path, m.name);
+      await answerMcp({
+        at,
+        creation: path,
+        animation: m.name,
+        duration: result.clip.duration,
+        mapping: Object.fromEntries(
+          Object.entries(mapping).map(([slot, i]) => [
+            slot,
+            current!.joints[i!].name,
+          ]),
+        ),
+      });
+    } catch (e) {
+      toast(errorText(e), "error");
+      await answerMcp({ at, error: errorText(e) });
+    }
   }
 
   $effect(() => {
@@ -294,20 +358,27 @@
   type Step = "export" | "compiler" | "build" | "start" | "load" | "play";
   let trying = $state<Step | null>(null);
   let inGame = $state<string | null>(null);
-  const animationIndex = () =>
-    Math.max(0, current?.animations.findIndex((a) => a.name === playing) ?? 0);
-
-  async function tryInGame() {
-    if (!current || trying) return;
+  /** the try in the game, playing the animation picked: by its name, which the game checks */
+  async function runTry() {
+    if (!current || !playing) throw new Error(t("tryNoAnimation"));
     trying = "export";
     try {
-      await testInGame(current.path, game, animationIndex());
+      await testInGame(current.path, game, playing);
       inGame = current.path;
     } catch (e) {
       inGame = null;
-      toast(errorText(e), "error");
+      throw e;
     } finally {
       trying = null;
+    }
+  }
+
+  async function tryInGame() {
+    if (!current || trying) return;
+    try {
+      await runTry();
+    } catch (e) {
+      toast(errorText(e), "error");
     }
   }
 
@@ -320,7 +391,10 @@
   $effect(() => {
     const anim = playing;
     if (!anim || untrack(() => trying || inGame !== current?.path)) return;
-    playInGame(untrack(animationIndex)).catch((e) => {
+    playInGame(
+      untrack(() => current!.path),
+      anim,
+    ).catch((e) => {
       inGame = null;
       toast(errorText(e), "error");
     });

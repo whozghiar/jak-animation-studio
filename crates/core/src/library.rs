@@ -561,6 +561,31 @@ pub struct PlayRequest {
   pub game: String,
   /// when it was asked, in ms since 1970: a window opened later than a minute after skips it
   pub at: u64,
+  /// a movement to put on the model first (the retargeting is the window's, three.js's)
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub mocap: Option<MocapRequest>,
+  /// the model tried in the game playing `animation`, then checked there (`game_test::Check`)
+  #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+  pub check: bool,
+}
+
+/// A motion capture file (BVH, FBX, glTF) put on the model as the New animation panel does, with
+/// its bone mapping guessed, then saved as `name` in the creation. The window answers in
+/// `mcp-answer.json`: its request's `at`, then the creation and the mapping, or an error.
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MocapRequest {
+  pub file: PathBuf,
+  pub name: String,
+  pub fps: u32,
+  pub in_place: bool,
+  /// the arms keep the model's first animation's pose when its hands hold a weapon
+  pub hold_weapon: bool,
+}
+
+/// The window's answer to a request that asks for one (`mocap`, `check`).
+pub fn answer_file(dir: &Path) -> PathBuf {
+  dir.join("mcp-answer.json")
 }
 
 impl PlayRequest {

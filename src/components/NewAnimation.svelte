@@ -10,7 +10,7 @@
   import { autoMap, SLOTS, type Mapping } from "$lib/mapping";
   import { captureMocap, captureVideo, loadMocap, type Mocap } from "$lib/pose";
   import type { Capture } from "$lib/frames";
-  import { retarget, type Retarget } from "$lib/retarget";
+  import { DEFAULTS, retarget, type Retarget } from "$lib/retarget";
   import type { EditStart } from "$lib/keys";
   import { setAnimation, type ModelInfo } from "$lib/rpc";
   import type { Viewer } from "$lib/viewer";
@@ -45,9 +45,10 @@
   let clipIndex = $state(0);
   let name = $state("");
   let fps = $state(30);
-  let smoothing = $state(2);
-  let inPlace = $state(true);
-  let face = $state(true);
+  let smoothing = $state(DEFAULTS.smoothing);
+  let inPlace = $state(DEFAULTS.inPlace);
+  let face = $state(DEFAULTS.faceForward);
+  let holdWeapon = $state(DEFAULTS.holdWeapon);
   let mapping = $state<Mapping>(autoMap(model.joints));
   let showMapping = $state(false);
   let capture = $state.raw<Capture | null>(null);
@@ -106,11 +107,12 @@
 
   // the preview follows every change of the options and of the mapping
   $effect(() => {
-    const options = { smoothing, inPlace, faceForward: face };
+    const options = { smoothing, inPlace, faceForward: face, holdWeapon };
     const map = $state.snapshot(mapping);
     if (!capture) return;
     try {
-      const r = retarget(viewer.rig(), map, capture, options);
+      // the props (a guard's gun) keep the pose of the model's first animation
+      const r = retarget(viewer.rig(), map, capture, options, viewer.clips[0]);
       result = r;
       viewer.play(r.clip);
       viewer.setFigure(r.frames, capture.fps);
@@ -288,6 +290,20 @@
         />
         <span class="text-neutral-300">{t("faceForward")}</span>
       </label>
+      {#if result?.weapon}
+        <label class="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            class="mt-1 rounded border-white/20 bg-[#1b1b1b] text-orange-500 focus:ring-0"
+            bind:checked={holdWeapon}
+          />
+          <span class="text-neutral-300"
+            >{t("holdWeapon")}<br /><span class="text-xs text-neutral-500"
+              >{t("holdWeaponHint")}</span
+            ></span
+          >
+        </label>
+      {/if}
       {#if capture.absolute}
         <label class="flex items-start gap-2 text-sm">
           <input

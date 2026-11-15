@@ -308,10 +308,29 @@ fn a_creation_is_a_copy_and_exports_for_the_game() {
     animation: Some("idle".into()),
     game: "jak2".into(),
     at: library::PlayRequest::now(),
+    mocap: Some(library::MocapRequest {
+      file: "walk.fbx".into(),
+      name: "walk".into(),
+      fps: 30,
+      in_place: true,
+      hold_weapon: true,
+    }),
+    check: true,
   };
   request.send(&root).unwrap();
   assert_eq!(library::PlayRequest::take(&root), Some(request));
   assert_eq!(library::PlayRequest::take(&root), None, "played once");
+  // a request of an older studio, without a movement
+  std::fs::write(
+    library::PlayRequest::file(&root),
+    format!(
+      r#"{{"model":"a.glb","animation":null,"game":"jak1","at":{}}}"#,
+      library::PlayRequest::now()
+    ),
+  )
+  .unwrap();
+  let old = library::PlayRequest::take(&root).unwrap();
+  assert_eq!((old.mocap, old.check), (None, false));
   std::fs::remove_dir_all(&root).unwrap();
 }
 

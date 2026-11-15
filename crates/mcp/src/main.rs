@@ -14,7 +14,7 @@ use std::time::Duration;
 use animation_studio_core::{
   edit::{self, Pose},
   glb::Glb,
-  library::{self, GAMES, PlayRequest, Settings},
+  library::{self, GAMES, MocapRequest, PlayRequest, Settings},
   model, names,
   rules::{self, Level, MAX_FRAME_BYTES, MAX_JOINTS},
 };
@@ -34,7 +34,8 @@ the rest positions to know where a limb points before turning it (a T-pose's arm
 'translate' moves a joint (metres in the parent's space); moving 'align' moves the entity in game. \
 Joints not named keep their rest pose; between poses the game blends linearly, so for a loop repeat \
 the first pose at the end. To make an animation from a description: inspect_model, create_animation, \
-then play_animation so that the user sees it in the studio. The game's rules, checked on every \
+then play_animation so that the user sees it in the studio. To put a motion capture (BVH, FBX such as Mixamo's, glTF) on a humanoid model: apply_mocap. To see that the game plays an animation \
+as the studio does: check_in_game. The game's rules, checked on every \
 write: one armature, joint 0 named 'align' at the origin, parents before children, at most 114 \
 joints, at most 2128 bytes of data per frame (about 8 bytes per rotating joint), only translation, \
 rotation and scale keys. Changes go to the model's copy in the creations folder; import_model \
@@ -110,6 +111,30 @@ fn tools() -> Value {
       "play_animation",
       "Shows the model in the studio's window and plays one of its animations (the first by default). Starts the studio when it is not open.",
       json!({ "model": model, "game": game, "animation": anim }),
+      &["model"],
+    ),
+    tool(
+      "apply_mocap",
+      "Puts the movement of a motion capture file (BVH, FBX such as Mixamo's, glTF with an animated skeleton) on a humanoid model, the bones of both matched by their names (hips, chest, neck, head, arms, legs), and saves it as an animation of the model's creation. The studio's window does it, as its New animation panel does (it starts the studio when it is not open, and plays the result there); waits for it, up to 2 minutes. Returns the joints that play each body part and what the game would refuse in the model.",
+      json!({
+        "model": model,
+        "game": game,
+        "file": { "type": "string", "description": "the motion capture file: .bvh, .fbx, .glb or .gltf" },
+        "name": { "type": "string", "description": "the animation's name (the file's name by default)" },
+        "in_place": { "type": "boolean", "description": "true (by default): the hips go up and down but do not travel; false: the travel goes to align, which moves the entity in game" },
+        "fps": { "type": "integer", "enum": [15, 24, 30, 60], "description": "keys per second (30 by default)" },
+        "hold_weapon": { "type": "boolean", "description": "true (by default): when the model's hands hold a weapon in its first animation (a guard's gun), the arms keep that pose and the weapon stays in both hands; false: the arms follow the capture, the weapon the hand holding it" }
+      }),
+      &["model", "file"],
+    ),
+    tool(
+      "check_in_game",
+      "Tries the model in the game (the studio's Try in the game: test-zone rebuilt with it, the game started, the animation playing again and again in front of Jak), then checks what the game plays: the art group's element must be the animation asked, its length in frames (60 a second) the studio's, and four screenshots the game takes over one loop show it (look at them: the pose must be the studio's). The studio's window does it (it starts the studio when it is not open); the first try takes a few minutes. The game stays open: the user closes it in the studio.",
+      json!({
+        "model": model,
+        "game": game,
+        "animation": { "type": "string", "description": "the animation to check (the last of the model, the one added last, by default)" }
+      }),
       &["model"],
     ),
     tool(
@@ -242,6 +267,36 @@ impl Server {
     Ok("the studio was not open: it is starting and plays it once open")
   }
 
+  /// A request the window answers (a movement put on, a check in the game): its answer, waited for
+  /// up to `wait`.
+  fn ask(&self, request: PlayRequest, wait: Duration) -> Result<Value> {
+    let dir = Settings::dir();
+    let answer = library::answer_file(&dir);
+    let _ = std::fs::remove_file(&answer);
+    let at = request.at;
+    self.play(request)?;
+    let end = std::time::Instant::now() + wait;
+    while std::time::Instant::now() < end {
+      std::thread::sleep(Duration::from_millis(100));
+      let Some(a) = std::fs::read(&answer)
+        .ok()
+        .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+        .filter(|a| a["at"] == at)
+      else {
+        continue;
+      };
+      let _ = std::fs::remove_file(&answer);
+      if let Some(error) = a["error"].as_str() {
+        bail!("{error}");
+      }
+      return Ok(a);
+    }
+    bail!(
+      "the studio did not answer within {} s: is its window open?",
+      wait.as_secs()
+    )
+  }
+
   fn call(&self, name: &str, args: &Value) -> Result<Value> {
     let settings = self.settings();
     let game = match args["game"].as_str() {
@@ -327,8 +382,99 @@ impl Server {
           animation: animation.clone(),
           game: game.to_owned(),
           at: PlayRequest::now(),
+          mocap: None,
+          check: false,
         })?;
         Ok(json!({ "model": model, "animation": animation, "status": status }))
+      }
+      "apply_mocap" => {
+        let model = self.resolve(&settings, game, arg(args, "model")?)?;
+        let file = std::path::absolute(arg(args, "file")?)?;
+        let ext = file
+          .extension()
+          .and_then(|e| e.to_str())
+          .map(str::to_lowercase);
+        ensure!(file.is_file(), "no file at {}", file.display());
+        ensure!(
+          matches!(ext.as_deref(), Some("bvh" | "fbx" | "glb" | "gltf")),
+          "{}: a motion capture file is a .bvh, .fbx, .glb or .gltf",
+          file.display()
+        );
+        let name = match args["name"].as_str() {
+          Some(n) => n.to_owned(),
+          None => rules::goal_name(&file.file_stem().unwrap_or_default().to_string_lossy()),
+        };
+        let fps = args["fps"].as_u64().unwrap_or(30) as u32;
+        ensure!([15, 24, 30, 60].contains(&fps), "fps is 15, 24, 30 or 60");
+        let answer = self.ask(
+          PlayRequest {
+            model,
+            animation: Some(name.clone()),
+            game: game.to_owned(),
+            at: PlayRequest::now(),
+            mocap: Some(MocapRequest {
+              file,
+              name,
+              fps,
+              in_place: args["in_place"].as_bool().unwrap_or(true),
+              hold_weapon: args["hold_weapon"].as_bool().unwrap_or(true),
+            }),
+            check: false,
+          },
+          // the window loads the model, reads the file and retargets it: seconds, more as it starts
+          Duration::from_secs(120),
+        )?;
+        let creation = PathBuf::from(answer["creation"].as_str().unwrap_or_default());
+        let mut out = self.issues(&creation)?;
+        out["animation"] = answer["animation"].clone();
+        out["mapping"] = answer["mapping"].clone();
+        out["duration"] = answer["duration"].clone();
+        Ok(out)
+      }
+      "check_in_game" => {
+        let model = self.resolve(&settings, game, arg(args, "model")?)?;
+        let info = library::inspect(&model)?;
+        let animation = match args["animation"].as_str() {
+          Some(a) => info.animations.iter().find(|x| x.name == a),
+          None => info.animations.last(),
+        }
+        .with_context(|| {
+          format!(
+            "{} has no animation {}",
+            info.name,
+            args["animation"].as_str().unwrap_or_default()
+          )
+        })?;
+        let answer = self.ask(
+          PlayRequest {
+            model: model.clone(),
+            animation: Some(animation.name.clone()),
+            game: game.to_owned(),
+            at: PlayRequest::now(),
+            mocap: None,
+            check: true,
+          },
+          // a first try compiles the game's code with goalc: minutes
+          Duration::from_secs(900),
+        )?;
+        let check = &answer["check"];
+        let frames = check["frames"].as_u64().unwrap_or(0);
+        // build-actor samples the keys at 60 a second up to the last one
+        let expected = (animation.duration * 60.0).ceil() as u64;
+        let mut out = json!({
+          "model": model,
+          "animation": animation.name,
+          "playsIt": check["animation"] == animation.name.as_str(),
+          "slot": check["slot"],
+          "framesInGame": frames,
+          "framesExpected": expected,
+          "lengthMatches": frames.abs_diff(expected) <= 1,
+          "screenshots": check["screenshots"],
+        });
+        out["note"] = json!(
+          "the game keeps playing it in front of Jak; the screenshots follow as images (deleted from the disk once sent)"
+        );
+        Ok(out)
       }
       "delete_animation" => {
         let anim = arg(args, "name")?.to_owned();
@@ -385,12 +531,36 @@ impl Server {
       "tools/list" => json!({ "tools": tools() }),
       "tools/call" => {
         let params = &msg["params"];
-        let (text, is_error) =
-          match self.call(params["name"].as_str().unwrap_or(""), &params["arguments"]) {
-            Ok(v) => (serde_json::to_string_pretty(&v).unwrap_or_default(), false),
-            Err(e) => (format!("{e:#}"), true),
-          };
-        json!({ "content": [{ "type": "text", "text": text }], "isError": is_error })
+        let (content, is_error) = match self
+          .call(params["name"].as_str().unwrap_or(""), &params["arguments"])
+        {
+          Ok(mut v) => {
+            // the screenshots of a check: sent as images after the text, then deleted, so that
+            // nothing of the check stays on the disk
+            let mut images = Vec::new();
+            if let Some(paths) = v["screenshots"].as_array().cloned() {
+              for path in paths.iter().filter_map(Value::as_str) {
+                if let Ok(bytes) = std::fs::read(path) {
+                  images.push(
+                    json!({ "type": "image", "data": base64(&bytes), "mimeType": "image/png" }),
+                  );
+                }
+                let _ = std::fs::remove_file(path);
+              }
+              v["screenshots"] = json!(images.len());
+            }
+            let mut content = vec![
+              json!({ "type": "text", "text": serde_json::to_string_pretty(&v).unwrap_or_default() }),
+            ];
+            content.extend(images);
+            (content, false)
+          }
+          Err(e) => (
+            vec![json!({ "type": "text", "text": format!("{e:#}") })],
+            true,
+          ),
+        };
+        json!({ "content": content, "isError": is_error })
       }
       method => {
         return Some(json!({
@@ -401,6 +571,35 @@ impl Server {
     };
     Some(json!({ "jsonrpc": "2.0", "id": id, "result": result }))
   }
+}
+
+/// Standard base64 (RFC 4648), the encoding of an MCP image.
+fn base64(bytes: &[u8]) -> String {
+  const ABC: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let mut out = String::with_capacity(bytes.len().div_ceil(3) * 4);
+  for chunk in bytes.chunks(3) {
+    let n = chunk
+      .iter()
+      .enumerate()
+      .fold(0u32, |n, (i, b)| n | u32::from(*b) << (16 - 8 * i));
+    for i in 0..4 {
+      out.push(if i <= chunk.len() {
+        ABC[(n >> (18 - 6 * i) & 63) as usize] as char
+      } else {
+        '='
+      });
+    }
+  }
+  out
+}
+
+#[test]
+fn base64_is_rfc_4648() {
+  assert_eq!(base64(b""), "");
+  assert_eq!(base64(b"f"), "Zg==");
+  assert_eq!(base64(b"fo"), "Zm8=");
+  assert_eq!(base64(b"foo"), "Zm9v");
+  assert_eq!(base64(b"foobar"), "Zm9vYmFy");
 }
 
 fn main() {

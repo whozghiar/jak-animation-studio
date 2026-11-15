@@ -3,8 +3,10 @@
 //! project of the studio's (<prefs>/game-test/<game>/goalc/), the test level every OpenGOAL game has
 //! (test-zone, TSZ.DGO) with the model as a custom actor and a viewer of a few lines; gk plays it;
 //! goalc, connected to it, brings Jak to test-zone and puts the model in front of him, playing the
-//! animation picked. The only files written into the game are test-zone's DGO and .fr3: the game's
-//! are kept in the try's folder and put back when the try stops.
+//! animation picked again and again, which goalc checks the game does play (`check` tells more:
+//! the art group's element played, its frames, and screenshots the game takes). The only files
+//! written into the game are test-zone's DGO and .fr3: the game's are kept in the try's folder and
+//! put back when the try stops.
 //!
 //! An installation is a folder laid out one of three ways:
 //!   OpenGOAL Launcher   <folder>/active/bin/gk(.exe), goalc; <folder>/active/<game>/data/
@@ -314,6 +316,17 @@ impl Goalc {
   }
 }
 
+/// The .png files of `folder` and when each last changed.
+fn png_times(folder: &Path) -> Vec<(PathBuf, std::time::SystemTime)> {
+  std::fs::read_dir(folder)
+    .into_iter()
+    .flatten()
+    .flatten()
+    .filter(|e| e.path().extension().is_some_and(|x| x == "png"))
+    .filter_map(|e| Some((e.path(), e.metadata().ok()?.modified().ok()?)))
+    .collect()
+}
+
 /// a port of this computer no one listens on
 fn free_port() -> u16 {
   TcpListener::bind(("127.0.0.1", 0))
@@ -552,6 +565,43 @@ impl Session {
   }
 }
 
+/// The form whose value is 1 when the viewer plays the animation `name`: the frame group of its
+/// first channel is the art group's element of that name (build-actor names each element after its
+/// animation in the file).
+fn playing_form(name: &str) -> String {
+  format!(
+    "(let ((p (the ogas-viewer (and *ogas-viewer* (ppointer->process *ogas-viewer*))))) \
+     (if (and p (string= (-> p skel root-channel 0 frame-group name) \"{name}\")) 1 0))"
+  )
+}
+
+/// The viewer plays its animation `anim` (0 the first), named `name`, checked in the game.
+fn play_checked(goalc: &mut Goalc, anim: usize, name: &str) -> Result<()> {
+  goalc.wait_value(&format!("(ogas-play {anim})"), Duration::from_secs(20))?;
+  goalc
+    .wait_value(&playing_form(name), Duration::from_secs(10))
+    .map_err(|_| {
+      text(
+        "game-not-playing",
+        "The game does not play {anim}: the art group's element {slot} is another animation.",
+        &[("anim", name.to_owned()), ("slot", (anim + 2).to_string())],
+      )
+      .into()
+    })
+}
+
+/// What the game shows of the animation tried: the art group's element it plays (its slot, after
+/// the joint geometry and the mesh), how many frames build-actor made of it (60 a second), and
+/// screenshots the game took over one loop, copied to <prefs>/game-test/<game>/check-<n>.png.
+#[derive(serde::Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Check {
+  pub animation: String,
+  pub slot: usize,
+  pub frames: u64,
+  pub screenshots: Vec<PathBuf>,
+}
+
 /// The tries of the studio: one game at a time.
 #[derive(Default)]
 pub struct GameTest {
@@ -575,15 +625,104 @@ impl GameTest {
     lock(&self.session).gk.as_mut().is_some_and(Program::alive)
   }
 
-  /// The model in the running game plays its animation `anim` (0 the first).
-  pub fn play(&self, anim: usize) -> Result<()> {
+  /// The model in the running game plays its animation `anim` (0 the first), named `name`.
+  pub fn play(&self, anim: usize, name: &str) -> Result<()> {
     let mut s = lock(&self.session);
     let goalc = s.goalc.as_mut().context("no game is open")?;
-    goalc.wait_value(&format!("(ogas-play {anim})"), Duration::from_secs(20))
+    play_checked(goalc, anim, name)
   }
 
-  /// `model` tried in `game`, installed in `root`, playing its animation `anim`; `step` is told each
-  /// step ("export", "compiler", "build", "start", "load", "play").
+  /// The running game plays `name`: what it shows of it, with `shots` screenshots spread over
+  /// `seconds` (one loop of the animation).
+  pub fn check(&self, game: &str, name: &str, seconds: f32, shots: usize) -> Result<Check> {
+    let mut s = lock(&self.session);
+    let goalc = s.goalc.as_mut().context("no game is open")?;
+    goalc
+      .wait_value(&playing_form(name), Duration::from_secs(10))
+      .map_err(|_| {
+        anyhow::Error::new(text(
+          "game-not-playing",
+          "The game does not play {anim}: the art group's element {slot} is another animation.",
+          &[("anim", name.to_owned()), ("slot", "?".into())],
+        ))
+      })?;
+    let viewer = "(the ogas-viewer (ppointer->process *ogas-viewer*))";
+    let number = |goalc: &mut Goalc, form: &str| -> Result<u64> {
+      let v = goalc.value(form)?;
+      v.parse().with_context(|| format!("{form}: {v}"))
+    };
+    let slot = number(goalc, &format!("(-> {viewer} anim)"))? as usize + 2;
+    let frames = number(
+      goalc,
+      &format!("(-> {viewer} skel root-channel 0 frame-group frames num-frames)"),
+    )?;
+    // the game writes its screenshots to <config>/OpenGOAL/<game>/screenshots/ at the end of a
+    // frame (common/util/FileUtil.cpp), named after *screen-shot-settings* (Jak II and 3), else
+    // after the time (Jak and Daxter)
+    let folder = dirs::config_dir()
+      .unwrap_or_default()
+      .join("OpenGOAL")
+      .join(game)
+      .join("screenshots");
+    let out = Settings::dir().join("game-test").join(game);
+    // the screenshots of a check are the caller's to delete: one left by a check gone wrong goes
+    for (old, _) in png_times(&out) {
+      if old
+        .file_name()
+        .is_some_and(|n| n.to_string_lossy().starts_with("check-"))
+      {
+        let _ = std::fs::remove_file(old);
+      }
+    }
+    let mut screenshots = Vec::new();
+    for n in 0..shots {
+      let before = png_times(&folder);
+      let mut form = "(pc-screen-shot)".to_owned();
+      if game != "jak1" {
+        form = format!(
+          "(begin (set! (-> *screen-shot-settings* width) 960) \
+           (set! (-> *screen-shot-settings* height) 540) (set! (-> *screen-shot-settings* msaa) 4) \
+           (copyn-charp<-string (-> *screen-shot-settings* name) \"ogas-check-{n}\" 244) {form})"
+        );
+      }
+      goalc.eval(&form, Duration::from_secs(20))?;
+      let end = Instant::now() + Duration::from_secs(10);
+      let taken = loop {
+        // Jak II and 3 name it: another game's screenshot is never taken for it
+        let named = folder.join(format!("ogas-check-{n}.png"));
+        let new = png_times(&folder).into_iter().find(|(path, time)| {
+          (game == "jak1" || *path == named) && before.iter().all(|(p, t)| p != path || t != time)
+        });
+        if new.is_some() || Instant::now() > end {
+          break new;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+      };
+      let (taken, _) = taken.context("The game took no screenshot")?;
+      let copy = out.join(format!("check-{n}.png"));
+      // written whole once its size stays
+      let mut size = 0;
+      while std::fs::metadata(&taken).map(|m| m.len()).unwrap_or(0) != size || size == 0 {
+        size = std::fs::metadata(&taken).map(|m| m.len()).unwrap_or(0);
+        std::thread::sleep(Duration::from_millis(200));
+      }
+      std::fs::copy(&taken, &copy)?;
+      // the game's folder keeps only what its user took
+      let _ = std::fs::remove_file(&taken);
+      screenshots.push(copy);
+      std::thread::sleep(Duration::from_secs_f32((seconds / shots as f32).max(0.1)));
+    }
+    Ok(Check {
+      animation: name.to_owned(),
+      slot,
+      frames,
+      screenshots,
+    })
+  }
+
+  /// `model` tried in `game`, installed in `root`, playing its animation `anim`, named `name`
+  /// (checked in the game); `step` is told each step ("export", "compiler", "build", "start",
+  /// "load", "play").
   /// What goalc and the game printed go to <prefs>/game-test/<game>/goalc.log and gk.log.
   pub fn try_model(
     &self,
@@ -591,10 +730,11 @@ impl GameTest {
     root: &Path,
     game: &str,
     anim: usize,
+    name: &str,
     step: impl Fn(&str),
   ) -> Result<()> {
     let mut s = lock(&self.session);
-    let mut r = self.run(&mut s, model, root, game, anim, step);
+    let mut r = self.run(&mut s, model, root, game, (anim, name), step);
     if r.is_err()
       && let Some(gk) = s.gk.as_mut()
       && !gk.alive()
@@ -630,7 +770,7 @@ impl GameTest {
     model: &Path,
     root: &Path,
     game: &str,
-    anim: usize,
+    (anim, name): (usize, &str),
     step: impl Fn(&str),
   ) -> Result<()> {
     let install = find_install(game, root)?;
@@ -790,7 +930,7 @@ impl GameTest {
     goalc.wait_value("(if *target* 1 0)", Duration::from_secs(60))?;
 
     step("play");
-    goalc.wait_value(&format!("(ogas-play {anim})"), Duration::from_secs(20))
+    play_checked(goalc, anim, name)
   }
 }
 
@@ -1015,18 +1155,26 @@ mod tests {
   fn try_in_the_game() {
     let var = |k: &str| std::env::var(k).unwrap_or_else(|_| panic!("{k}"));
     let test = GameTest::default();
+    let model = PathBuf::from(var("OGAS_TRY_MODEL"));
+    let names: Vec<String> = crate::model::animations(&Glb::read(&model).unwrap())
+      .into_iter()
+      .map(|a| a.name)
+      .collect();
+    let game = var("OGAS_TRY_GAME");
     let r = test.try_model(
-      Path::new(&var("OGAS_TRY_MODEL")),
+      &model,
       Path::new(&var("OGAS_GAME_INSTALL")),
-      &var("OGAS_TRY_GAME"),
+      &game,
       0,
+      &names[0],
       |s| println!("step {s}"),
     );
     let seconds = std::env::var("OGAS_TRY_SECONDS").map_or(5, |s| s.parse().unwrap_or(5));
     if r.is_ok() {
+      println!("{:?}", test.check(&game, &names[0], 1.0, 2).unwrap());
       for anim in [1, 0] {
         std::thread::sleep(Duration::from_secs(seconds));
-        test.play(anim).unwrap();
+        test.play(anim, &names[anim]).unwrap();
       }
       std::thread::sleep(Duration::from_secs(seconds));
     }

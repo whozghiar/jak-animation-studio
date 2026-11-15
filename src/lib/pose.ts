@@ -119,6 +119,8 @@ export async function captureVideo(
 }
 
 export type Mocap = {
+  /** the file's name */
+  name: string;
   /** what the clips' tracks are bound to */
   root: THREE.Object3D;
   clips: THREE.AnimationClip[];
@@ -139,11 +141,12 @@ export async function loadMocap(file: File): Promise<Mocap> {
     const { skeleton, clip } = new BVHLoader().parse(await file.text());
     const root = new THREE.Group();
     root.add(skeleton.bones[0]);
-    return { root, clips: [clip], bones: skeleton.bones };
+    return { name: file.name, root, clips: [clip], bones: skeleton.bones };
   }
   if (ext === "fbx") {
     const group = new FBXLoader().parse(await file.arrayBuffer(), "");
     return {
+      name: file.name,
       root: group,
       clips: group.animations,
       bones: bonesOf(group),
@@ -153,6 +156,7 @@ export async function loadMocap(file: File): Promise<Mocap> {
     const data = ext === "glb" ? await file.arrayBuffer() : await file.text();
     const gltf = await new GLTFLoader().parseAsync(data, "");
     return {
+      name: file.name,
       root: gltf.scene,
       clips: gltf.animations,
       bones: bonesOf(gltf.scene),
@@ -227,5 +231,7 @@ export function captureMocap(
   }
   mixer.stopAllAction();
   mixer.uncacheRoot(mocap.root);
+  if (!frames.some((f) => f.hipL && f.hipR))
+    throw new Error(t("noBodyMocap", { file: mocap.name }));
   return { fps, frames, absolute: true };
 }
