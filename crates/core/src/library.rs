@@ -112,6 +112,28 @@ impl Settings {
     })
   }
 
+  /// The OpenGOAL Launcher's games (`--game-install`, by game), for the folders not chosen yet: each
+  /// game's installation folder, and its models folder when its extraction wrote the models
+  /// (`active/<game>/data/decompiler_out/<game>/levels`; the Launcher's own extraction does not).
+  pub fn fill_from_launcher(&mut self, installs: &BTreeMap<String, PathBuf>) {
+    for (game, root) in installs {
+      self
+        .game_dirs
+        .entry(game.clone())
+        .or_insert_with(|| root.clone());
+      if self.models_dirs.contains_key(game) {
+        continue;
+      }
+      if let Some(levels) = self
+        .game_data(game)
+        .map(|d| d.join("decompiler_out").join(game).join("levels"))
+        .filter(|d| d.is_dir())
+      {
+        self.models_dirs.insert(game.clone(), levels);
+      }
+    }
+  }
+
   pub fn models_dir(&self, game: &str) -> Option<&Path> {
     self.models_dirs.get(game).map(PathBuf::as_path)
   }

@@ -544,6 +544,8 @@ fn main() {
 
   // the creations folder written down, so the MCP server works in the same one
   let mut settings = Settings::load();
+  // started by the Launcher: its games are the folders not chosen yet
+  settings.fill_from_launcher(&game_installs);
   if settings.creations_dir.is_none() {
     settings.creations_dir = Some(default_library.unwrap_or_else(|| settings.creations()));
   }

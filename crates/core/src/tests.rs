@@ -1326,3 +1326,30 @@ fn a_try_builds_the_animation_picked_and_what_fits_beside_it() {
   );
   assert!(crate::game_test::fit_animations(&mut model(&[]), "jak", "e", size).is_err());
 }
+
+/// Started by the OpenGOAL Launcher, the studio takes its games for the folders not chosen yet: the
+/// installation folder, and the models folder when the extraction wrote the models.
+#[test]
+fn the_launchers_games_fill_the_folders_not_chosen() {
+  let root = std::env::temp_dir().join(format!("ogas-launcher-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  let levels = root.join("active/jak3/data/decompiler_out/jak3/levels");
+  std::fs::create_dir_all(&levels).unwrap();
+  std::fs::create_dir_all(root.join("active/jak3/data/goal_src")).unwrap();
+  std::fs::create_dir_all(root.join("active/jak2/data/goal_src")).unwrap();
+  let installs: std::collections::BTreeMap<String, std::path::PathBuf> =
+    [("jak2", &root), ("jak3", &root)]
+      .into_iter()
+      .map(|(g, r)| (g.to_owned(), r.clone()))
+      .collect();
+  let mut settings = library::Settings::default();
+  settings
+    .game_dirs
+    .insert("jak2".into(), std::path::PathBuf::from("mine"));
+  settings.fill_from_launcher(&installs);
+  assert_eq!(settings.game_dirs["jak2"], std::path::PathBuf::from("mine"));
+  assert_eq!(settings.game_dirs["jak3"], root);
+  assert_eq!(settings.models_dir("jak3"), Some(levels.as_path()));
+  assert_eq!(settings.models_dir("jak2"), None, "no models extracted");
+  std::fs::remove_dir_all(&root).unwrap();
+}
