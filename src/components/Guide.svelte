@@ -1,8 +1,213 @@
 <script lang="ts">
-  import { GAMES, gameNames, type GameNames } from "$lib/rpc";
+  import { openPath } from "@tauri-apps/plugin-opener";
+  import { GAMES, gameNames, prefsFolder, type GameNames } from "$lib/rpc";
   import { app } from "$lib/settings.svelte";
-  import { t } from "$lib/i18n.svelte";
+  import { tick, untrack } from "svelte";
+  import { t, type Key } from "$lib/i18n.svelte";
+  import { help, THEMES, type Section } from "$lib/help.svelte";
   import { toast } from "$lib/toast.svelte";
+  import list from "../../docs/screenshots/guide-list.png";
+  import overview from "../../docs/screenshots/studio-overview.gif";
+  import anims from "../../docs/screenshots/guide-animations.png";
+  import appearance from "../../docs/screenshots/appearance.gif";
+  import mocap from "../../docs/screenshots/new-animation-mocap.gif";
+  import keys from "../../docs/screenshots/animation-editor.png";
+  import exported from "../../docs/screenshots/export.png";
+  import tried from "../../docs/screenshots/try-in-game.gif";
+  import settingsShot from "../../docs/screenshots/settings.png";
+  import mcp from "../../docs/screenshots/mcp-backflip-jak3.gif";
+
+  let section = $state<"usage" | "insert">("usage");
+  /** the insertion's lines made for the model opened rather than the Marauder */
+  let useOpened = $state(false);
+
+  /** the studio's features, each with a capture and its buttons: their labels are the
+   * interface's own texts, what they do next to them */
+  const k = (key: Key) => () => t(key);
+  const both = (a: Key, b: Key) => () => `${t(a)} / ${t(b)}`;
+  const usage: {
+    id: Section;
+    title: Key;
+    text: Key;
+    img?: string;
+    controls: [() => string, Key][];
+  }[] = [
+    {
+      id: "browse",
+      title: "useBrowse",
+      text: "useBrowseText",
+      img: list,
+      controls: [
+        [() => Object.values(GAMES).join(" / "), "ctl_games"],
+        [both("tabModels", "tabCreations"), "ctl_tabs"],
+        [k("search"), "ctl_search"],
+        [k("refreshList"), "ctl_refresh"],
+        [k("import"), "ctl_import"],
+        [() => t("variants", { n: "N" }), "ctl_variants"],
+      ],
+    },
+    {
+      id: "watch",
+      title: "useWatch",
+      text: "useWatchText",
+      img: overview,
+      controls: [
+        [both("play", "pause"), "ctl_play"],
+        [k("timeBar"), "ctl_timeBar"],
+        [k("speed"), "ctl_speed"],
+        [k("skeleton"), "ctl_skeleton"],
+        [k("viewMouse"), "ctl_view"],
+      ],
+    },
+    {
+      id: "anims",
+      title: "useAnims",
+      text: "useAnimsText",
+      img: anims,
+      controls: [
+        [both("original", "creation"), "ctl_badge"],
+        [k("openFolder"), "ctl_folder"],
+        [k("gameAnimation"), "ctl_gameTag"],
+        [k("editKeys"), "ctl_editKeys"],
+        [k("rename"), "ctl_rename"],
+        [k("delete"), "ctl_delete"],
+        [() => t("twinAnimations", { n: "N" }), "ctl_twins"],
+        [k("newAnimation"), "ctl_new"],
+      ],
+    },
+    {
+      id: "looks",
+      title: "useLooks",
+      text: "useLooksText",
+      img: appearance,
+      controls: [
+        [
+          () => [t("lookJak"), t("lookDark"), t("lookLight")].join(" / "),
+          "ctl_forms",
+        ],
+        [k("lightWings"), "ctl_wings"],
+        [k("morphGun"), "ctl_gun"],
+        [k("armor"), "ctl_armor"],
+        [
+          () => `${t("outfit", { n: "N" })} / ${t("outfitRandom")}`,
+          "ctl_outfit",
+        ],
+        [
+          () => `${t("segments", { n: "N" })} / ${t("parts", { n: "N" })}`,
+          "ctl_segments",
+        ],
+        [() => t("shapes", { n: "N" }), "ctl_shapes"],
+      ],
+    },
+    {
+      id: "new",
+      title: "useNew",
+      text: "useNewText",
+      img: mocap,
+      controls: [
+        [
+          () => [t("fromVideo"), t("fromMocap"), t("fromManual")].join(" / "),
+          "ctl_source",
+        ],
+        [k("fps"), "ctl_fps"],
+        [k("extract"), "ctl_extract"],
+        [k("smoothing"), "ctl_smoothing"],
+        [k("faceForward"), "ctl_face"],
+        [k("inPlace"), "ctl_inPlace"],
+        [k("holdWeapon"), "ctl_hold"],
+        [k("mapping"), "ctl_mapping"],
+        [k("refine"), "ctl_refine"],
+        [k("save"), "ctl_save"],
+      ],
+    },
+    {
+      id: "keys",
+      title: "useKeys",
+      text: "useKeysText",
+      img: keys,
+      controls: [
+        [k("duration"), "ctl_duration"],
+        [k("joint"), "ctl_joint"],
+        [both("rotateTool", "moveTool"), "ctl_tools"],
+        [both("prevKey", "nextKey"), "ctl_steps"],
+        [k("addKey"), "ctl_addKey"],
+        [k("deleteKey"), "ctl_deleteKey"],
+        [k("restPose"), "ctl_rest"],
+        [k("undo"), "ctl_undo"],
+        [k("save"), "ctl_saveKeys"],
+      ],
+    },
+    {
+      id: "check",
+      title: "useCheck",
+      text: "useCheckText",
+      img: exported,
+      controls: [
+        [k("gameCheck"), "ctl_check"],
+        [() => t("exportGame", { game: "…" }), "ctl_export"],
+        [k("openReadme"), "ctl_readme"],
+      ],
+    },
+    {
+      id: "try",
+      title: "useTry",
+      text: "useTryText",
+      img: tried,
+      controls: [
+        [k("tryInGame"), "ctl_try"],
+        [k("closeGame"), "ctl_close"],
+      ],
+    },
+    {
+      id: "settings",
+      title: "useSettings",
+      text: "useSettingsText",
+      img: settingsShot,
+      controls: [
+        [k("modelsDirs"), "ctl_modelsDirs"],
+        [k("creationsDir"), "ctl_creationsDir"],
+        [() => t("gameDir", { game: "…" }), "ctl_gameDir"],
+        [k("language"), "ctl_language"],
+        [k("mcpTitle"), "ctl_mcp"],
+      ],
+    },
+    { id: "mcp", title: "useMcp", text: "useMcpText", img: mcp, controls: [] },
+    { id: "log", title: "useLog", text: "useLogText", controls: [] },
+  ];
+  const byId = Object.fromEntries(usage.map((u) => [u.id, u])) as Record<
+    Section,
+    (typeof usage)[number]
+  >;
+
+  /** the section scrolled to, lit a moment */
+  let lit = $state<Section | null>(null);
+  async function go(id: string, light?: Section) {
+    await tick();
+    // the captures above it take their height once loaded
+    await Promise.all(
+      [...document.querySelectorAll("main img")].map((i) =>
+        (i as HTMLImageElement).decode().catch(() => {}),
+      ),
+    );
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (light) {
+      lit = light;
+      setTimeout(() => lit === light && (lit = null), 2000);
+    }
+  }
+
+  // a control's "See more": its section
+  $effect(() => {
+    const want = help.open;
+    if (!want) return;
+    untrack(() => {
+      help.open = null;
+      section = "usage";
+      go(`use-${want}`, want);
+    });
+  });
 
   // the guide's example until a model is opened: Jak 3's Marauder with a wave made in the studio
   const marauder = [
@@ -60,8 +265,9 @@
       .catch(() => (opened = null));
   });
 
-  const names = $derived(opened ?? EXAMPLE);
-  const game = $derived(opened ? (app.settings?.game ?? "jak1") : "jak3");
+  const mine = $derived(useOpened ? opened : null);
+  const names = $derived(mine ?? EXAMPLE);
+  const game = $derived(mine ? (app.settings?.game ?? "jak1") : "jak3");
   const actor = $derived(names.actor);
   /** the entity's type: "my-" and the model's first word (my-marauder) */
   const type = $derived(`my-${actor.split("-")[0]}`);
@@ -196,57 +402,177 @@
 {/snippet}
 
 <div class="h-full overflow-y-auto p-8">
-  <div class="mx-auto flex max-w-3xl flex-col gap-8">
-    <h1 class="font-title text-2xl">{t("guideTitle")}</h1>
-    <p class="text-sm text-neutral-300">
-      {t(opened ? "guideIntro" : "guideIntroExample", args)}
-    </p>
-    <p class="text-sm text-neutral-400">{t("guideNeed", args)}</p>
+  <div class="mx-auto flex max-w-5xl flex-col gap-8">
+    <div class="flex border-b border-white/10 text-sm">
+      {#each ["usage", "insert"] as const as id (id)}
+        <button
+          class="px-4 py-3 {section === id
+            ? 'border-b-2 border-orange-500 text-white'
+            : 'text-neutral-400 hover:text-neutral-200'}"
+          onclick={() => (section = id)}
+          >{t(id === "usage" ? "guideUsage" : "guideTitle")}</button
+        >
+      {/each}
+    </div>
 
-    {#each steps as step, i (step.title)}
-      <section class="flex flex-col gap-2">
-        <h2 class="text-sm font-semibold text-neutral-200">
-          {i + 1}. {t(step.title)}
-        </h2>
-        <p class="text-sm text-neutral-400">{t(step.text, args)}</p>
-        {#if "pick" in step}
-          <label class="flex items-center gap-2 text-sm text-neutral-300">
-            {t("guideEventAnim")}
-            <select
-              class="rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-1.5 text-sm"
-              value={play.symbol}
-              onchange={(e) => (chosen = e.currentTarget.value)}
-            >
-              {#each names.slots.slice(1) as s (s.symbol)}
-                <option value={s.symbol}>{s.animation}</option>
+    {#if section === "usage"}
+      <div class="flex gap-10">
+        <nav
+          class="sticky top-0 hidden w-52 shrink-0 flex-col gap-4 self-start pt-1 text-sm lg:flex"
+          aria-label={t("guideContents")}
+        >
+          <span
+            class="text-xs font-semibold tracking-wide text-neutral-500 uppercase"
+            >{t("guideContents")}</span
+          >
+          {#each THEMES as theme, ti (theme.id)}
+            <div class="flex flex-col gap-1">
+              <button
+                class="text-left font-semibold text-neutral-200 hover:text-orange-400"
+                onclick={() => go(`theme-${theme.id}`)}
+                >{ti + 1}. {t(theme.title)}</button
+              >
+              <ul
+                class="ml-1 flex flex-col gap-1 border-l border-white/10 pl-3"
+              >
+                {#each theme.sections as id (id)}
+                  <li>
+                    <button
+                      class="text-left hover:text-neutral-100 {lit === id
+                        ? 'text-orange-400'
+                        : 'text-neutral-400'}"
+                      onclick={() => go(`use-${id}`, id)}
+                      >{t(byId[id].title)}</button
+                    >
+                  </li>
+                {/each}
+              </ul>
+            </div>
+          {/each}
+        </nav>
+
+        <div class="flex min-w-0 flex-1 flex-col gap-12">
+          <p class="text-sm text-neutral-300">{t("guideUsageIntro")}</p>
+          {#each THEMES as theme, ti (theme.id)}
+            <div id="theme-{theme.id}" class="flex scroll-mt-2 flex-col gap-6">
+              <h2
+                class="font-title border-b border-white/10 pb-2 text-xl text-neutral-100"
+              >
+                {ti + 1}. {t(theme.title)}
+              </h2>
+              {#each theme.sections as id, si (id)}
+                {@const item = byId[id]}
+                <section
+                  id="use-{id}"
+                  class="flex scroll-mt-2 flex-col gap-3 rounded-lg border bg-white/[0.02] p-5 transition-colors duration-700 {lit ===
+                  id
+                    ? 'border-orange-500'
+                    : 'border-white/10'}"
+                >
+                  <h3 class="text-base font-semibold text-neutral-100">
+                    {ti + 1}.{si + 1}
+                    {t(item.title)}
+                  </h3>
+                  <p class="text-sm text-neutral-400">{t(item.text)}</p>
+                  {#if item.img}
+                    <img
+                      src={item.img}
+                      alt={t(item.title)}
+                      class="max-w-full self-start rounded-md border border-white/10"
+                    />
+                  {/if}
+                  {#if item.controls.length}
+                    <table class="text-sm">
+                      <tbody>
+                        {#each item.controls as [label, what] (what)}
+                          <tr class="border-t border-white/5 align-top">
+                            <td
+                              class="w-56 py-2 pr-4 font-semibold text-neutral-200"
+                              >{label()}</td
+                            >
+                            <td class="py-2 text-neutral-400">{t(what)}</td>
+                          </tr>
+                        {/each}
+                      </tbody>
+                    </table>
+                  {/if}
+                  {#if id === "log"}
+                    <button
+                      class="self-start text-sm text-orange-400 hover:text-orange-300"
+                      onclick={async () => openPath(await prefsFolder())}
+                      >{t("useLogOpen")}</button
+                    >
+                  {/if}
+                </section>
               {/each}
-            </select>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {:else}
+      <div class="mx-auto flex w-full max-w-3xl flex-col gap-8">
+        <h1 class="font-title text-2xl">{t("guideTitle")}</h1>
+        <p class="text-sm text-neutral-300">
+          {t(mine ? "guideIntro" : "guideIntroExample", args)}
+        </p>
+        {#if opened}
+          <label class="flex items-center gap-2 text-sm text-neutral-300">
+            <input
+              type="checkbox"
+              class="rounded accent-orange-500"
+              bind:checked={useOpened}
+            />
+            {t("guideUseOpened", { model: opened.actor })}
           </label>
         {/if}
-        {@render block(step.code)}
-      </section>
-    {/each}
+        <p class="text-sm text-neutral-400">{t("guideNeed", args)}</p>
 
-    <section
-      class="flex flex-col gap-2 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4"
-    >
-      <h2 class="text-sm font-semibold text-neutral-200">
-        {t("guideNotBorn")}
-      </h2>
-      <p class="text-sm text-neutral-300">{t("guideNotBornText")}</p>
-      {@render block(code.vis)}
-      {#if game === "jak1"}
-        <p class="text-sm text-neutral-300">{t("guideJak1")}</p>
-      {/if}
-    </section>
+        {#each steps as step, i (step.title)}
+          <section class="flex flex-col gap-2">
+            <h2 class="text-sm font-semibold text-neutral-200">
+              {i + 1}. {t(step.title)}
+            </h2>
+            <p class="text-sm text-neutral-400">{t(step.text, args)}</p>
+            {#if "pick" in step}
+              <label class="flex items-center gap-2 text-sm text-neutral-300">
+                {t("guideEventAnim")}
+                <select
+                  class="rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-1.5 text-sm"
+                  value={play.symbol}
+                  onchange={(e) => (chosen = e.currentTarget.value)}
+                >
+                  {#each names.slots.slice(1) as s (s.symbol)}
+                    <option value={s.symbol}>{s.animation}</option>
+                  {/each}
+                </select>
+              </label>
+            {/if}
+            {@render block(step.code)}
+          </section>
+        {/each}
 
-    <section
-      class="flex flex-col gap-2 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4"
-    >
-      <h2 class="text-sm font-semibold text-neutral-200">
-        {t("guideMemory")}
-      </h2>
-      <p class="text-sm text-neutral-300">{t("guideMemoryText", args)}</p>
-    </section>
+        <section
+          class="flex flex-col gap-2 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4"
+        >
+          <h2 class="text-sm font-semibold text-neutral-200">
+            {t("guideNotBorn")}
+          </h2>
+          <p class="text-sm text-neutral-300">{t("guideNotBornText")}</p>
+          {@render block(code.vis)}
+          {#if game === "jak1"}
+            <p class="text-sm text-neutral-300">{t("guideJak1")}</p>
+          {/if}
+        </section>
+
+        <section
+          class="flex flex-col gap-2 rounded-lg border border-orange-500/40 bg-orange-500/10 p-4"
+        >
+          <h2 class="text-sm font-semibold text-neutral-200">
+            {t("guideMemory")}
+          </h2>
+          <p class="text-sm text-neutral-300">{t("guideMemoryText", args)}</p>
+        </section>
+      </div>
+    {/if}
   </div>
 </div>

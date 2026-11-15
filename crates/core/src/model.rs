@@ -72,6 +72,9 @@ pub struct AnimationInfo {
   pub name: String,
   pub duration: f32,
   pub keyframes: usize,
+  /// one of the game's own animations (`is_game_animation`)
+  #[serde(skip_serializing_if = "std::ops::Not::not")]
+  pub in_game: bool,
 }
 
 /// The skins the nodes use: build-actor takes the model's armature from them.
@@ -217,6 +220,12 @@ pub fn channels(glb: &Glb, anim: &Value) -> Vec<Channel> {
     .collect()
 }
 
+/// Jak's and Daxter's animations, which the game already has (names::is_always_loaded): the studio
+/// shows them, but neither checks nor exports them. Their creations keep them marked so.
+pub fn is_game_animation(anim: &Value) -> bool {
+  anim["extras"]["gameAnimation"] == true
+}
+
 pub fn animation_name(anim: &Value, index: usize) -> String {
   anim["name"]
     .as_str()
@@ -240,6 +249,7 @@ pub fn animations(glb: &Glb) -> Vec<AnimationInfo> {
           .filter_map(|(t, _)| t.last().copied())
           .fold(0.0, f32::max),
         keyframes: keys.iter().map(|(t, _)| t.len()).max().unwrap_or(0),
+        in_game: is_game_animation(anim),
       }
     })
     .collect()

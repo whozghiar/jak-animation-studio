@@ -8,17 +8,18 @@ const en = {
   tabCreations: "Creations",
   search: "Search",
   variants: "{n} variants",
-  tag_cutscene: "Cutscene",
+  tag_highres: "High detail",
   tag_lowres: "Low detail",
   tag_simple: "Simple",
   tag_rider: "In a vehicle",
   tag_escort: "Escort",
-  tag_minigame: "Minigame",
   tag_main: "Main",
   import: "Import models (.glb) into the creations",
+  refreshList: "Read the list again",
   importReplace:
     "A creation is already named {name}. Replace it? Its animations will be lost.",
   noModelsDir: "Choose the models folder of {game} in the settings.",
+  listingModels: "Reading the game's models… {p} %",
   noModels:
     "No entity here: only the living entities of the game (characters, creatures, enemies) are listed.",
   noCreations:
@@ -33,17 +34,16 @@ const en = {
   noAnimation: "No animation yet.",
   newAnimation: "New animation",
   twinAnimations: "Add {n} animations from models with the same skeleton",
-  twinAnimationsHint:
-    "The extraction wrote this entity's animations to other files: {files}",
   rename: "Rename",
   delete: "Delete",
   deleteConfirm: "Delete the animation {name}?",
   gameCheck: "Game check",
   allGood: "Ready for build-actor.",
+  gameAnimation: "Game",
+  gameAnimations:
+    "These {n} animations are the game's (Jak and Daxter are in every level): only those you add are checked and exported.",
   exportGame: "Export for {game}",
   tryInGame: "Try in the game",
-  tryInGameHint:
-    "Builds the model as a custom actor and shows it in {game}, in its test level (test-zone), playing the animation picked. Needs the game installed: the OpenGOAL Launcher's, or the jak-project folder of the settings. The game's own files are put back when the game closes.",
   tryStep_export: "Writing the model",
   tryStep_compiler:
     "Starting the game's compiler (a minute or two the first time)",
@@ -51,19 +51,146 @@ const en = {
   tryStep_start: "Starting the game",
   tryStep_load: "Taking Jak to the test level",
   tryStep_play: "Showing the model",
-  inGame: "In the game: the animation picked here plays there too.",
+  inGame:
+    "In the game: the animation picked here plays there too. One the game does not hold yet, or one you edit, is built again (the game restarts).",
   closeGame: "Close the game",
-  navGuide: "In-game guide",
+  navGuide: "Guide",
+  guideUsage: "Using the studio",
+  guideUsageIntro:
+    "What the studio does, from finding a model to seeing it in the game. The second tab puts a model in a mod of yours, step by step.",
+  useBrowse: "The list of models",
+  useBrowseText:
+    "The list on the left holds the game's living entities (characters, creatures, enemies) and your creations, the copies the studio keeps of what you change. Pick one to open it.",
+  useLooks: "Appearance",
+  useLooksText:
+    "The model as the game's code draws it. Nothing here changes the model or its textures: the studio only edits animations.",
+  useNew: "Make an animation",
+  useNewText:
+    "New animation puts a movement on the model: from a video of one person, a motion capture file (BVH, FBX, glTF), or by hand. It is saved in the model's creation: the original model never changes.",
+  useKeys: "Edit the keys",
+  useKeysText:
+    "The clapperboard next to an animation opens its keys: pick a joint, turn or move it, and a key is set at the moment shown. K keys a joint as it is, Del deletes its key, Ctrl+Z undoes.",
+  useCheck: "Check and export",
+  useCheckText:
+    "Game check lists what build-actor would stop on or build wrong. Export writes the creation as build-actor needs it, with a README of the lines to add to the game. Jak's and Daxter's own animations are the game's: only those you add are checked and exported.",
+  useTry: "Try it in the game",
+  useTryText:
+    "Try in the game builds the model into the game's test level and starts the game: the model plays the animation picked, and the next one you pick. The game's files are put back when it closes.",
+  useSettings: "Settings",
+  useSettingsText:
+    "The folders the studio works with, the language, and the AI assistant.",
+  useMcp: "With an AI assistant",
+  useMcpText:
+    "Settings give the command that adds the studio's MCP server to Claude Code. The assistant then lists the models, makes animations from your words or from a motion capture, and checks them in the game; the studio shows what it does.",
+  useLog: "When something goes wrong",
+  useLogText:
+    "Every error is written to errors.log in the studio's folder; the try in the game writes what goalc and the game said to game-test/<game>/goalc.log and gk.log there.",
+  useLogOpen: "Open the studio's folder",
+  guideContents: "Contents",
+  seeMore: "See more",
+  themeFind: "Find a model",
+  themeAnimate: "Animate",
+  themeLooks: "The model's looks",
+  themeGame: "To the game",
+  themeSetup: "Settings and help",
+  useWatch: "Watch a model",
+  useWatchText:
+    "The model plays its first animation in the view; the bar under the view drives it.",
+  useAnims: "The animations",
+  useAnimsText:
+    "The right panel lists the model's animations: click one to play it. The buttons of a line show when the mouse is over it.",
+  timeBar: "Time bar",
+  viewMouse: "The view",
+  ctl_games: "The game whose models are listed.",
+  ctl_tabs:
+    "The game's entities, or your creations: the copies the studio keeps of the models you changed (the original never changes).",
+  ctl_search: "Finds an entity by its official name or its file's.",
+  ctl_refresh:
+    "Reads the list again: a creation the AI assistant made, or a new extraction of the game.",
+  ctl_import: "Copies .glb files of your own into the creations.",
+  ctl_variants:
+    "An entity the game splits into several models (high detail, in a vehicle...): the arrow opens them.",
+  ctl_play: "Plays or pauses the animation.",
+  ctl_timeBar:
+    "Drags the animation to a moment; each mark above it is a key, the orange ones the picked joint's.",
+  ctl_speed: "Plays slower (0.25x, 0.5x) or faster (2x).",
+  ctl_skeleton: "Shows the joints and bones over the model.",
+  ctl_view: "Drag to turn around the model, right-drag to move, wheel to zoom.",
+  ctl_badge:
+    "Original: the game's model, read only. Creation: your copy, the one exported.",
+  ctl_folder: "Opens the folder of the model's file.",
+  ctl_gameTag:
+    "Jak's or Daxter's own animation: the game has it, so it is neither checked nor exported; it can be tried in the game, and edited into a version of your own.",
+  ctl_editKeys: "Opens the animation in the key editor.",
+  ctl_rename: "Renames the animation (in the creation).",
+  ctl_delete: "Deletes the animation (from the creation).",
+  ctl_twins:
+    "Adds the animations other files of the same entity and skeleton hold, where the extraction put them.",
+  ctl_new:
+    "Makes a new animation from a video, a motion capture file or by hand.",
+  ctl_forms:
+    "Jak as himself, as Dark Jak (shapes, skin, black eyes) or as Light Jak (the game's lights).",
+  ctl_wings: "Light Jak's wings, out only when he glides.",
+  ctl_gun: "Puts the Morph Gun in Jak's hand, with the mod of your choice.",
+  ctl_armor:
+    "Shows or hides the armor pieces of a model without the game's segments.",
+  ctl_outfit:
+    "Every look the game's code gives the model (colours, hats, weapons...); Random picks one.",
+  ctl_segments: "The model's pieces one by one, to show or hide.",
+  ctl_shapes:
+    "The blend shapes (Dark Jak's, Jak's goggles and scarf), from 0 to 1.",
+  ctl_source:
+    "Where the movement comes from: a video of one person, a BVH, FBX or glTF file, or nothing (the rest pose, to key by hand).",
+  ctl_fps:
+    "How many keys the animation gets a second: 15 by default, as the game's own animations; more is finer, and heavier.",
+  ctl_extract:
+    "Reads the movement and puts it on the model, next to the orange figure of the capture.",
+  ctl_smoothing: "Calms a shaky capture.",
+  ctl_face: "Turns the movement to face the model's front.",
+  ctl_inPlace:
+    "Keeps the model on the spot, as the game wants: its code moves it through the level.",
+  ctl_hold:
+    "Keeps a weapon in both hands, with the arms of the model's first animation.",
+  ctl_mapping: "Which joint of the model plays which body part.",
+  ctl_refine: "Goes on in the key editor.",
+  ctl_save: "Saves the animation in the model's creation.",
+  ctl_duration: "How long the animation lasts, in seconds.",
+  ctl_joint: "The joint to move; clicking its dot in the view picks it too.",
+  ctl_tools:
+    "Turns the joint with its rings, or moves it with its arrows: a key is set at the moment shown.",
+  ctl_steps: "Goes to the previous or next key.",
+  ctl_addKey: "Keys the joint as it is, at the moment shown.",
+  ctl_deleteKey: "Deletes the joint's key at the moment shown.",
+  ctl_rest: "Puts the joint back to its rest pose at the moment shown.",
+  ctl_undo: "Undoes the last change.",
+  ctl_saveKeys:
+    "Saves the animation; with the game of a try open, the studio builds it again with your version.",
+  ctl_check:
+    "What build-actor would stop on (red) or what is worth knowing (yellow), animation by animation.",
+  ctl_export:
+    "Writes the creation as build-actor needs it, with a README of the lines to add to the game.",
+  ctl_readme: "Opens that README.",
+  ctl_try:
+    "Shows the model in the game's test level, playing the animation picked. Greyed out, with the reason under it, when the game cannot be started: no installation, another game open, Jak and Daxter.",
+  ctl_close: "Closes the game; its own files are put back.",
+  ctl_modelsDirs:
+    "Each game's models, the decompiler's decompiler_out/<game>/levels folder. Read only.",
+  ctl_creationsDir: "Where the studio keeps your creations.",
+  ctl_gameDir:
+    "Each game's installation: the OpenGOAL Launcher's folder, an OpenGOAL release or a jak-project. The game the studio tries models in, and where exports go.",
+  ctl_language: "English or French.",
+  ctl_mcp: "The command that adds the studio's MCP server to Claude Code.",
+  guideUseOpened: "Make the lines for the model opened: {model}",
   guideTitle: "Put a model in the game",
   guideIntro:
     "These steps put {model} in {game}'s test level as an entity of its own, which plays its animations. Every line is made for this model, the one last opened in the studio.",
   guideIntroExample:
-    "These steps put a model in the game's test level as an entity of its own, which plays its animations. Until you open a model in the studio, they show Jak 3's Marauder with a wave made in the studio.",
+    "These steps put a model in the game's test level as an entity of its own, which plays its animations. The example is Jak 3's Marauder, with a wave made in the studio.",
   guideNeed:
     "You need a jak-project where {game} builds, and the model exported with Export for {game}. The studio's Try in the game does all of this in a copy of the test level: these steps are for your own mod.",
   guideModel: "Put the model in place",
   guideModelText:
-    "Copy the export's custom_assets folder into your jak-project: the model lands here. With the jak-project folder set in the settings, the export already put it there.",
+    "Copy the export's custom_assets folder into your jak-project: the model lands here. With the game's installation folder set in the settings, the export already put it there.",
   guideBuild: "Build its art group",
   guideBuildText:
     "In goal_src/{gameId}/game.gp, next to the other build-actor lines: the art group holds the model's skeleton and animations.",
@@ -105,27 +232,34 @@ const en = {
   fromMocap: "Mocap file",
   looks: "Appearance",
   looksHint:
-    "The model's variants: parts to show or hide, blend shapes. Applying makes the look the creation's own, the one the game builds (Light Jak's wings are a model of their own, shown here only).",
+    "The model's variants, as the game's code draws them: Outfit picks one, the lists show or hide its parts. What is shown here never changes the model: the studio only edits animations.",
   lookJak: "Jak",
   lookDark: "Dark Jak",
   lookLight: "Light Jak",
+  morphGun: "Morph Gun",
+  gunMod_red: "Red",
+  gunMod_yellow: "Yellow",
+  gunMod_blue: "Blue",
+  gunMod_dark: "Dark",
   armor: "Armor",
   armorTag: "armor",
   parts: "{n} parts",
+  segments: "{n} segments (as the game turns them on)",
+  seg_goatee: "Goatee",
+  lightWings: "Wings (gliding)",
+  seg_scarfUp: "Scarf over the mouth",
+  outfit: "Outfit {n}",
+  outfits: "of {n}",
+  outfitRandom: "Random",
   shapes: "{n} blend shapes",
   shape: "Shape {n}",
   shapeDark: "Dark Jak {n}",
   shape_goggles: "Goggles",
   shape_scarf: "Scarf",
-  resetLook: "Reset",
-  applyLook: "Apply to the creation",
-  applyLookConfirm:
-    "The hidden parts will be removed from the creation and the blend shapes set in its vertices. Go on?",
   noWings:
     "{name}.glb is not in the model's folder nor in the game's models folder.",
   noGameTextures:
-    "The eyes and Dark Jak's skin are drawn from the game's textures (decompiler_out/<game>/textures): set the jak-project folder in the settings.",
-  "core_every-part-hidden": "A model needs at least one part shown.",
+    "The eyes and Dark Jak's skin are drawn from the game's textures (decompiler_out/<game>/textures), next to the models folder or in the game's installation folder of the settings.",
   fromManual: "Manual",
   manualHint:
     "Pose the joints yourself with the mouse, key by key, from the rest pose.",
@@ -156,6 +290,8 @@ const en = {
   clip: "Clip",
   name: "Name",
   fps: "Keys per second",
+  fpsHint:
+    "The game's own animations have 15 keys a second. More keeps finer detail of the movement in a heavier file; in the game, an animation's size depends on its length and on the joints that move (build-actor makes 60 frames a second whatever the keys).",
   smoothing: "Smoothing",
   faceForward: "Face forward",
   inPlace: "In place",
@@ -192,10 +328,16 @@ const en = {
   creationsDir: "Creations folder",
   creationsDirHint:
     "Each model you change is copied here with its animations, ready to export.",
-  jakProjectDir: "jak-project folder (optional)",
-  jakProjectDirHint:
-    "When set, exports go straight into its custom_assets folder.",
   game: "Game",
+  gameDir: "Game installation folder: {game} (optional)",
+  gameDirHint:
+    "Where the game is installed: the studio tries models in it when started on its own (from the OpenGOAL Launcher, it uses the Launcher's games), and exports go into its custom_assets folder. Expected folders, for example:",
+  gameDirLauncher:
+    "the OpenGOAL Launcher's installation folder, the one that holds active: C:\\Games\\OpenGOAL",
+  gameDirRelease:
+    "an OpenGOAL release unzipped, the folder that holds gk.exe: C:\\Games\\opengoal-v0.3.9",
+  gameDirProject:
+    "a jak-project built with its game, your mod's: C:\\dev\\jak-project",
   language: "Language",
   choose: "Choose",
   clear: "Clear",
@@ -261,7 +403,7 @@ const en = {
   "core_still-pose-held":
     "{anim}: a still pose, given a second key 1/60 s later (build-actor stops on it otherwise)",
   "core_no-game-folder":
-    "Choose the game to try in: the jak-project folder in the settings, or start the studio from the OpenGOAL Launcher.",
+    "Choose the game's installation folder in the settings, or start the studio from the OpenGOAL Launcher.",
   "core_game-not-in-launcher":
     "This game is not installed with the OpenGOAL Launcher's active tooling ({version}): install or update it in the Launcher.",
   "core_game-not-found":
@@ -275,6 +417,8 @@ const en = {
   "core_game-not-playing":
     "The game does not play {anim}: the art group's element {slot} is another animation.",
   "core_try-animation-missing": "{model} has no animation {anim} to try.",
+  "core_try-jak1":
+    "Jak and Daxter closes when a level loads a character added this way: try models in Jak II or Jak 3.",
   "core_art-group-too-big":
     "The model takes {size} KB once built, more than the {max} KB a level of the game loads it into: remove or shorten animations.",
   "core_animations-too-big":
@@ -292,7 +436,7 @@ const en = {
     "In the game, '{anim}' would be named {name}, as '{other}' is: give it another name.",
 };
 
-type Key = keyof typeof en;
+export type Key = keyof typeof en;
 
 const fr: Record<Key, string> = {
   navStudio: "Studio",
@@ -304,18 +448,19 @@ const fr: Record<Key, string> = {
   tabCreations: "Créations",
   search: "Rechercher",
   variants: "{n} variantes",
-  tag_cutscene: "Cinématique",
+  tag_highres: "Haute définition",
   tag_lowres: "Basse résolution",
   tag_simple: "Simplifié",
   tag_rider: "En véhicule",
   tag_escort: "Escorte",
-  tag_minigame: "Mini-jeu",
   tag_main: "Principal",
   import: "Importer des modèles (.glb) dans les créations",
+  refreshList: "Relire la liste",
   importReplace:
     "Une création s'appelle déjà {name}. La remplacer ? Ses animations seront perdues.",
   noModelsDir:
     "Choisissez le dossier des modèles de {game} dans les paramètres.",
+  listingModels: "Lecture des modèles du jeu… {p} %",
   noModels:
     "Aucune entité ici : seules les entités vivantes du jeu (personnages, créatures, ennemis) sont listées.",
   noCreations:
@@ -331,17 +476,16 @@ const fr: Record<Key, string> = {
   noAnimation: "Aucune animation pour l'instant.",
   newAnimation: "Nouvelle animation",
   twinAnimations: "Ajouter {n} animations des modèles au même squelette",
-  twinAnimationsHint:
-    "L'extraction a écrit les animations de cette entité dans d'autres fichiers : {files}",
   rename: "Renommer",
   delete: "Supprimer",
   deleteConfirm: "Supprimer l'animation {name} ?",
   gameCheck: "Vérification pour le jeu",
   allGood: "Prêt pour build-actor.",
+  gameAnimation: "Jeu",
+  gameAnimations:
+    "Ces {n} animations sont celles du jeu (Jak et Daxter sont dans tous les niveaux) : seules celles que vous ajoutez sont vérifiées et exportées.",
   exportGame: "Exporter pour {game}",
   tryInGame: "Essayer dans le jeu",
-  tryInGameHint:
-    "Construit le modèle comme un acteur personnalisé et le montre dans {game}, dans son niveau de test (test-zone), en train de jouer l'animation choisie. Il faut le jeu installé : celui de l'OpenGOAL Launcher, ou le dossier jak-project des réglages. Les fichiers du jeu sont remis en place quand le jeu se ferme.",
   tryStep_export: "Écriture du modèle",
   tryStep_compiler:
     "Démarrage du compilateur du jeu (une à deux minutes la première fois)",
@@ -349,19 +493,148 @@ const fr: Record<Key, string> = {
   tryStep_start: "Démarrage du jeu",
   tryStep_load: "Jak va au niveau de test",
   tryStep_play: "Affichage du modèle",
-  inGame: "Dans le jeu : l'animation choisie ici y joue aussi.",
+  inGame:
+    "Dans le jeu : l'animation choisie ici y joue aussi. Celle que le jeu n'a pas encore, ou celle que vous modifiez, est reconstruite (le jeu redémarre).",
   closeGame: "Fermer le jeu",
-  navGuide: "Guide dans le jeu",
+  navGuide: "Guide",
+  guideUsage: "Utilisation de l'outil",
+  guideUsageIntro:
+    "Ce que fait le studio, de la recherche d'un modèle jusqu'à le voir dans le jeu. Le second onglet met un modèle dans votre mod, étape par étape.",
+  useBrowse: "La liste des modèles",
+  useBrowseText:
+    "La liste de gauche contient les entités vivantes du jeu (personnages, créatures, ennemis) et vos créations, les copies que le studio garde de ce que vous modifiez. Choisissez-en une pour l'ouvrir.",
+  useLooks: "Apparence",
+  useLooksText:
+    "Le modèle tel que le code du jeu le dessine. Rien ici ne modifie le modèle ni ses textures : le studio ne modifie que les animations.",
+  useNew: "Créer une animation",
+  useNewText:
+    "Nouvelle animation met un mouvement sur le modèle : depuis une vidéo d'une personne, un fichier de capture de mouvement (BVH, FBX, glTF), ou à la main. Elle est enregistrée dans la création du modèle : le modèle d'origine ne change jamais.",
+  useKeys: "Modifier les clés",
+  useKeysText:
+    "Le clap à côté d'une animation ouvre ses clés : choisissez un joint, tournez-le ou déplacez-le, et une clé est posée au moment affiché. K pose une clé sur le joint tel quel, Suppr efface sa clé, Ctrl+Z annule.",
+  useCheck: "Vérifier et exporter",
+  useCheckText:
+    "Vérification pour le jeu liste ce sur quoi build-actor s'arrêterait ou qu'il construirait mal. Exporter écrit la création comme build-actor la veut, avec un README des lignes à ajouter au jeu. Les animations de Jak et de Daxter sont celles du jeu : seules celles que vous ajoutez sont vérifiées et exportées.",
+  useTry: "L'essayer dans le jeu",
+  useTryText:
+    "Essayer dans le jeu construit le modèle dans le niveau de test du jeu et lance le jeu : le modèle joue l'animation choisie, puis celle que vous choisissez ensuite. Les fichiers du jeu sont remis en place à sa fermeture.",
+  useSettings: "Réglages",
+  useSettingsText:
+    "Les dossiers avec lesquels le studio travaille, la langue et l'assistant IA.",
+  useMcp: "Avec un assistant IA",
+  useMcpText:
+    "Les réglages donnent la commande qui ajoute le serveur MCP du studio à Claude Code. L'assistant liste alors les modèles, crée des animations depuis vos mots ou une capture de mouvement, et les vérifie dans le jeu ; le studio montre ce qu'il fait.",
+  useLog: "Quand quelque chose ne va pas",
+  useLogText:
+    "Chaque erreur est écrite dans errors.log, dans le dossier du studio ; l'essai dans le jeu y écrit ce qu'ont dit goalc et le jeu dans game-test/<jeu>/goalc.log et gk.log.",
+  useLogOpen: "Ouvrir le dossier du studio",
+  guideContents: "Sommaire",
+  seeMore: "Voir plus",
+  themeFind: "Trouver un modèle",
+  themeAnimate: "Animer",
+  themeLooks: "L'apparence du modèle",
+  themeGame: "Vers le jeu",
+  themeSetup: "Réglages et aide",
+  useWatch: "Regarder un modèle",
+  useWatchText:
+    "Le modèle joue sa première animation dans la vue ; la barre sous la vue la pilote.",
+  useAnims: "Les animations",
+  useAnimsText:
+    "Le panneau de droite liste les animations du modèle : cliquez sur l'une d'elles pour la jouer. Les boutons d'une ligne apparaissent au survol de la souris.",
+  timeBar: "Barre de temps",
+  viewMouse: "La vue",
+  ctl_games: "Le jeu dont les modèles sont listés.",
+  ctl_tabs:
+    "Les entités du jeu, ou vos créations : les copies que le studio garde des modèles que vous avez modifiés (l'original ne change jamais).",
+  ctl_search: "Trouve une entité par son nom officiel ou celui de son fichier.",
+  ctl_refresh:
+    "Relit la liste : une création faite par l'assistant IA, ou une nouvelle extraction du jeu.",
+  ctl_import: "Copie vos propres fichiers .glb dans les créations.",
+  ctl_variants:
+    "Une entité que le jeu sépare en plusieurs modèles (haute définition, dans un véhicule...) : la flèche les ouvre.",
+  ctl_play: "Joue ou met en pause l'animation.",
+  ctl_timeBar:
+    "Amène l'animation à un moment ; chaque trait au-dessus est une clé, les orange celles du joint choisi.",
+  ctl_speed: "Joue plus lentement (0,25x, 0,5x) ou plus vite (2x).",
+  ctl_skeleton: "Montre les joints et les os par-dessus le modèle.",
+  ctl_view:
+    "Glissez pour tourner autour du modèle, clic droit pour le déplacer, la molette pour zoomer.",
+  ctl_badge:
+    "Original : le modèle du jeu, en lecture seule. Création : votre copie, celle qui est exportée.",
+  ctl_folder: "Ouvre le dossier du fichier du modèle.",
+  ctl_gameTag:
+    "Une animation de Jak ou de Daxter : le jeu l'a déjà, elle n'est donc ni vérifiée ni exportée ; elle peut être essayée dans le jeu, et modifiée pour en faire votre version.",
+  ctl_editKeys: "Ouvre l'animation dans l'éditeur de clés.",
+  ctl_rename: "Renomme l'animation (dans la création).",
+  ctl_delete: "Supprime l'animation (de la création).",
+  ctl_twins:
+    "Ajoute les animations que d'autres fichiers de la même entité et du même squelette contiennent, là où l'extraction les a mises.",
+  ctl_new:
+    "Crée une animation depuis une vidéo, un fichier de capture de mouvement ou à la main.",
+  ctl_forms:
+    "Jak lui-même, en Dark Jak (formes, peau, yeux noirs) ou en Light Jak (les lumières du jeu).",
+  ctl_wings: "Les ailes de Light Jak, sorties seulement quand il plane.",
+  ctl_gun: "Met le Morph Gun dans la main de Jak, avec le mod de votre choix.",
+  ctl_armor:
+    "Montre ou cache les pièces d'armure d'un modèle sans les segments du jeu.",
+  ctl_outfit:
+    "Chaque apparence que le code du jeu donne au modèle (couleurs, chapeaux, armes...) ; Au hasard en tire une.",
+  ctl_segments: "Les pièces du modèle une par une, à montrer ou cacher.",
+  ctl_shapes:
+    "Les formes de mélange (celles de Dark Jak, les lunettes et le foulard de Jak), de 0 à 1.",
+  ctl_source:
+    "D'où vient le mouvement : une vidéo d'une personne, un fichier BVH, FBX ou glTF, ou rien (la pose de repos, à animer à la main).",
+  ctl_fps:
+    "Le nombre de clés par seconde de l'animation : 15 par défaut, comme les animations du jeu ; plus est plus fin, et plus lourd.",
+  ctl_extract:
+    "Lit le mouvement et le met sur le modèle, à côté de la silhouette orange de la capture.",
+  ctl_smoothing: "Calme une capture qui tremble.",
+  ctl_face: "Tourne le mouvement face à l'avant du modèle.",
+  ctl_inPlace:
+    "Garde le modèle sur place, comme le veut le jeu : son code le déplace dans le niveau.",
+  ctl_hold:
+    "Garde une arme dans les deux mains, avec les bras de la première animation du modèle.",
+  ctl_mapping: "Quel joint du modèle joue quelle partie du corps.",
+  ctl_refine: "Continue dans l'éditeur de clés.",
+  ctl_save: "Enregistre l'animation dans la création du modèle.",
+  ctl_duration: "La durée de l'animation, en secondes.",
+  ctl_joint:
+    "Le joint à bouger ; cliquer sur son point dans la vue le choisit aussi.",
+  ctl_tools:
+    "Tourne le joint avec ses anneaux, ou le déplace avec ses flèches : une clé est posée au moment affiché.",
+  ctl_steps: "Va à la clé précédente ou suivante.",
+  ctl_addKey: "Pose une clé sur le joint tel qu'il est, au moment affiché.",
+  ctl_deleteKey: "Efface la clé du joint au moment affiché.",
+  ctl_rest: "Remet le joint dans sa pose de repos au moment affiché.",
+  ctl_undo: "Annule la dernière modification.",
+  ctl_saveKeys:
+    "Enregistre l'animation ; si le jeu d'un essai est ouvert, le studio le reconstruit avec votre version.",
+  ctl_check:
+    "Ce sur quoi build-actor s'arrêterait (rouge) ou ce qui est bon à savoir (jaune), animation par animation.",
+  ctl_export:
+    "Écrit la création comme build-actor la veut, avec un README des lignes à ajouter au jeu.",
+  ctl_readme: "Ouvre ce README.",
+  ctl_try:
+    "Montre le modèle dans le niveau de test du jeu, en train de jouer l'animation choisie. Grisé, avec la raison en dessous, quand le jeu ne peut pas être lancé : pas d'installation, un autre jeu ouvert, Jak and Daxter.",
+  ctl_close: "Ferme le jeu ; ses propres fichiers sont remis en place.",
+  ctl_modelsDirs:
+    "Les modèles de chaque jeu, le dossier decompiler_out/<jeu>/levels du décompilateur. En lecture seule.",
+  ctl_creationsDir: "Là où le studio garde vos créations.",
+  ctl_gameDir:
+    "L'installation de chaque jeu : le dossier de l'OpenGOAL Launcher, une version d'OpenGOAL ou un jak-project. Le jeu où le studio essaie les modèles, et là où vont les exports.",
+  ctl_language: "Anglais ou français.",
+  ctl_mcp: "La commande qui ajoute le serveur MCP du studio à Claude Code.",
+  guideUseOpened: "Faire les lignes pour le modèle ouvert : {model}",
   guideTitle: "Mettre un modèle dans le jeu",
   guideIntro:
     "Ces étapes mettent {model} dans le niveau de test de {game}, comme une entité à part entière qui joue ses animations. Chaque ligne est faite pour ce modèle, le dernier ouvert dans le studio.",
   guideIntroExample:
-    "Ces étapes mettent un modèle dans le niveau de test du jeu, comme une entité à part entière qui joue ses animations. Tant qu'aucun modèle n'est ouvert dans le studio, elles montrent le Marauder de Jak 3 avec un salut (wave) fait dans le studio.",
+    "Ces étapes mettent un modèle dans le niveau de test du jeu, comme une entité à part entière qui joue ses animations. L'exemple est le Marauder de Jak 3, avec un salut (wave) fait dans le studio.",
   guideNeed:
     "Il vous faut un jak-project où {game} se compile, et le modèle exporté avec Exporter pour {game}. L'essai dans le jeu du studio fait tout cela dans une copie du niveau de test : ces étapes sont pour votre propre mod.",
   guideModel: "Mettre le modèle en place",
   guideModelText:
-    "Copiez le dossier custom_assets de l'export dans votre jak-project : le modèle arrive ici. Avec le dossier jak-project choisi dans les réglages, l'export l'y a déjà mis.",
+    "Copiez le dossier custom_assets de l'export dans votre jak-project : le modèle arrive ici. Avec le répertoire d'installation du jeu choisi dans les réglages, l'export l'y a déjà mis.",
   guideBuild: "Construire son art group",
   guideBuildText:
     "Dans goal_src/{gameId}/game.gp, à côté des autres lignes build-actor : l'art group contient le squelette et les animations du modèle.",
@@ -403,27 +676,34 @@ const fr: Record<Key, string> = {
   fromMocap: "Fichier mocap",
   looks: "Apparence",
   looksHint:
-    "Les variantes du modèle : pièces à montrer ou cacher, formes de mélange. Appliquer rend l'apparence propre à la création, celle que le jeu construit (les ailes de Light Jak sont un modèle à part, montré ici seulement).",
+    "Les variantes du modèle, telles que le code du jeu les dessine : Tenue en choisit une, les listes montrent ou cachent ses pièces. Ce qui est montré ici ne change jamais le modèle : le studio ne modifie que les animations.",
   lookJak: "Jak",
   lookDark: "Dark Jak",
   lookLight: "Light Jak",
+  morphGun: "Arme (Morph Gun)",
+  gunMod_red: "Rouge",
+  gunMod_yellow: "Jaune",
+  gunMod_blue: "Bleu",
+  gunMod_dark: "Sombre",
   armor: "Armure",
   armorTag: "armure",
   parts: "{n} pièces",
+  segments: "{n} segments (comme le jeu les active)",
+  seg_goatee: "Bouc",
+  lightWings: "Ailes (vol plané)",
+  seg_scarfUp: "Écharpe sur la bouche",
+  outfit: "Tenue {n}",
+  outfits: "sur {n}",
+  outfitRandom: "Au hasard",
   shapes: "{n} formes de mélange",
   shape: "Forme {n}",
   shapeDark: "Dark Jak {n}",
   shape_goggles: "Lunettes",
   shape_scarf: "Écharpe",
-  resetLook: "Rétablir",
-  applyLook: "Appliquer à la création",
-  applyLookConfirm:
-    "Les pièces cachées seront retirées de la création et les formes de mélange inscrites dans ses sommets. Continuer ?",
   noWings:
     "{name}.glb n'est ni dans le dossier du modèle ni dans le dossier des modèles du jeu.",
   noGameTextures:
-    "Les yeux et la peau de Dark Jak sont dessinés avec les textures du jeu (decompiler_out/<jeu>/textures) : indiquez le dossier jak-project dans les réglages.",
-  "core_every-part-hidden": "Un modèle garde au moins une pièce visible.",
+    "Les yeux et la peau de Dark Jak sont dessinés avec les textures du jeu (decompiler_out/<jeu>/textures), à côté du dossier de modèles ou dans le répertoire d'installation du jeu des réglages.",
   fromManual: "Manuel",
   manualHint:
     "Posez vous-même les jointures à la souris, clé par clé, depuis la pose de repos.",
@@ -454,6 +734,8 @@ const fr: Record<Key, string> = {
   clip: "Clip",
   name: "Nom",
   fps: "Clés par seconde",
+  fpsHint:
+    "Les animations du jeu ont 15 clés par seconde. Plus garde le mouvement plus fin dans un fichier plus lourd ; dans le jeu, la taille d'une animation dépend de sa durée et des joints qui bougent (build-actor fait 60 images par seconde quelles que soient les clés).",
   smoothing: "Lissage",
   faceForward: "Face à l'avant",
   inPlace: "Sur place",
@@ -490,10 +772,16 @@ const fr: Record<Key, string> = {
   creationsDir: "Dossier des créations",
   creationsDirHint:
     "Chaque modèle que vous changez est copié ici avec ses animations, prêt à exporter.",
-  jakProjectDir: "Dossier jak-project (facultatif)",
-  jakProjectDirHint:
-    "S'il est choisi, les exports vont directement dans son dossier custom_assets.",
   game: "Jeu",
+  gameDir: "Répertoire d'installation du jeu : {game} (facultatif)",
+  gameDirHint:
+    "Là où le jeu est installé : le studio y essaie les modèles quand il est lancé seul (depuis l'OpenGOAL Launcher, il prend les jeux du Launcher), et les exports vont dans son dossier custom_assets. Répertoires attendus, par exemple :",
+  gameDirLauncher:
+    "le dossier d'installation de l'OpenGOAL Launcher, celui qui contient active : C:\\Jeux\\OpenGOAL",
+  gameDirRelease:
+    "une version d'OpenGOAL décompressée, le dossier qui contient gk.exe : C:\\Jeux\\opengoal-v0.3.9",
+  gameDirProject:
+    "un jak-project compilé avec son jeu, celui de votre mod : C:\\dev\\jak-project",
   language: "Langue",
   choose: "Choisir",
   clear: "Retirer",
@@ -562,7 +850,7 @@ const fr: Record<Key, string> = {
   "core_still-pose-held":
     "{anim} : une pose fixe, avec une seconde clé 1/60 s plus tard (build-actor s'y arrête sinon)",
   "core_no-game-folder":
-    "Choisissez le jeu où essayer : le dossier jak-project dans les réglages, ou lancez le studio depuis l'OpenGOAL Launcher.",
+    "Choisissez le répertoire d'installation du jeu dans les réglages, ou lancez le studio depuis l'OpenGOAL Launcher.",
   "core_game-not-in-launcher":
     "Ce jeu n'est pas installé avec l'outillage actif de l'OpenGOAL Launcher ({version}) : installez-le ou mettez-le à jour dans le Launcher.",
   "core_game-not-found":
@@ -576,6 +864,8 @@ const fr: Record<Key, string> = {
   "core_game-not-playing":
     "Le jeu ne joue pas {anim} : l'élément {slot} du groupe d'art est une autre animation.",
   "core_try-animation-missing": "{model} n'a pas d'animation {anim} à essayer.",
+  "core_try-jak1":
+    "Jak and Daxter se ferme quand un niveau charge un personnage ajouté de cette façon : essayez les modèles dans Jak II ou Jak 3.",
   "core_art-group-too-big":
     "Le modèle prend {size} Ko une fois construit, plus que les {max} Ko dans lesquels un niveau du jeu le charge : retirez ou raccourcissez des animations.",
   "core_animations-too-big":

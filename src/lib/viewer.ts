@@ -69,7 +69,8 @@ export class Viewer {
   private pieces: { object: THREE.Mesh; key: string }[] = [];
   /** the look shown: blend weights kept over what the animations set */
   private weights: number[] = [];
-  private wings?: THREE.Object3D;
+  /** the models carried by joints: Light Jak's wings, the Morph Gun */
+  private carried = new Map<string, THREE.Object3D>();
   /** the model's materials as the game draws them, with their own texture and color */
   private materials: {
     material: THREE.MeshLambertMaterial;
@@ -80,6 +81,9 @@ export class Viewer {
   private swaps = new Map<string, THREE.Texture>();
   /** Light Jak: the model untextured, lit by the rim lights */
   private lit = false;
+  /** scales the game puts on joints every frame, over the animation's own (joint number, -1 for
+   * the whole model): only what is drawn has them */
+  private jointScales: [number, THREE.Vector3][] = [];
   private lights = new THREE.Group();
   private rim = new THREE.Group();
   /** the editor's: a dot on each joint to pick it, the picked one's handles */
@@ -101,6 +105,9 @@ export class Viewer {
   selected: number | null = null;
   /** called every frame with the playing animation's time and length */
   onTime?: (time: number, duration: number) => void;
+  /** called every frame before drawing, with the playing animation's name, time and length (the
+   * eyes follow the animation's eye frames) */
+  onFrame?: (clip: string | undefined, time: number, duration: number) => void;
   /** called when the animation shown or the picked joint changes */
   onKeys?: (keys: Keys) => void;
   /** a joint's dot clicked */
@@ -115,7 +122,13 @@ export class Viewer {
     this.scene.background = new THREE.Color(0x1b1b1b);
     // three's lambert divides by pi: these are the game's light values
     // (goal_src/<game>/engine/gfx/mood: an ambient and directional lights)
-    const light = (color: number, intensity: number, x = 0, y = 0, z = 0) => {
+    const light = (
+      color: THREE.ColorRepresentation,
+      intensity: number,
+      x = 0,
+      y = 0,
+      z = 0,
+    ) => {
       const l = new THREE.DirectionalLight(color, intensity * Math.PI);
       l.position.set(x, y, z);
       return l;
@@ -126,13 +139,17 @@ export class Viewer {
     this.scene.add(this.lights);
     // Light Jak's rim lights (time-of-day.gc, drawable.gc): three cyan lights from behind the
     // model as the camera sees it, and a blue ambient; they turn with the camera
-    this.rim.add(new THREE.AmbientLight(0x00004d, Math.PI));
+    // the game's colors are linear: as hex, three.js would read them as sRGB and darken them (the
+    // ambient 0.3 blue would light 0.075)
+    const linear = (r: number, g: number, b: number) =>
+      new THREE.Color().setRGB(r, g, b, THREE.LinearSRGBColorSpace);
+    this.rim.add(new THREE.AmbientLight(linear(0, 0, 0.3), Math.PI));
     for (const [x, y, z] of [
       [0.7746, 0.4473, 0.4473],
       [-0.7746, 0.4473, 0.4473],
       [0, -0.8944, 0.4472],
     ]) {
-      const l = light(0x00f2ff, 2, x, y, -z - 1);
+      const l = light(linear(0, 0.95, 1), 2, x, y, -z - 1);
       l.target.position.set(0, 0, -1);
       this.rim.add(l, l.target);
     }
@@ -175,6 +192,8 @@ export class Viewer {
 
   private tick(t: number) {
     this.timer.update(t);
+    // hidden (another page shown): nothing to draw, the animation waits
+    if (!this.canvas.offsetParent) return;
     if (this.mixer && !this.paused && !this.transform?.dragging)
       this.mixer.update(this.timer.getDelta() * this.speed);
     if (this.helper) this.helper.visible = this.skeleton;
@@ -182,13 +201,39 @@ export class Viewer {
     this.updateFigure();
     this.updateHandles();
     this.controls.update();
+    this.onFrame?.(this.action?.getClip().name, this.time, this.duration);
+    this.followAlign();
+    const scaled = this.jointScales.flatMap(([j, s]) => {
+      const o = j < 0 ? this.model : this.joints[j];
+      if (!o) return [];
+      const was = o.scale.clone();
+      o.scale.multiply(s);
+      return [[o, was] as const];
+    });
     this.renderer.render(this.scene, this.camera);
+    for (const [o, was] of scaled) o.scale.copy(was);
     this.onTime?.(this.time, this.duration);
+  }
+
+  /** The entity's travel: the game moves the whole character by its `align` joint (align-control),
+   * which no other joint hangs from in the extracted models, so the model is moved by align's
+   * offset from its rest position, back to the start when the animation loops. */
+  private followAlign() {
+    const align = this.joints[0];
+    const rest = align && this.rest.get(align);
+    if (!this.model || !rest || align.name !== "align") return;
+    if (this.joints.some((j) => j.parent === align)) return;
+    this.model.position.copy(align.position).sub(rest[0]);
   }
 
   get time() {
     // a clip of no length loops into NaN
     return this.duration ? (this.action?.time ?? 0) : 0;
+  }
+
+  /** the playing animation's name */
+  get clipName() {
+    return this.action?.getClip().name;
   }
 
   get duration() {
@@ -269,10 +314,11 @@ export class Viewer {
   unload() {
     this.setEditing(false);
     this.swaps.clear();
+    this.jointScales = [];
     this.lit = false;
     this.rim.visible = false;
     this.lights.visible = true;
-    this.setWings(null);
+    for (const slot of [...this.carried.keys()]) this.setCarried(slot, null);
     this.pieces = [];
     this.weights = [];
     this.mixer?.stopAllAction();
@@ -405,31 +451,45 @@ export class Viewer {
     }
   }
 
-  /** A model carried by one of the joints (Light Jak's wings on his chest), or none: its `anchor`
-   * joint on `joint`, without `joint`'s scale. */
-  async setWings(bytes: ArrayBuffer | null, joint = "", anchor = "") {
-    if (this.wings) {
-      this.wings.removeFromParent();
-      this.wings.traverse((o) => {
+  /** A model carried by one of the joints in `slot` (Light Jak's wings on his chest, the Morph Gun
+   * in his hand), or none: its `anchor` joint (else its origin) on `joint`, without `joint`'s
+   * scale; `glow`, a model the game does not light; `pose`, the animation whose first keys it takes
+   * (the gun's gun-idle-red folds the barrels of the other mods away). */
+  async setCarried(
+    slot: string,
+    bytes: ArrayBuffer | null,
+    joint = "",
+    anchor = "",
+    glow = false,
+    pose = "",
+  ) {
+    const old = this.carried.get(slot);
+    if (old) {
+      old.removeFromParent();
+      old.traverse((o) => {
         const mesh = o as THREE.Mesh;
         mesh.geometry?.dispose();
         for (const m of [mesh.material ?? []].flat()) m.dispose();
       });
-      this.wings = undefined;
+      this.carried.delete(slot);
     }
     const at = this.joints.find((j) => j.name === joint);
     if (!bytes || !at) return;
     const gltf = await new GLTFLoader().parseAsync(bytes, "");
     gltf.scene.traverse((o) => {
-      if (!(o as THREE.SkinnedMesh).isSkinnedMesh) return;
-      dropMissingJoints(o as THREE.SkinnedMesh);
-      // under the joint, only the bones may place the vertices: the mesh's own place would add the
-      // joint's a second time
-      (o as THREE.SkinnedMesh).bindMode = THREE.DetachedBindMode;
+      if ((o as THREE.SkinnedMesh).isSkinnedMesh)
+        dropMissingJoints(o as THREE.SkinnedMesh);
     });
     // In game (lightjak-wings.gc) the wings' root follows the joint without its scale, and their own
     // animations (open, flap, none of them extracted) bring their main joint there. ponytail: at
     // rest, the anchor is put on the joint instead; the wings' animations if they are ever extracted.
+    // The gun's root is the joint's matrix, scaled as Jak (target-gun.gc, target-gun-compute-pos).
+    const posed = gltf.animations.find((c) => c.name === pose);
+    if (posed) {
+      const mixer = new THREE.AnimationMixer(gltf.scene);
+      mixer.clipAction(posed).play();
+      mixer.setTime(0);
+    }
     gltf.scene.updateMatrixWorld(true);
     const anchored = gltf.scene.getObjectByName(anchor);
     const scale = 1 / at.getWorldScale(new THREE.Vector3()).x;
@@ -438,8 +498,8 @@ export class Viewer {
         .copy(anchored.getWorldPosition(new THREE.Vector3()))
         .multiplyScalar(-scale);
     gltf.scene.scale.setScalar(scale);
-    this.toGame(gltf.scene, true);
-    this.wings = gltf.scene;
+    this.toGame(gltf.scene, glow);
+    this.carried.set(slot, gltf.scene);
     at.add(gltf.scene);
   }
 
@@ -533,18 +593,46 @@ uniform sampler2D gameStrength;`,
   }
 
   /** Textures in place of the materials' own, by material name (without "-envmap"): the eyes
-   * drawn as the game does, Dark Jak's skin. */
+   * drawn as the game does, Dark Jak's skin. One of the same size is updated in place (the eyes
+   * change with the animation's frames). */
   setTextures(textures: Map<string, ImageData>) {
-    for (const t of this.swaps.values()) t.dispose();
-    this.swaps.clear();
+    let changed = false;
+    for (const [name, t] of this.swaps)
+      if (!textures.has(name)) {
+        t.dispose();
+        this.swaps.delete(name);
+        changed = true;
+      }
     for (const [name, image] of textures) {
-      const t = new THREE.DataTexture(image.data, image.width, image.height);
+      const old = this.swaps.get(name);
+      if (
+        old &&
+        old.image.width === image.width &&
+        old.image.height === image.height
+      ) {
+        (old.image.data as Uint8ClampedArray).set(image.data);
+        old.needsUpdate = true;
+        continue;
+      }
+      old?.dispose();
+      const t = new THREE.DataTexture(
+        new Uint8ClampedArray(image.data),
+        image.width,
+        image.height,
+      );
       t.magFilter = t.minFilter = THREE.LinearFilter;
       t.wrapS = t.wrapT = THREE.RepeatWrapping;
       t.needsUpdate = true;
       this.swaps.set(name, t);
+      changed = true;
     }
-    this.applyMaps();
+    if (changed) this.applyMaps();
+  }
+
+  /** The scales the game puts on joints every frame (`joint-mod`s: Jak's neck, waist and horns,
+   * target-darkjak.gc), by joint number, -1 for the whole model. */
+  setJointScales(scales: [number, [number, number, number]][]) {
+    this.jointScales = scales.map(([j, s]) => [j, new THREE.Vector3(...s)]);
   }
 
   /** Light Jak: the model untextured under the game's rim lights. */

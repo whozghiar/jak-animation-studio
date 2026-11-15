@@ -135,10 +135,15 @@ fn a_foreign_animation_is_flagged_then_fixed_by_normalize() {
       { "sampler": 2, "target": { "node": 4, "path": "translation" } }
     ]
   }]);
-  let found = errors(&glb, "chain");
+  // what export fixes is a warning: the game check stays green for it
+  let found: Vec<&str> = rules::check(&glb, "chain")
+    .into_iter()
+    .map(|i| i.text.code)
+    .collect();
   for code in ["missing-keys", "weights", "not-a-joint"] {
     assert!(found.contains(&code), "{code} in {found:?}");
   }
+  assert!(errors(&glb, "chain").is_empty(), "none is an error");
   let notes = edit::normalize(&mut glb, "chain").unwrap();
   for code in [
     "made-linear",
@@ -419,7 +424,7 @@ fn push_indices(glb: &mut Glb, indices: &[u32]) -> usize {
 }
 
 #[test]
-fn a_look_hides_parts_and_bakes_blend_shapes() {
+fn a_look_splits_parts() {
   let mut glb = skinned(3);
   // two pieces, each drawing its own three vertices; one blend shape lifting the first vertex
   let mut corners = Vec::new();
@@ -447,19 +452,114 @@ fn a_look_hides_parts_and_bakes_blend_shapes() {
       .collect::<Vec<_>>(),
     [vec![0], vec![1]]
   );
+}
 
-  crate::looks::apply(&mut glb, &[(0, 1)], &[1.0]).unwrap();
-  let mesh = &glb.array("meshes")[0];
-  assert_eq!(mesh["primitives"].as_array().unwrap().len(), 1);
-  assert!(mesh["primitives"][0].get("targets").is_none() && mesh.get("weights").is_none());
-  let baked = glb
-    .floats(&mesh["primitives"][0]["attributes"]["POSITION"])
-    .unwrap();
-  assert_eq!(baked[1], 1.0, "the shape is in the vertices");
-  assert!(
-    crate::looks::apply(&mut glb, &[(0, 0)], &[]).is_err(),
-    "a model keeps a part"
+/// Each animation's eye frames come from its art-joint-anim's merc-eye-anim-block (Jak II's layout:
+/// the block 4 bytes into the object, the name 8, pointers from byte 16 of the file).
+#[test]
+fn the_eye_frames_are_read_from_the_animations() {
+  let root = std::env::temp_dir().join(format!("ogas-eye-frames-{}", std::process::id()));
+  let objects = root.join("decompiler_out/jak2/raw_obj");
+  let level = root.join("decompiler_out/jak2/levels/common");
+  for d in [&objects, &level] {
+    std::fs::create_dir_all(d).unwrap();
+  }
+  let base = 0x10;
+  let mut data = vec![0u8; 0x200];
+  let (anim, name, block) = (0x40, 0x80, 0xc0);
+  data[anim..anim + 4].copy_from_slice(&u32::MAX.to_le_bytes());
+  data[anim + 4..anim + 8].copy_from_slice(&((block - base) as u32).to_le_bytes());
+  data[anim + 8..anim + 12].copy_from_slice(&((name - base) as u32).to_le_bytes());
+  data[name..name + 4].copy_from_slice(&10u32.to_le_bytes());
+  data[name + 4..name + 14].copy_from_slice(b"hero-stand");
+  // max-frame 0, then the left eye (x -3/128, lid -115/128, iris 64/64, pupil 28/64, lid 64/64) and
+  // the right one
+  data[block..block + 2].copy_from_slice(&0i16.to_le_bytes());
+  for (k, x) in [-3i8, 3].into_iter().enumerate() {
+    let at = block + 8 + 8 * k;
+    data[at..at + 7].copy_from_slice(&[x as u8, 0, (-115i8) as u8, 0, 64, 28, 64]);
+  }
+  std::fs::write(objects.join("hero-ag.go"), &data).unwrap();
+  let frames = crate::looks::eye_frames(&level.join("hero-lod0.glb"), "jak2", None);
+  let [left, right] = frames["hero-stand"][0];
+  assert_eq!(
+    left,
+    [-3.0 / 128.0, 0.0, -115.0 / 128.0, 1.0, 28.0 / 64.0, 1.0]
   );
+  assert_eq!(right[0], 3.0 / 128.0);
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
+/// The game's segments: the merc-ctrl of the raw art group (Jak 3's layout) gives the effects'
+/// triangle counts, which split the primitives, and the seg-table the effects of each segment.
+#[test]
+fn the_segments_are_read_from_the_merc_ctrl() {
+  let root = std::env::temp_dir().join(format!("ogas-segs-{}", std::process::id()));
+  let objects = root.join("decompiler_out/jak3/raw_obj");
+  let level = root.join("decompiler_out/jak3/levels/ctypesa");
+  for d in [&objects, &level] {
+    std::fs::create_dir_all(d).unwrap();
+  }
+  // effects of 2, 1 and 2 triangles; segments: body (effect 0), rifle (1), tazer (2)
+  let (base, header) = (0x80, 0x200);
+  let mut data = vec![0u8; 0x400];
+  let put =
+    |data: &mut Vec<u8>, at: usize, bytes: &[u8]| data[at..at + bytes.len()].copy_from_slice(bytes);
+  put(&mut data, header + 24, &3u32.to_le_bytes());
+  put(&mut data, header + 32, &3u16.to_le_bytes());
+  put(&mut data, header + 34, &5u16.to_le_bytes());
+  for (i, tris) in [2u16, 1, 2].into_iter().enumerate() {
+    put(&mut data, header + 128 + 32 * i + 18, &1u16.to_le_bytes());
+    put(&mut data, header + 128 + 32 * i + 22, &tris.to_le_bytes());
+  }
+  let (name, table) = (0x300, 0x340);
+  put(
+    &mut data,
+    header - 40,
+    &((name - base) as u32).to_le_bytes(),
+  );
+  put(&mut data, name, &18u32.to_le_bytes());
+  put(&mut data, name + 4, b"crimson-guard-lod0");
+  put(
+    &mut data,
+    header - 20,
+    &((table - base) as u32).to_le_bytes(),
+  );
+  put(&mut data, table, &3u32.to_le_bytes());
+  for (i, mask) in [0b001u64, 0b010, 0b100].into_iter().enumerate() {
+    put(&mut data, table + 12 + 8 * i, &mask.to_le_bytes());
+  }
+  std::fs::write(objects.join("crimson-guard-ag.go"), &data).unwrap();
+
+  let mut glb = skinned(3);
+  let positions = glb.push_floats(&[0.0; 9], "VEC3");
+  let triangles: Vec<_> = [2, 1, 1, 1]
+    .map(|n| push_indices(&mut glb, &[0, 1, 2].repeat(n)))
+    .to_vec();
+  let primitives: Vec<_> = triangles
+    .iter()
+    .map(|i| json!({ "attributes": { "POSITION": positions }, "indices": i }))
+    .collect();
+  glb.json["meshes"] = json!([{ "primitives": primitives }]);
+  let model = level.join("crimson-guard-lod0.glb");
+  let looks = crate::looks::game_looks(&glb, &model, "jak3", None);
+  assert_eq!(
+    looks
+      .parts
+      .iter()
+      .map(|p| p.primitives.clone())
+      .collect::<Vec<_>>(),
+    [vec![0], vec![1], vec![2, 3]],
+    "one part per effect"
+  );
+  assert_eq!(looks.segments, [vec![0], vec![1], vec![2]]);
+  assert!(
+    crate::looks::game_looks(&glb, &model, "jak1", None)
+      .segments
+      .is_empty(),
+    "Jak 1 has no segments"
+  );
+  std::fs::remove_dir_all(&root).unwrap();
 }
 
 #[test]
@@ -970,4 +1070,259 @@ fn the_games_models_survive_the_studio() {
     read / 1_000_000,
     exported / 1_000_000
   );
+}
+
+/// The eyes a game draws are read from the art group's eye control: its shaders' texture ids, named
+/// with the texture table, or through the texture-remap-table of the level the model comes from;
+/// a skin (jakb-c) finds its art group (jakb).
+#[test]
+fn the_eyes_are_read_from_the_eye_control() {
+  let root = std::env::temp_dir().join(format!("ogas-eyes-{}", std::process::id()));
+  let objects = root.join("decompiler_out/jak2/raw_obj");
+  let levels = root.join("decompiler_out/jak2/levels/common");
+  let config = root.join("decompiler/config/jak2/ntsc_v1");
+  for d in [&objects, &levels, &config] {
+    std::fs::create_dir_all(d).unwrap();
+  }
+  // page 1, textures 1 to 4, as tex-info keys (page << 16 | index)
+  std::fs::write(
+    config.join("tex-info.min.json"),
+    r#"[[65537,{"name":"bam-iris-16x16"}],[65538,{"name":"autoeye-pupil"}],[65539,{"name":"autoeye-lid"}],[65540,{"name":"hero-eye"}]]"#,
+  )
+  .unwrap();
+  let id = |page: u32, index: u32| (page << 20) | (index << 8) | 0x14;
+  // the right iris is the art group's own texture 7 of page 900, which the level renames
+  let mut data = vec![0u8; 64];
+  let control = data.len();
+  data.extend([0, 1, 6, 0]);
+  data.resize(control + 16 + 6 * 80, 0);
+  for (k, texture) in [id(1, 1), id(1, 2), id(1, 3), id(900, 7), id(1, 2), id(1, 3)]
+    .into_iter()
+    .enumerate()
+  {
+    let shader = control + 16 + k * 80;
+    data[shader + 24..shader + 28].copy_from_slice(&texture.to_le_bytes());
+    data[shader + 40] = 0x34;
+    data[shader + 56] = 0x08;
+  }
+  std::fs::write(objects.join("jakb-ag.go"), &data).unwrap();
+  let mut bsp = vec![0u8; 32];
+  bsp.extend((id(900, 7) & !0xff).to_le_bytes());
+  bsp.extend(id(1, 4).to_le_bytes());
+  std::fs::write(objects.join("common.go"), &bsp).unwrap();
+  let eyes = crate::looks::eye_textures(&levels.join("jakb-c-lod0.glb"), "jak2", None).unwrap();
+  assert_eq!(
+    eyes.left,
+    ["bam-iris-16x16", "autoeye-pupil", "autoeye-lid"]
+  );
+  assert_eq!(eyes.right, ["hero-eye", "autoeye-pupil", "autoeye-lid"]);
+  assert_eq!(
+    crate::looks::eye_textures(&levels.join("babak-lod0.glb"), "jak2", None),
+    None,
+    "no art group: no eyes read"
+  );
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
+/// A game's models folder lists what the playable game shows: a skin (a mesh without animation,
+/// Jak 3's jakb-c) with the animations of its twin, which only carries them (jakb, a stand-in mesh)
+/// and is not listed; no model without animation.
+#[test]
+fn skins_play_the_animations_of_their_twin() {
+  let root = std::env::temp_dir().join(format!("ogas-skins-{}", std::process::id()));
+  let level = root.join("common");
+  std::fs::create_dir_all(&level).unwrap();
+  let mut carrier = skinned(3);
+  edit::set_animation(&mut carrier, "hero-run", &[rotation(1, &[0.0, 1.0])]).unwrap();
+  carrier.write(&level.join("hero-lod0.glb")).unwrap();
+  let mut skin = skinned(3);
+  let indices = skin.push_indices(&[0, 1, 2].repeat(20), 5123);
+  skin.json["meshes"][0]["primitives"][0]["indices"] = json!(indices);
+  skin.write(&level.join("hero-c-lod0.glb")).unwrap();
+  skinned(2).write(&level.join("lonely-lod0.glb")).unwrap();
+
+  let listed: Vec<(String, usize)> = library::list_models(&root, "jak3", false)
+    .into_iter()
+    .map(|m| (m.name, m.animations))
+    .collect();
+  assert_eq!(listed, [("hero-c-lod0".to_owned(), 1)]);
+  assert_eq!(library::list_models(&root, "jak3", true).len(), 3, "all");
+  let shown = library::read_with_skin_animations(&level.join("hero-c-lod0.glb")).unwrap();
+  let names: Vec<String> = model::animations(&shown)
+    .into_iter()
+    .map(|a| a.name)
+    .collect();
+  assert_eq!(names, ["hero-run"]);
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
+/// The eyes of every model of a game's levels that draws them apart (`programmer_eye` stand-ins),
+/// read as the game names them: `OGAS_MODELS=<jak-project>/decompiler_out/<game>/levels
+/// OGAS_GAME=<game> cargo test -p animation-studio-core -- --ignored --nocapture the_games_eyes`.
+#[test]
+#[ignore = "needs a game's models: OGAS_MODELS=<folder> OGAS_GAME=<game>"]
+fn the_games_eyes() {
+  let dir = std::path::PathBuf::from(std::env::var("OGAS_MODELS").expect("OGAS_MODELS"));
+  let game = std::env::var("OGAS_GAME").expect("OGAS_GAME");
+  let (mut seen, mut read) = (std::collections::BTreeSet::new(), 0);
+  let mut stack = vec![dir];
+  while let Some(d) = stack.pop() {
+    for e in std::fs::read_dir(&d).unwrap().flatten() {
+      let path = e.path();
+      if path.is_dir() {
+        stack.push(path);
+        continue;
+      }
+      let name = library::model_name(&path);
+      let Ok(glb) = Glb::read_json(&path) else {
+        continue;
+      };
+      let eyes = glb.array("materials").iter().any(|m| {
+        m["name"]
+          .as_str()
+          .is_some_and(|n| n.starts_with("programmer_eye"))
+      });
+      if !eyes || !seen.insert(name.clone()) {
+        continue;
+      }
+      match crate::looks::eye_textures(&path, &game, None) {
+        Some(e) => {
+          read += 1;
+          println!("{name}: {:?} {:?}", e.left, e.right);
+        }
+        None => println!("{name}: not read"),
+      }
+    }
+  }
+  println!("{read} of {} models' eyes read", seen.len());
+}
+
+/// The segments of every model of a game's levels the playable game shows, read from its art group:
+/// `OGAS_MODELS=<jak-project>/decompiler_out/<game>/levels OGAS_GAME=<game> cargo test -p
+/// animation-studio-core -- --ignored --nocapture the_games_segments`.
+#[test]
+#[ignore = "needs a game's models: OGAS_MODELS=<folder> OGAS_GAME=<game>"]
+fn the_games_segments() {
+  let dir = std::path::PathBuf::from(std::env::var("OGAS_MODELS").expect("OGAS_MODELS"));
+  let game = std::env::var("OGAS_GAME").expect("OGAS_GAME");
+  let (mut seen, mut read) = (std::collections::BTreeSet::new(), 0);
+  let mut stack = vec![dir];
+  while let Some(d) = stack.pop() {
+    for e in std::fs::read_dir(&d).unwrap().flatten() {
+      let path = e.path();
+      if path.is_dir() {
+        stack.push(path);
+        continue;
+      }
+      let name = library::model_name(&path);
+      if !crate::names::is_shown(&game, &name) || !seen.insert(name.clone()) {
+        continue;
+      }
+      let Ok(glb) = Glb::read_json(&path) else {
+        continue;
+      };
+      let looks = crate::looks::game_looks(&glb, &path, &game, None);
+      if looks.segments.len() > 1 {
+        read += 1;
+        println!(
+          "{name}: {} effects, {} segments",
+          looks.parts.len(),
+          looks.segments.len()
+        );
+      } else if looks.parts.len() > 1 {
+        println!("{name}: {} parts, no segments", looks.parts.len());
+      }
+    }
+  }
+  println!("{read} of {} models have segments", seen.len());
+}
+
+/// Jak's animations are the game's: shown, and kept in his creation, but neither checked nor
+/// exported; what is added to him is.
+#[test]
+fn jaks_creation_exports_only_the_animations_added() {
+  let root = std::env::temp_dir().join(format!("ogas-jak-{}", std::process::id()));
+  let _ = std::fs::remove_dir_all(&root);
+  let models = root.join("common");
+  std::fs::create_dir_all(&models).unwrap();
+  let mut jak = skinned(3);
+  // a game's animation the export would warn about: joints left without keys
+  let mut partial = rotation(1, &[0.0, 1.0]);
+  partial.joint = 2;
+  edit::set_animation(&mut jak, "jakb-stance", &[partial]).unwrap();
+  jak.json["animations"][0]["channels"]
+    .as_array_mut()
+    .unwrap()
+    .truncate(1);
+  let model = models.join("jakb-lod0.glb");
+  jak.write(&model).unwrap();
+
+  let info = library::inspect(&model).unwrap();
+  assert!(info.animations[0].in_game);
+  for (name, always) in [
+    ("sidekick-lod0", true),
+    ("daxter-lod0", true),
+    ("jakb-c-lod0", true),
+    ("daxter-highres-lod0", false),
+    ("babak-lod0", false),
+  ] {
+    assert_eq!(crate::names::is_always_loaded(name), always, "{name}");
+  }
+  assert!(info.issues.is_empty(), "{:?}", info.issues);
+
+  let creations = root.join("creations");
+  let creation = library::edit_creation(&model, &creations, "jak2", |glb| {
+    edit::set_animation(glb, "wave", &[rotation(1, &[0.0, 1.0])])
+  })
+  .unwrap();
+  let info = library::inspect(&creation).unwrap();
+  let shown: Vec<(&str, bool)> = info
+    .animations
+    .iter()
+    .map(|a| (a.name.as_str(), a.in_game))
+    .collect();
+  assert_eq!(shown, [("jakb-stance", true), ("wave", false)]);
+
+  let export = library::export(&creation, "jak2", None, "en").unwrap();
+  let built = Glb::read(&export.glb).unwrap();
+  let names: Vec<String> = model::animations(&built)
+    .into_iter()
+    .map(|a| a.name)
+    .collect();
+  assert_eq!(names, ["wave"]);
+  assert_eq!(
+    library::model_game_names(&creation).unwrap().art,
+    ["wave-ja"]
+  );
+  std::fs::remove_dir_all(&root).unwrap();
+}
+
+/// A try builds the animation picked, then those nearest it that fit in the level, added ones before
+/// Jak's own.
+#[test]
+fn a_try_builds_the_animation_picked_and_what_fits_beside_it() {
+  let model = |game: &[&str]| {
+    let mut glb = skinned(3);
+    for name in ["a", "b", "c", "d"] {
+      edit::set_animation(&mut glb, name, &[rotation(1, &[0.0, 1.0])]).unwrap();
+    }
+    for (i, anim) in glb.array_mut("animations").iter_mut().enumerate() {
+      if game.contains(&["a", "b", "c", "d"][i]) {
+        anim["extras"]["gameAnimation"] = json!(true);
+      }
+    }
+    glb
+  };
+  let mut glb = model(&[]);
+  let joints = model::skeleton(&glb).unwrap();
+  let size = rules::built_size(&glb, &joints, &glb.array("animations")[0]);
+  let fit = |glb: &mut Glb| crate::game_test::fit_animations(glb, "jak", "c", 2 * size).unwrap();
+  assert_eq!(fit(&mut glb), ["b", "c"], "the nearest, the earlier first");
+  assert_eq!(model::animations(&glb).len(), 2);
+  assert_eq!(
+    fit(&mut model(&["a", "b", "c"])),
+    ["c", "d"],
+    "an added one first"
+  );
+  assert!(crate::game_test::fit_animations(&mut model(&[]), "jak", "e", size).is_err());
 }

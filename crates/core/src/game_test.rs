@@ -23,7 +23,12 @@ use std::time::{Duration, Instant};
 use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 
-use crate::{edit, glb::Glb, library::Settings, rules};
+use crate::{
+  edit,
+  glb::Glb,
+  library::{self, Settings},
+  model, rules,
+};
 
 const EXE: &str = std::env::consts::EXE_SUFFIX;
 /// the model's name in the game: never one of the game's art groups
@@ -335,13 +340,13 @@ fn free_port() -> u16 {
     .unwrap_or(0)
 }
 
-fn port_taken(port: u16) -> bool {
+pub fn port_taken(port: u16) -> bool {
   TcpListener::bind(("0.0.0.0", port)).is_err() || TcpListener::bind(("127.0.0.1", port)).is_err()
 }
 
 /// gk's listener: 8112 for Jak 1, 8113 for Jak 2, 8114 for Jak 3, whatever its --port says
 /// (DECI2_PORT - 1 + the game's version, game/runtime.cpp).
-fn game_port(game: &str) -> u16 {
+pub fn game_port(game: &str) -> u16 {
   match game {
     "jak2" => 8113,
     "jak3" => 8114,
@@ -542,6 +547,8 @@ struct Session {
   goalc: Option<Goalc>,
   gk: Option<Program>,
   kept: Vec<(PathBuf, PathBuf)>,
+  /// the animations of the model the game shows, in its art group's order
+  built: Vec<String>,
 }
 
 impl Session {
@@ -553,6 +560,7 @@ impl Session {
       // killed, not quit: goalc quitting resets the game it is connected to
       g.program.kill();
     }
+    self.built.clear();
     for (place, copy) in self.kept.drain(..) {
       if copy.is_file() {
         if std::fs::copy(&copy, &place).is_ok() {
@@ -620,16 +628,24 @@ impl GameTest {
     lock(&self.session).stop();
   }
 
-  /// Whether the game of the last try is still open.
+  /// Whether a try goes on, or the game of the last one is still open.
   pub fn running(&self) -> bool {
-    lock(&self.session).gk.as_mut().is_some_and(Program::alive)
+    self
+      .session
+      .try_lock()
+      .map_or(true, |mut s| s.gk.as_mut().is_some_and(Program::alive))
   }
 
-  /// The model in the running game plays its animation `anim` (0 the first), named `name`.
-  pub fn play(&self, anim: usize, name: &str) -> Result<()> {
+  /// The model in the running game plays its animation `name`; false when the try did not build it
+  /// (another try builds it).
+  pub fn play(&self, name: &str) -> Result<bool> {
     let mut s = lock(&self.session);
+    let Some(anim) = s.built.iter().position(|n| n == name) else {
+      return Ok(false);
+    };
     let goalc = s.goalc.as_mut().context("no game is open")?;
-    play_checked(goalc, anim, name)
+    play_checked(goalc, anim, name)?;
+    Ok(true)
   }
 
   /// The running game plays `name`: what it shows of it, with `shots` screenshots spread over
@@ -720,8 +736,9 @@ impl GameTest {
     })
   }
 
-  /// `model` tried in `game`, installed in `root`, playing its animation `anim`, named `name`
-  /// (checked in the game); `step` is told each step ("export", "compiler", "build", "start",
+  /// `model` tried in `game`, installed in `root`, playing its animation `name` (checked in the
+  /// game), with the animations nearest it that fit in the level (`fit_animations`); `step` is told
+  /// each step ("export", "compiler", "build", "start",
   /// "load", "play").
   /// What goalc and the game printed go to <prefs>/game-test/<game>/goalc.log and gk.log.
   pub fn try_model(
@@ -729,12 +746,11 @@ impl GameTest {
     model: &Path,
     root: &Path,
     game: &str,
-    anim: usize,
     name: &str,
     step: impl Fn(&str),
   ) -> Result<()> {
     let mut s = lock(&self.session);
-    let mut r = self.run(&mut s, model, root, game, (anim, name), step);
+    let mut r = self.run(&mut s, model, root, game, name, step);
     if r.is_err()
       && let Some(gk) = s.gk.as_mut()
       && !gk.alive()
@@ -770,7 +786,7 @@ impl GameTest {
     model: &Path,
     root: &Path,
     game: &str,
-    (anim, name): (usize, &str),
+    name: &str,
     step: impl Fn(&str),
   ) -> Result<()> {
     let install = find_install(game, root)?;
@@ -790,7 +806,13 @@ impl GameTest {
     let proj = project(&install, &dir)?;
 
     step("export");
-    let mut glb = Glb::read(model)?;
+    let mut glb = library::read_with_skin_animations(model)?;
+    let max = if game == "jak1" {
+      rules::JAK1_DGO_BUFFER
+    } else {
+      rules::DGO_BUFFER
+    };
+    let built = fit_animations(&mut glb, &library::model_name(model), name, max * 3 / 4)?;
     // what the game would show wrong, it shows: a try is there to see it
     edit::normalize(&mut glb, ACTOR)?;
     edit::hold_still_keys(&mut glb)?;
@@ -845,14 +867,10 @@ impl GameTest {
     )?;
 
     step("build");
+    s.built.clear();
     goalc.make("$OUT/iso/TSZ.DGO")?;
-    let built = proj.join("out").join(game);
-    let size = std::fs::metadata(built.join(format!("obj/{ACTOR}-ag.go")))?.len() as usize;
-    let max = if game == "jak1" {
-      rules::JAK1_DGO_BUFFER
-    } else {
-      rules::DGO_BUFFER
-    };
+    let out = proj.join("out").join(game);
+    let size = std::fs::metadata(out.join(format!("obj/{ACTOR}-ag.go")))?.len() as usize;
     if size > max {
       bail!(text(
         "art-group-too-big",
@@ -880,7 +898,7 @@ impl GameTest {
         }
         s.kept.push((place.clone(), copy));
       }
-      std::fs::copy(built.join(file), &place).with_context(|| place.display().to_string())?;
+      std::fs::copy(out.join(file), &place).with_context(|| place.display().to_string())?;
     }
 
     step("start");
@@ -930,8 +948,69 @@ impl GameTest {
     goalc.wait_value("(if *target* 1 0)", Duration::from_secs(60))?;
 
     step("play");
-    play_checked(goalc, anim, name)
+    let anim = built
+      .iter()
+      .position(|n| n == name)
+      .expect("fit_animations keeps it");
+    play_checked(goalc, anim, name)?;
+    s.built = built;
+    Ok(())
   }
+}
+
+/// The animations a try builds: `name`, then the model's others, those added before the game's
+/// own (Jak's) and each the nearest `name` in the file first, as many as fit in `budget` bytes once
+/// built; the rest are taken out. A level loads the art group whole: Jak's 289 animations in Jak 3
+/// would take 10 MB. Returns the names kept, in the file's order.
+pub(crate) fn fit_animations(
+  glb: &mut Glb,
+  model: &str,
+  name: &str,
+  budget: usize,
+) -> Result<Vec<String>> {
+  let joints = model::skeleton(glb)?;
+  let anims = glb.array("animations").to_vec();
+  let names: Vec<String> = anims
+    .iter()
+    .enumerate()
+    .map(|(i, a)| model::animation_name(a, i))
+    .collect();
+  let picked = names.iter().position(|n| n == name).with_context(|| {
+    text(
+      "try-animation-missing",
+      "{model} has no animation {anim} to try.",
+      &[("model", model.to_owned()), ("anim", name.to_owned())],
+    )
+  })?;
+  let mut order: Vec<usize> = (0..anims.len()).collect();
+  order.sort_by_key(|&i| {
+    (
+      i != picked,
+      model::is_game_animation(&anims[i]),
+      i.abs_diff(picked),
+    )
+  });
+  let mut keep = vec![false; anims.len()];
+  let mut used = 0;
+  for i in order {
+    let size = rules::built_size(glb, &joints, &anims[i]);
+    if i == picked || used + size <= budget {
+      keep[i] = true;
+      used += size;
+    }
+  }
+  let mut k = keep.iter();
+  glb
+    .array_mut("animations")
+    .retain(|_| *k.next().expect("one per animation"));
+  glb.compact();
+  Ok(
+    names
+      .into_iter()
+      .zip(keep)
+      .filter_map(|(n, k)| k.then_some(n))
+      .collect(),
+  )
 }
 
 /// goalc's project, made again for another installation: links to the installed game's sources
@@ -1165,7 +1244,6 @@ mod tests {
       &model,
       Path::new(&var("OGAS_GAME_INSTALL")),
       &game,
-      0,
       &names[0],
       |s| println!("step {s}"),
     );
@@ -1174,7 +1252,7 @@ mod tests {
       println!("{:?}", test.check(&game, &names[0], 1.0, 2).unwrap());
       for anim in [1, 0] {
         std::thread::sleep(Duration::from_secs(seconds));
-        test.play(anim, &names[anim]).unwrap();
+        test.play(&names[anim]).unwrap();
       }
       std::thread::sleep(Duration::from_secs(seconds));
     }

@@ -122,7 +122,7 @@ fn tools() -> Value {
         "file": { "type": "string", "description": "the motion capture file: .bvh, .fbx, .glb or .gltf" },
         "name": { "type": "string", "description": "the animation's name (the file's name by default)" },
         "in_place": { "type": "boolean", "description": "true (by default): the hips go up and down but do not travel; false: the travel goes to align, which moves the entity in game" },
-        "fps": { "type": "integer", "enum": [15, 24, 30, 60], "description": "keys per second (30 by default)" },
+        "fps": { "type": "integer", "enum": [15, 24, 30, 60], "description": "keys per second (15 by default, as the game's own animations)" },
         "hold_weapon": { "type": "boolean", "description": "true (by default): when the model's hands hold a weapon in its first animation (a guard's gun), the arms keep that pose and the weapon stays in both hands; false: the arms follow the capture, the weapon the hand holding it" }
       }),
       &["model", "file"],
@@ -157,7 +157,7 @@ fn tools() -> Value {
     ),
     tool(
       "export_for_game",
-      "Writes the creation as build-actor wants it (in the animations that need it: keys made linear, joints keyed; the skin set so that any build-actor builds it right) at custom_assets/<game>/models/custom_levels/<model>.glb, in the jak-project folder of the settings or in the creation's export folder, with a README giving the lines to add to the game.",
+      "Writes the creation as build-actor wants it (in the animations that need it: keys made linear, joints keyed; the skin set so that any build-actor builds it right) at custom_assets/<game>/models/custom_levels/<model>.glb, in the game's installation folder of the settings or in the creation's export folder, with a README giving the lines to add to the game.",
       json!({ "model": model, "game": game }),
       &["model"],
     ),
@@ -314,7 +314,7 @@ impl Server {
       "get_settings" => Ok(json!({
         "modelsFolders": settings.models_dirs,
         "creationsFolder": settings.creations(),
-        "jakProjectFolder": settings.jak_project_dir,
+        "gameFolders": settings.game_dirs,
         "game": settings.game(),
         "games": GAMES,
         "limits": { "joints": MAX_JOINTS, "bytesPerFrame": MAX_FRAME_BYTES },
@@ -404,7 +404,7 @@ impl Server {
           Some(n) => n.to_owned(),
           None => rules::goal_name(&file.file_stem().unwrap_or_default().to_string_lossy()),
         };
-        let fps = args["fps"].as_u64().unwrap_or(30) as u32;
+        let fps = args["fps"].as_u64().unwrap_or(15) as u32;
         ensure!([15, 24, 30, 60].contains(&fps), "fps is 15, 24, 30 or 60");
         let answer = self.ask(
           PlayRequest {
@@ -506,7 +506,7 @@ impl Server {
         let export = library::export(
           &creation,
           game,
-          settings.jak_project_dir.as_deref(),
+          settings.game_data(game).as_deref(),
           settings.lang.as_deref().unwrap_or("en"),
         )?;
         Ok(json!({

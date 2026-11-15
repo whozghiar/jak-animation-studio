@@ -19,7 +19,7 @@ use std::time::Duration;
 
 use animation_studio_core::{
   edit::{self, Channel},
-  game_test::{Check, GameTest},
+  game_test::{self, Check, GameTest},
   library::{self, Export, GameNames, ModelEntry, ModelInfo, PlayRequest, Settings, Twin},
   looks::{self, Looks},
   rules::Text,
@@ -35,10 +35,68 @@ struct Launch {
   tooling_version: Option<String>,
 }
 
+/// A line added to the error log, `<prefs>/errors.log` (`%APPDATA%/OpenGOAL/animation-studio` on
+/// Windows), after the time (UTC); past 1 MB, the log becomes errors.old.log and a new one starts.
+fn log_error(line: &str) {
+  use std::io::Write;
+  let dir = Settings::dir();
+  let file = dir.join("errors.log");
+  if std::fs::metadata(&file).is_ok_and(|m| m.len() > 1 << 20) {
+    let _ = std::fs::rename(&file, dir.join("errors.old.log"));
+  }
+  let _ = std::fs::create_dir_all(&dir);
+  if let Ok(mut f) = std::fs::OpenOptions::new()
+    .create(true)
+    .append(true)
+    .open(&file)
+  {
+    let _ = writeln!(f, "{} {line}", utc_now());
+  }
+}
+
+/// The time now: "2026-11-15 14:03:27 UTC".
+fn utc_now() -> String {
+  let secs = std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .map_or(0, |d| d.as_secs()) as i64;
+  // days since 1970 to a date: Howard Hinnant's civil_from_days
+  let z = secs.div_euclid(86400) + 719_468;
+  let era = z.div_euclid(146_097);
+  let doe = z - era * 146_097;
+  let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+  let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+  let mp = (5 * doy + 2) / 153;
+  let (d, m) = (
+    doy - (153 * mp + 2) / 5 + 1,
+    if mp < 10 { mp + 3 } else { mp - 9 },
+  );
+  let y = yoe + era * 400 + i64::from(m <= 2);
+  let s = secs.rem_euclid(86400);
+  format!(
+    "{y}-{m:02}-{d:02} {:02}:{:02}:{:02} UTC",
+    s / 3600,
+    s / 60 % 60,
+    s % 60
+  )
+}
+
+/// The studio's folder: its settings, errors.log, and the try's game-test/<game>/goalc.log, gk.log.
+#[tauri::command]
+fn prefs_folder() -> PathBuf {
+  Settings::dir()
+}
+
+/// What went wrong in the window (a script error), written to the error log.
+#[tauri::command]
+fn log_window_error(message: String) {
+  log_error(&format!("[window] {message}"));
+}
+
 /// An error for the interface: with the code and arguments of its text when the core gave them, so
-/// that the interface says it in its language.
+/// that the interface says it in its language. It goes to the error log too.
 fn err(e: anyhow::Error) -> Value {
   let message = format!("{e:#}");
+  log_error(&message);
   match e.downcast_ref::<Text>() {
     Some(text) => json!({ "code": text.code, "args": text.args, "message": message }),
     None => json!({ "message": message }),
@@ -59,9 +117,23 @@ fn save_settings(settings: Settings) -> Result<(), Value> {
   settings.save().map_err(err)
 }
 
+/// The models of `dir`; reading a game's thousands of files takes a while: "list-progress" events
+/// tell the window how far it went ({ dir, done, total }), a hundred times at most.
 #[tauri::command]
-async fn list_models(dir: PathBuf, game: String, objects: bool) -> Vec<ModelEntry> {
-  library::list_models(&dir, &game, objects)
+async fn list_models(
+  app: tauri::AppHandle,
+  dir: PathBuf,
+  game: String,
+  objects: bool,
+) -> Vec<ModelEntry> {
+  library::list_models_with(&dir, &game, objects, |done, total| {
+    if done == total || done % (total / 100).max(1) == 0 {
+      let _ = app.emit(
+        "list-progress",
+        json!({ "dir": dir, "done": done, "total": total }),
+      );
+    }
+  })
 }
 
 #[tauri::command]
@@ -71,9 +143,19 @@ async fn inspect_model(path: PathBuf) -> Result<ModelInfo, Value> {
 
 #[tauri::command]
 async fn read_model(path: PathBuf) -> Result<tauri::ipc::Response, Value> {
+  let unreadable = |e: &dyn std::fmt::Display| json!({ "message": format!("Unable to read {}: {e}", path.display()) });
+  // a skin plays the animations of its twin (Jak 3's jakb-c, jakb's)
+  if path
+    .extension()
+    .is_some_and(|x| x.eq_ignore_ascii_case("glb"))
+  {
+    return library::read_with_skin_animations(&path)
+      .map(|glb| tauri::ipc::Response::new(glb.to_bytes()))
+      .map_err(|e| unreadable(&e));
+  }
   std::fs::read(&path)
     .map(tauri::ipc::Response::new)
-    .map_err(|e| json!({ "message": format!("Unable to read {}: {e}", path.display()) }))
+    .map_err(|e| unreadable(&e))
 }
 
 /// When the file last changed (ms), so the window follows the edits of the MCP server.
@@ -133,20 +215,57 @@ async fn rename_animation(
 }
 
 #[tauri::command]
-async fn model_looks(path: PathBuf) -> Result<Looks, Value> {
-  Ok(looks::looks(
-    &animation_studio_core::glb::Glb::read(&path).map_err(err)?,
-  ))
+async fn model_looks(path: PathBuf, game: String) -> Result<Looks, Value> {
+  let glb = animation_studio_core::glb::Glb::read(&path).map_err(err)?;
+  let project = Settings::load().decompiled(&game);
+  Ok(looks::game_looks(&glb, &path, &game, project.as_deref()))
 }
 
-/// The look made the creation's own: `hidden` (mesh, primitive) removed, blend shapes baked.
+/// Each animation's eye frames (looks::eye_frames), by name.
 #[tauri::command]
-async fn apply_looks(
-  model: PathBuf,
-  hidden: Vec<(usize, usize)>,
-  weights: Vec<f32>,
-) -> Result<PathBuf, Value> {
-  edit_creation(model, |glb| looks::apply(glb, &hidden, &weights))
+async fn model_eye_frames(
+  path: PathBuf,
+  game: String,
+) -> std::collections::HashMap<String, Vec<[looks::EyeFrame; 2]>> {
+  let project = Settings::load().decompiled(&game);
+  looks::eye_frames(&path, &game, project.as_deref())
+}
+
+/// The .png files of the textures the game draws the model's eyes with (looks::eye_textures), left
+/// then right: iris, pupil, lid. Each from the decompiler's textures, in the page of the model's
+/// level when it has it (Kleever's klever-eye from desliz-pris), else in the first page that has it.
+#[tauri::command]
+async fn model_eyes(path: PathBuf, game: String) -> Option<[[PathBuf; 3]; 2]> {
+  let project = Settings::load().decompiled(&game);
+  let eyes = looks::eye_textures(&path, &game, project.as_deref())?;
+  let mut roots: Vec<PathBuf> = path.ancestors().map(|d| d.join("textures")).collect();
+  roots.extend(project.map(|p| p.join("decompiler_out").join(&game).join("textures")));
+  let level = path
+    .parent()
+    .and_then(|d| d.file_name())
+    .map(|d| d.to_string_lossy().into_owned())
+    .unwrap_or_default();
+  let file = |name: &String| -> Option<PathBuf> {
+    roots.iter().filter(|r| r.is_dir()).find_map(|root| {
+      let mut pages: Vec<PathBuf> = std::fs::read_dir(root)
+        .ok()?
+        .flatten()
+        .map(|e| e.path())
+        .collect();
+      pages.sort_by_key(|p| {
+        let page = p.file_name().map(|n| n.to_string_lossy().into_owned());
+        (!page.is_some_and(|n| n.starts_with(&level)), p.clone())
+      });
+      pages
+        .into_iter()
+        .map(|page| page.join(format!("{name}.png")))
+        .find(|f| f.is_file())
+    })
+  };
+  let side = |names: &[String; 3]| -> Option<[PathBuf; 3]> {
+    Some([file(&names[0])?, file(&names[1])?, file(&names[2])?])
+  };
+  Some([side(&eyes.left)?, side(&eyes.right)?])
 }
 
 /// The models with the same skeleton as `path` and animations it lacks, in its folder and the game's
@@ -178,7 +297,7 @@ async fn add_animations(model: PathBuf, sources: Vec<PathBuf>) -> Result<PathBuf
 async fn game_textures(game: String, near: PathBuf, beside: String) -> Vec<PathBuf> {
   let settings = Settings::load();
   let mut roots: Vec<PathBuf> = near.ancestors().map(|d| d.join("textures")).collect();
-  if let Some(project) = &settings.jak_project_dir {
+  if let Some(project) = settings.decompiled(&game) {
     roots.push(project.join("decompiler_out").join(&game).join("textures"));
   }
   let pngs = |page: &Path| -> Vec<PathBuf> {
@@ -259,22 +378,6 @@ fn answer_mcp(result: Value) -> Result<(), Value> {
     .map_err(|e| json!({ "message": format!("Unable to answer the MCP server: {e}") }))
 }
 
-/// The index of the animation `name` in `model`: the game plays that one, or the try fails.
-fn animation_index(model: &Path, name: &str) -> Result<usize, Value> {
-  let info = library::inspect(model).map_err(err)?;
-  info
-    .animations
-    .iter()
-    .position(|a| a.name == name)
-    .ok_or_else(|| {
-      err(anyhow::Error::new(Text::new(
-        "try-animation-missing",
-        "{model} has no animation {anim} to try.",
-        &[("model", info.name.clone()), ("anim", name.to_owned())],
-      )))
-    })
-}
-
 /// The names the game's code gives a model's art (the guide's lines).
 #[tauri::command]
 async fn game_names(model: PathBuf) -> Result<GameNames, Value> {
@@ -289,10 +392,65 @@ async fn export_for_game(model: PathBuf, lang: String) -> Result<Export, Value> 
   library::export(
     &creation,
     settings.game(),
-    settings.jak_project_dir.as_deref(),
+    settings.game_data(settings.game()).as_deref(),
     &lang,
   )
   .map_err(err)
+}
+
+/// The installation of `game` a try starts: the Launcher's, else the settings' one.
+fn try_root(launch: &Launch, game: &str) -> anyhow::Result<PathBuf> {
+  match (launch.game_installs.get(game), &launch.tooling_version) {
+    (Some(root), _) => Ok(root.clone()),
+    // started by the Launcher: a game built by another tooling than the active one is not tried
+    (None, Some(version)) => Err(anyhow::Error::new(Text::new(
+      "game-not-in-launcher",
+      "This game is not installed with the OpenGOAL Launcher's active tooling ({version}): install or update it in the Launcher.",
+      &[("version", version.clone())],
+    ))),
+    (None, None) => Settings::load().game_dirs.remove(game).ok_or_else(|| {
+      anyhow::Error::new(Text::new(
+        "no-game-folder",
+        "Choose the game's installation folder in the settings, or start the studio from the OpenGOAL Launcher.",
+        &[],
+      ))
+    }),
+  }
+}
+
+/// Why `game` cannot be started for a try now, or None: no installation found or complete, Jak and
+/// Daxter (it closes when a level loads a custom actor with a skeleton), or another game on its
+/// port (the game of a try the studio runs is its own).
+#[tauri::command]
+async fn try_blocked(app: tauri::AppHandle, game: String) -> Option<Value> {
+  if game == "jak1" {
+    return Some(err_quiet(Text::new(
+      "try-jak1",
+      "Jak and Daxter closes when a level loads a character added this way: try models in Jak II or Jak 3.",
+      &[],
+    )));
+  }
+  let root = match try_root(&app.state::<Launch>(), &game) {
+    Ok(root) => root,
+    Err(e) => return Some(err_quiet(e.downcast::<Text>().ok()?)),
+  };
+  if let Err(e) = game_test::find_install(&game, &root) {
+    return Some(err_quiet(e.downcast::<Text>().ok()?));
+  }
+  let ours = app.state::<GameTest>().running();
+  let port = game_test::game_port(&game);
+  (!ours && game_test::port_taken(port)).then(|| {
+    err_quiet(Text::new(
+      "game-port-taken",
+      "Another game listens on port {port}: close it first.",
+      &[("port", port.to_string())],
+    ))
+  })
+}
+
+/// A text of the core for the interface, not an error: not written to the error log.
+fn err_quiet(text: Text) -> Value {
+  json!({ "code": text.code, "args": text.args, "message": text.message })
 }
 
 /// The model tried in the game (test_in_game): built as a custom actor and shown in `game`'s test
@@ -305,30 +463,11 @@ async fn test_in_game(
   game: String,
   animation: String,
 ) -> Result<(), Value> {
-  let index = animation_index(&model, &animation)?;
-  let launch = app.state::<Launch>();
-  let root = match (launch.game_installs.get(&game), &launch.tooling_version) {
-    (Some(root), _) => root.clone(),
-    // started by the Launcher: a game built by another tooling than the active one is not tried
-    (None, Some(version)) => {
-      return Err(err(anyhow::Error::new(Text::new(
-        "game-not-in-launcher",
-        "This game is not installed with the OpenGOAL Launcher's active tooling ({version}): install or update it in the Launcher.",
-        &[("version", version.clone())],
-      ))));
-    }
-    (None, None) => Settings::load().jak_project_dir.ok_or_else(|| {
-      err(anyhow::Error::new(Text::new(
-        "no-game-folder",
-        "Choose the game to try in: the jak-project folder in the settings, or start the studio from the OpenGOAL Launcher.",
-        &[],
-      )))
-    })?,
-  };
+  let root = try_root(&app.state::<Launch>(), &game).map_err(err)?;
   tauri::async_runtime::spawn_blocking(move || {
     app
       .state::<GameTest>()
-      .try_model(&model, &root, &game, index, &animation, |step| {
+      .try_model(&model, &root, &game, &animation, |step| {
         let _ = app.emit("game-test", step);
       })
   })
@@ -337,15 +476,11 @@ async fn test_in_game(
   .map_err(err)
 }
 
-/// The model in the game of the last try plays its animation `animation`.
+/// The model in the game of the last try plays its animation `animation`: false when the try did
+/// not build it (the window tries again with it).
 #[tauri::command]
-async fn play_in_game(
-  app: tauri::AppHandle,
-  model: PathBuf,
-  animation: String,
-) -> Result<(), Value> {
-  let index = animation_index(&model, &animation)?;
-  tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().play(index, &animation))
+async fn play_in_game(app: tauri::AppHandle, animation: String) -> Result<bool, Value> {
+  tauri::async_runtime::spawn_blocking(move || app.state::<GameTest>().play(&animation))
     .await
     .map_err(|e| json!({ "message": e.to_string() }))?
     .map_err(err)
@@ -400,6 +535,12 @@ fn main() {
       _ => {}
     }
   }
+
+  let default_hook = std::panic::take_hook();
+  std::panic::set_hook(Box::new(move |info| {
+    log_error(&format!("[panic] {info}"));
+    default_hook(info);
+  }));
 
   // the creations folder written down, so the MCP server works in the same one
   let mut settings = Settings::load();
@@ -456,10 +597,11 @@ fn main() {
       rename_animation,
       import_model,
       model_looks,
+      model_eyes,
+      model_eye_frames,
       twin_animations,
       add_animations,
       game_textures,
-      apply_looks,
       find_model,
       take_play,
       answer_mcp,
@@ -469,6 +611,9 @@ fn main() {
       test_in_game,
       play_in_game,
       stop_game_test,
+      try_blocked,
+      log_window_error,
+      prefs_folder,
     ])
     .build(tauri::generate_context!())
     .expect("Jak Animation Studio could not start")

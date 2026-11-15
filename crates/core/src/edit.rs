@@ -242,6 +242,31 @@ pub fn copy_animations(glb: &mut Glb, source: &Glb) -> Result<usize> {
   Ok(added)
 }
 
+/// Marks every animation as one of the game's (model::is_game_animation).
+pub fn mark_game_animations(glb: &mut Glb) {
+  for anim in glb.json["animations"].as_array_mut().into_iter().flatten() {
+    anim["extras"]["gameAnimation"] = json!(true);
+  }
+}
+
+/// The game's animations taken out: what goes to build-actor is the animations added to Jak.
+pub fn drop_game_animations(glb: &mut Glb) {
+  let Some(anims) = glb.json["animations"].as_array_mut() else {
+    return;
+  };
+  let before = anims.len();
+  anims.retain(|a| !model::is_game_animation(a));
+  if anims.len() == before {
+    return;
+  }
+  if glb.array("animations").is_empty()
+    && let Some(root) = glb.json.as_object_mut()
+  {
+    root.remove("animations");
+  }
+  glb.compact();
+}
+
 pub fn delete_animation(glb: &mut Glb, name: &str) -> Result<()> {
   let i = index_of(glb, name).with_context(|| {
     Text::new(

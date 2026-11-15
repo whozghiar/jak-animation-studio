@@ -6,12 +6,19 @@
   import SettingsPage from "./components/Settings.svelte";
   import Guide from "./components/Guide.svelte";
   import Toasts from "./components/Toasts.svelte";
+  import HelpNote from "./components/HelpNote.svelte";
+  import { help } from "$lib/help.svelte";
   import { listen } from "@tauri-apps/api/event";
+  import { invoke } from "@tauri-apps/api/core";
   import { getSettings, takePlay } from "$lib/rpc";
   import { app } from "$lib/settings.svelte";
   import { i18n, LANGS, type Lang } from "$lib/i18n.svelte";
 
   let page = $state<"studio" | "guide" | "settings">("studio");
+  // a control's "See more" opens its section of the guide
+  $effect(() => {
+    if (help.open) page = "guide";
+  });
 
   async function play() {
     const request = await takePlay();
@@ -19,6 +26,20 @@
     page = "studio";
     app.play = request;
   }
+
+  // the window's script errors go to the error log, next to the program's
+  const log = (message: string) =>
+    invoke("log_window_error", { message }).catch(() => {});
+  window.addEventListener("error", (e) =>
+    log(`${e.message} (${e.filename}:${e.lineno})`),
+  );
+  window.addEventListener("unhandledrejection", (e) =>
+    log(
+      e.reason instanceof Error
+        ? (e.reason.stack ?? e.reason.message)
+        : (e.reason?.message ?? String(e.reason)),
+    ),
+  );
 
   onMount(async () => {
     const settings = await getSettings();
@@ -37,15 +58,18 @@
     <Sidebar bind:page />
     <main class="relative min-w-0 flex-1 overflow-hidden">
       {#if app.settings}
-        {#if page === "studio"}
+        <!-- the studio stays: its models, lists and view are there when coming back -->
+        <div class="h-full" class:hidden={page !== "studio"}>
           <Studio />
-        {:else if page === "guide"}
+        </div>
+        {#if page === "guide"}
           <Guide />
-        {:else}
+        {:else if page === "settings"}
           <SettingsPage />
         {/if}
       {/if}
     </main>
   </div>
   <Toasts />
+  <HelpNote />
 </div>

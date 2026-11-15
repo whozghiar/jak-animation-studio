@@ -15,6 +15,7 @@
   import { setAnimation, type ModelInfo } from "$lib/rpc";
   import type { Viewer } from "$lib/viewer";
   import { errorText, t } from "$lib/i18n.svelte";
+  import { helpOn } from "$lib/help.svelte";
   import { toast } from "$lib/toast.svelte";
 
   let {
@@ -44,7 +45,8 @@
   let mocap = $state.raw<Mocap | null>(null);
   let clipIndex = $state(0);
   let name = $state("");
-  let fps = $state(30);
+  // the game's own animations have 15 keys a second (the extraction's, Jak's and Daxter's)
+  let fps = $state(15);
   let smoothing = $state(DEFAULTS.smoothing);
   let inPlace = $state(DEFAULTS.inPlace);
   let face = $state(DEFAULTS.faceForward);
@@ -161,6 +163,7 @@
   <div class="grid grid-cols-3 gap-2">
     {#each [["video", IconVideo, "fromVideo"], ["mocap", IconMocap, "fromMocap"], ["manual", IconHand, "fromManual"]] as const as [id, Icon, label] (id)}
       <button
+        use:helpOn={{ note: "ctl_source", section: "new" }}
         class="flex flex-col items-center gap-1 rounded-md border px-3 py-3 text-sm {source ===
         id
           ? 'border-orange-500 bg-orange-500/10'
@@ -237,6 +240,7 @@
       <span class="text-neutral-300">{t("fps")}</span>
       <select
         class="w-48 rounded-md border border-white/10 bg-[#1b1b1b] px-2 py-1 text-sm"
+        use:helpOn={{ note: "ctl_fps", section: "new", label: t("fps") }}
         bind:value={fps}
         disabled={!!capture}
       >
@@ -245,6 +249,7 @@
         {/each}
       </select>
     </label>
+    <p class="text-xs text-neutral-500">{t("fpsHint")}</p>
 
     {#if progress !== null}
       <div class="flex items-center gap-3">
@@ -259,6 +264,7 @@
       </div>
     {:else}
       <button
+        use:helpOn={{ note: "ctl_extract", section: "new" }}
         class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500 disabled:opacity-40"
         disabled={!file || (source === "mocap" && !mocap)}
         onclick={extract}>{t("extract")}</button
@@ -275,6 +281,11 @@
       <label class="flex items-center justify-between gap-2 text-sm">
         <span class="text-neutral-300">{t("smoothing")}</span>
         <input
+          use:helpOn={{
+            note: "ctl_smoothing",
+            section: "new",
+            label: t("smoothing"),
+          }}
           type="range"
           class="w-48 accent-orange-500"
           min="0"
@@ -284,6 +295,11 @@
       </label>
       <label class="flex items-center gap-2 text-sm">
         <input
+          use:helpOn={{
+            note: "ctl_face",
+            section: "new",
+            label: t("faceForward"),
+          }}
           type="checkbox"
           class="rounded border-white/20 bg-[#1b1b1b] text-orange-500 focus:ring-0"
           bind:checked={face}
@@ -293,6 +309,11 @@
       {#if result?.weapon}
         <label class="flex items-start gap-2 text-sm">
           <input
+            use:helpOn={{
+              note: "ctl_hold",
+              section: "new",
+              label: t("holdWeapon"),
+            }}
             type="checkbox"
             class="mt-1 rounded border-white/20 bg-[#1b1b1b] text-orange-500 focus:ring-0"
             bind:checked={holdWeapon}
@@ -307,6 +328,11 @@
       {#if capture.absolute}
         <label class="flex items-start gap-2 text-sm">
           <input
+            use:helpOn={{
+              note: "ctl_inPlace",
+              section: "new",
+              label: t("inPlace"),
+            }}
             type="checkbox"
             class="mt-1 rounded border-white/20 bg-[#1b1b1b] text-orange-500 focus:ring-0"
             bind:checked={inPlace}
@@ -322,6 +348,7 @@
 
     <div class="flex flex-col gap-2 rounded-md border border-white/10">
       <button
+        use:helpOn={{ note: "ctl_mapping", section: "new" }}
         class="flex items-center justify-between px-3 py-2 text-sm text-neutral-200"
         onclick={() => (showMapping = !showMapping)}
       >
@@ -354,6 +381,7 @@
     </div>
 
     <button
+      use:helpOn={{ note: "ctl_refine", section: "new" }}
       class="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20 disabled:opacity-40"
       disabled={!result}
       onclick={() =>
@@ -365,6 +393,7 @@
         })}>{t("refine")}</button
     >
     <button
+      use:helpOn={{ note: "ctl_save", section: "new" }}
       class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500 disabled:opacity-40"
       disabled={!result || !slug(name) || saving}
       onclick={save}>{t("save")}</button

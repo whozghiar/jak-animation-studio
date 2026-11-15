@@ -4,9 +4,12 @@
   import { GAMES, mcpCommand, type Game } from "$lib/rpc";
   import { app, save } from "$lib/settings.svelte";
   import { i18n, LANGS, t, type Lang } from "$lib/i18n.svelte";
+  import { helpOn } from "$lib/help.svelte";
   import { toast } from "$lib/toast.svelte";
 
-  type Folder = "creationsDir" | "jakProjectDir";
+  type Folder = "creationsDir";
+  /** the folders set for each game */
+  type PerGame = "modelsDirs" | "gameDirs";
   const settings = app.settings!;
   let command = $state("");
 
@@ -29,19 +32,19 @@
     await save();
   }
 
-  async function chooseModels(game: Game) {
+  async function chooseFor(key: PerGame, game: Game) {
     const dir = await open({
       directory: true,
-      defaultPath: settings.modelsDirs?.[game],
+      defaultPath: settings[key]?.[game],
     });
     if (typeof dir !== "string") return;
-    settings.modelsDirs = { ...settings.modelsDirs, [game]: dir };
+    settings[key] = { ...settings[key], [game]: dir };
     await save();
   }
 
-  async function clearModels(game: Game) {
-    const { [game]: _, ...rest } = settings.modelsDirs ?? {};
-    settings.modelsDirs = rest;
+  async function clearFor(key: PerGame, game: Game) {
+    const { [game]: _, ...rest } = settings[key] ?? {};
+    settings[key] = rest;
     await save();
   }
 
@@ -58,12 +61,6 @@
     optional?: boolean;
   }[] = [
     { key: "creationsDir", label: "creationsDir", hint: "creationsDirHint" },
-    {
-      key: "jakProjectDir",
-      label: "jakProjectDir",
-      hint: "jakProjectDirHint",
-      optional: true,
-    },
   ];
 </script>
 
@@ -78,32 +75,59 @@
       </p>
     {/if}
 
+    {#snippet perGame(key: PerGame, game: Game, label: string)}
+      {@const dir = settings[key]?.[game]}
+      <div class="flex items-center gap-2">
+        {#if label}
+          <span class="w-32 shrink-0 text-sm text-neutral-300">{label}</span>
+        {/if}
+        <div
+          class="min-w-0 flex-1 truncate rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-2 font-mono text-sm {dir
+            ? 'text-neutral-200'
+            : 'text-neutral-500'}"
+        >
+          {dir ?? t("notSet")}
+        </div>
+        <button
+          class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500"
+          use:helpOn={{
+            note: key === "modelsDirs" ? "ctl_modelsDirs" : "ctl_gameDir",
+            section: "settings",
+          }}
+          onclick={() => chooseFor(key, game)}>{t("choose")}</button
+        >
+        {#if dir}
+          <button
+            class="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
+            onclick={() => clearFor(key, game)}>{t("clear")}</button
+          >
+        {/if}
+      </div>
+    {/snippet}
+
     <section class="flex flex-col gap-2">
       <h2 class="text-sm font-semibold text-neutral-200">{t("modelsDirs")}</h2>
       {#each Object.entries(GAMES) as [id, label] (id)}
-        {@const dir = settings.modelsDirs?.[id as Game]}
-        <div class="flex items-center gap-2">
-          <span class="w-32 shrink-0 text-sm text-neutral-300">{label}</span>
-          <div
-            class="min-w-0 flex-1 truncate rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-2 font-mono text-sm {dir
-              ? 'text-neutral-200'
-              : 'text-neutral-500'}"
-          >
-            {dir ?? t("notSet")}
-          </div>
-          <button
-            class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500"
-            onclick={() => chooseModels(id as Game)}>{t("choose")}</button
-          >
-          {#if dir}
-            <button
-              class="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
-              onclick={() => clearModels(id as Game)}>{t("clear")}</button
-            >
-          {/if}
-        </div>
+        {@render perGame("modelsDirs", id as Game, label)}
       {/each}
       <p class="text-xs text-neutral-400">{t("modelsDirHint")}</p>
+    </section>
+
+    <section class="flex flex-col gap-3">
+      {#each Object.entries(GAMES) as [id, label] (id)}
+        <div class="flex flex-col gap-1">
+          <h2 class="text-sm font-semibold text-neutral-200">
+            {t("gameDir", { game: label })}
+          </h2>
+          {@render perGame("gameDirs", id as Game, "")}
+        </div>
+      {/each}
+      <p class="text-xs text-neutral-400">{t("gameDirHint")}</p>
+      <ul class="list-disc pl-5 text-xs text-neutral-400">
+        {#each ["gameDirLauncher", "gameDirRelease", "gameDirProject"] as const as example (example)}
+          <li>{t(example)}</li>
+        {/each}
+      </ul>
     </section>
 
     {#each folders as f (f.key)}
@@ -121,6 +145,7 @@
           </div>
           <button
             class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500"
+            use:helpOn={{ note: "ctl_creationsDir", section: "settings" }}
             onclick={() => choose(f.key)}>{t("choose")}</button
           >
           {#if f.optional && settings[f.key]}
@@ -138,6 +163,11 @@
       <section class="flex flex-col gap-2">
         <h2 class="text-sm font-semibold text-neutral-200">{t("language")}</h2>
         <select
+          use:helpOn={{
+            note: "ctl_language",
+            section: "settings",
+            label: t("language"),
+          }}
           class="rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-2 text-sm"
           value={i18n.lang}
           onchange={(e) => setLang(e.currentTarget.value as Lang)}
@@ -158,6 +188,7 @@
           >{command}</code
         >
         <button
+          use:helpOn={{ note: "ctl_mcp", section: "settings" }}
           class="rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
           onclick={async () => {
             await navigator.clipboard.writeText(command);

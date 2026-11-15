@@ -11,6 +11,7 @@
   import IconFolder from "~icons/mdi/folder-open-outline";
   import IconPlus from "~icons/mdi/plus";
   import IconImport from "~icons/mdi/tray-arrow-down";
+  import IconRefresh from "~icons/mdi/refresh";
   import IconChevron from "~icons/mdi/chevron-right";
   import IconPencil from "~icons/mdi/pencil-outline";
   import IconDelete from "~icons/mdi/delete-outline";
@@ -46,7 +47,9 @@
     setAnimation,
     stopGameTest,
     testInGame,
+    tryBlocked,
     twinAnimations,
+    type CoreText,
     type Export,
     type Game,
     type ModelEntry,
@@ -57,11 +60,16 @@
   import { app, save } from "$lib/settings.svelte";
   import { coreText, errorText, i18n, t } from "$lib/i18n.svelte";
   import { toast } from "$lib/toast.svelte";
+  import { helpOn } from "$lib/help.svelte";
 
   const settings = app.settings!;
   const game = $derived<Game>(settings.game ?? "jak1");
   let tab = $state<"models" | "creations">("models");
   let models = $state<ModelEntry[]>([]);
+  /** how far the game's models folder is read, while it is (thousands of files in Jak 3) */
+  let listing = $state<{ dir: string; done: number; total: number } | null>(
+    null,
+  );
   let creations = $state<ModelEntry[]>([]);
   let filter = $state("");
   let current = $state<ModelInfo | null>(null);
@@ -144,6 +152,20 @@
   const errors = $derived(
     current?.issues.filter((i) => i.level === "error").length ?? 0,
   );
+  const gameAnims = $derived(
+    current?.animations.filter((a) => a.inGame).length ?? 0,
+  );
+
+  /** each game's models folder, read once (thousands of files in Jak 3): by game and folder */
+  const listed = new Map<string, Promise<ModelEntry[]>>();
+  /** the model each game showed last, opened again when coming back to that game */
+  const lastOpen: Partial<Record<Game, { path: string; anim: string | null }>> =
+    {};
+  /** the models opened last, kept while their file is unchanged */
+  const recent = new Map<
+    string,
+    { at: number; info: ModelInfo; bytes: ArrayBuffer }
+  >();
 
   async function refresh() {
     const [g, m, c] = [
@@ -151,10 +173,16 @@
       settings.modelsDirs?.[game],
       settings.creationsDir,
     ];
+    const key = `${g}|${m}`;
+    if (m && !listed.has(key)) {
+      listing = { dir: m, done: 0, total: 0 };
+      listed.set(key, listModels(m, g, false));
+    }
     const found = [
-      m ? await listModels(m, g, false) : [],
+      m ? await listed.get(key)! : [],
       c ? await listModels(await join(c, g), g, true) : [],
     ];
+    if (listing?.dir === m) listing = null;
     // a list of the game left meanwhile would land over the new game's
     if (g === game) [models, creations] = found;
   }
@@ -163,9 +191,32 @@
     refresh();
   });
 
+  /** the list shown read again: the game's models folder too (a new extraction) */
+  async function reload() {
+    if (tab === "models")
+      listed.delete(`${game}|${settings.modelsDirs?.[game]}`);
+    await refresh();
+  }
+
+  /** why the game of the list cannot be started for a try now */
+  let blocked = $state<CoreText | null>(null);
+  async function checkTry() {
+    const g = game;
+    const why = await tryBlocked(g).catch(() => null);
+    if (g === game) blocked = why;
+  }
+  $effect(() => {
+    void game;
+    untrack(checkTry);
+  });
+
   async function setGame(g: Game) {
     if (g === game) return;
+    if (current) lastOpen[game] = { path: current.path, anim: playing };
     settings.game = g;
+    // the other game's lists go: the new ones come once read
+    models = [];
+    creations = [];
     current = null;
     creating = false;
     editing = null;
@@ -173,6 +224,13 @@
     playing = null;
     viewer.unload();
     await save();
+  }
+
+  /** the game picked in the list, with the model it showed last */
+  async function pickGame(g: Game) {
+    await setGame(g);
+    const last = lastOpen[g];
+    if (last) await open(last.path, last.anim);
   }
 
   /** what the MCP server asked to play */
@@ -304,17 +362,30 @@
     exported = null;
     twins = [];
     try {
-      const info = await inspectModel(path);
-      const model = await readModel(path);
+      const at = (await modified(path)) ?? 0;
+      let model = recent.get(path);
+      if (model?.at !== at)
+        model = {
+          at,
+          info: await inspectModel(path),
+          bytes: await readModel(path),
+        };
+      recent.delete(path);
+      recent.set(path, model);
+      if (recent.size > 4) recent.delete(recent.keys().next().value!);
+      const { info, bytes } = model;
       if (mine !== opened) return;
-      await viewer.load(model, info.joints);
-      lastModified = (await modified(path)) ?? 0;
+      await viewer.load(bytes, info.joints);
+      lastModified = at;
       current = info;
       app.model = info.path;
       const keep = anim && info.animations.some((a) => a.name === anim);
       play(keep ? anim : (info.animations[0]?.name ?? null));
       twinAnimations(path, game).then((found) => {
-        if (current?.path === path) twins = found;
+        // a skin already plays its twin's animations (Jak 3's jakb-c, jakb's)
+        const have = new Set(info.animations.map((a) => a.name));
+        if (current?.path === path)
+          twins = found.filter((w) => w.animations.some((a) => !have.has(a)));
       });
     } catch (e) {
       toast(errorText(e), "error");
@@ -323,11 +394,13 @@
     }
   }
 
-  /** after a change: the creation it went to is shown */
+  /** after a change: the creation it went to is shown, and tried again in the game open */
   async function edited(path: string, anim?: string | null) {
+    const again = !!inGame && inGame === current?.path;
     await refresh();
     tab = "creations";
     await open(path, anim);
+    if (again) await tryInGame();
   }
 
   async function rename(name: string) {
@@ -387,17 +460,18 @@
     await stopGameTest();
   }
 
-  // the animation picked plays in the game too
+  // the animation picked plays in the game too; one the try did not build, a new try builds
   $effect(() => {
     const anim = playing;
     if (!anim || untrack(() => trying || inGame !== current?.path)) return;
-    playInGame(
-      untrack(() => current!.path),
-      anim,
-    ).catch((e) => {
-      inGame = null;
-      toast(errorText(e), "error");
-    });
+    playInGame(anim)
+      .then((built) => {
+        if (!built) tryInGame();
+      })
+      .catch((e) => {
+        inGame = null;
+        toast(errorText(e), "error");
+      });
   });
 
   async function exportGame() {
@@ -411,6 +485,12 @@
   }
 
   onMount(() => {
+    listen<{ dir: string; done: number; total: number }>(
+      "list-progress",
+      (e) => {
+        if (listing?.dir === e.payload.dir) listing = e.payload;
+      },
+    );
     listen<Step>("game-test", (e) => {
       if (trying) trying = e.payload;
     });
@@ -423,6 +503,7 @@
     ready = true;
     // the MCP server edits the files: what it changes shows here
     poll = setInterval(async () => {
+      if (!trying) checkTry();
       if (!current || creating || editing || loading) return;
       const before = opened;
       const m = await modified(current.path);
@@ -447,18 +528,19 @@
     <div class="flex gap-1 border-b border-white/5 p-2">
       {#each Object.entries(GAMES) as [id, label] (id)}
         <button
+          use:helpOn={{ note: "ctl_games", section: "browse" }}
           class="flex-auto rounded-md px-2 py-1.5 text-xs whitespace-nowrap {game ===
           id
             ? 'bg-orange-500/15 text-white'
             : 'text-neutral-400 hover:bg-white/5 hover:text-neutral-200'}"
-          title={label}
-          onclick={() => setGame(id as Game)}>{label}</button
+          onclick={() => pickGame(id as Game)}>{label}</button
         >
       {/each}
     </div>
     <div class="flex border-b border-white/5 text-sm">
       {#each ["models", "creations"] as const as id (id)}
         <button
+          use:helpOn={{ note: "ctl_tabs", section: "browse" }}
           class="flex-1 py-3 {tab === id
             ? 'border-b-2 border-orange-500 text-white'
             : 'text-neutral-400 hover:text-neutral-200'}"
@@ -473,17 +555,42 @@
     </div>
     <div class="m-3 flex gap-2">
       <input
+        use:helpOn={{
+          note: "ctl_search",
+          section: "browse",
+          label: t("search"),
+        }}
         class="min-w-0 flex-1 rounded-md border border-white/10 bg-[#1b1b1b] px-3 py-1.5 text-sm placeholder:text-neutral-500 focus:border-orange-500 focus:ring-0"
         placeholder={t("search")}
         bind:value={filter}
       />
       <button
+        use:helpOn={{ note: "ctl_refresh", section: "browse" }}
+        class="rounded-md bg-white/10 px-2.5 text-lg hover:bg-white/20 disabled:opacity-40"
+        onclick={reload}
+        disabled={!!listing}
+        aria-label={t("refreshList")}><IconRefresh /></button
+      >
+      <button
+        use:helpOn={{ note: "ctl_import", section: "browse" }}
         class="rounded-md bg-white/10 px-2.5 text-lg hover:bg-white/20"
         onclick={importModels}
-        aria-label={t("import")}
-        title={t("import")}><IconImport /></button
+        aria-label={t("import")}><IconImport /></button
       >
     </div>
+    {#if listing && tab === "models"}
+      <div
+        class="flex items-center gap-3 px-4 py-3 text-xs text-neutral-300"
+        role="status"
+      >
+        <Spinner size="5" color="orange" />
+        {t("listingModels", {
+          p: listing.total
+            ? Math.round((100 * listing.done) / listing.total)
+            : 0,
+        })}
+      </div>
+    {/if}
     <ul class="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
       {#each groups as g (g.key)}
         {#if g.entries.length === 1}
@@ -507,6 +614,7 @@
         {:else}
           <li>
             <button
+              use:helpOn={{ note: "ctl_variants", section: "browse" }}
               class="flex w-full items-center gap-1 rounded-md py-2 pr-3 pl-1 text-left text-neutral-300 hover:bg-white/5"
               onclick={() => (expanded[g.key] = !isOpen(g))}
               aria-expanded={isOpen(g)}
@@ -559,15 +667,17 @@
           </li>
         {/if}
       {:else}
-        <li class="px-3 py-4 text-xs text-neutral-500">
-          {#if tab === "models"}
-            {settings.modelsDirs?.[game]
-              ? t("noModels")
-              : t("noModelsDir", { game: GAMES[game] })}
-          {:else}
-            {t("noCreations")}
-          {/if}
-        </li>
+        {#if !(tab === "models" && listing)}
+          <li class="px-3 py-4 text-xs text-neutral-500">
+            {#if tab === "models"}
+              {settings.modelsDirs?.[game]
+                ? t("noModels")
+                : t("noModelsDir", { game: GAMES[game] })}
+            {:else}
+              {t("noCreations")}
+            {/if}
+          </li>
+        {/if}
       {/each}
     </ul>
   </aside>
@@ -595,6 +705,7 @@
       class="flex items-center gap-3 border-t border-white/5 bg-[#0b0b0b] px-4 py-2"
     >
       <button
+        use:helpOn={{ note: "ctl_play", section: "watch" }}
         class="text-2xl text-neutral-200 hover:text-orange-500 disabled:opacity-30"
         disabled={!duration}
         onclick={() => (paused = !paused)}
@@ -619,6 +730,11 @@
           {/each}
         </div>
         <input
+          use:helpOn={{
+            note: "ctl_timeBar",
+            section: "watch",
+            label: t("timeBar"),
+          }}
           type="range"
           class="w-full accent-orange-500"
           min="0"
@@ -631,13 +747,13 @@
             viewer.seek(+e.currentTarget.value);
           }}
           aria-label={t("keyframes", { n: keys.all.length })}
-          title={t("keyframes", { n: keys.all.length })}
         />
       </div>
       <span class="w-32 text-right font-mono text-xs text-neutral-400"
         >{time.toFixed(2)} / {duration.toFixed(2)} s</span
       >
       <select
+        use:helpOn={{ note: "ctl_speed", section: "watch", label: t("speed") }}
         class="rounded-md border border-white/10 bg-[#1b1b1b] py-1 pr-7 pl-2 text-xs"
         bind:value={speed}
         aria-label={t("speed")}
@@ -647,12 +763,12 @@
         {/each}
       </select>
       <button
+        use:helpOn={{ note: "ctl_skeleton", section: "watch" }}
         class="text-xl {skeleton
           ? 'text-orange-500'
           : 'text-neutral-400 hover:text-neutral-200'}"
         onclick={() => (skeleton = !skeleton)}
         aria-label={t("skeleton")}
-        title={t("skeleton")}
       >
         <IconBone />
       </button>
@@ -719,6 +835,7 @@
             </p>
           </div>
           <span
+            use:helpOn={{ note: "ctl_badge", section: "anims" }}
             class="shrink-0 rounded px-2 py-0.5 text-xs {isCreation
               ? 'bg-orange-500/20 text-orange-300'
               : 'bg-white/10 text-neutral-300'}"
@@ -726,6 +843,7 @@
           >
         </div>
         <button
+          use:helpOn={{ note: "ctl_folder", section: "anims" }}
           class="flex items-center gap-2 self-start text-xs text-neutral-400 hover:text-neutral-200"
           onclick={() => revealItemInDir(current!.path)}
         >
@@ -761,10 +879,18 @@
                     class="min-w-0 flex-1 truncate text-left text-sm"
                     onclick={() => play(anim.name)}>{anim.name}</button
                   >
+                  {#if anim.inGame}
+                    <span
+                      use:helpOn={{ note: "ctl_gameTag", section: "anims" }}
+                      class="rounded bg-white/10 px-1.5 text-[11px] text-neutral-400"
+                      >{t("gameAnimation")}</span
+                    >
+                  {/if}
                   <span class="font-mono text-xs text-neutral-500"
                     >{anim.duration.toFixed(2)} s</span
                   >
                   <button
+                    use:helpOn={{ note: "ctl_editKeys", section: "anims" }}
                     class="text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-neutral-200"
                     onclick={() => {
                       const clip = viewer.clips.find(
@@ -778,24 +904,25 @@
                         duration: clip.duration,
                       };
                     }}
-                    aria-label={t("editKeys")}
-                    title={t("editKeys")}><IconEditKeys /></button
+                    aria-label={t("editKeys")}><IconEditKeys /></button
                   >
-                  <button
-                    class="text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-neutral-200"
-                    onclick={() => {
-                      renaming = anim.name;
-                      newName = anim.name;
-                    }}
-                    aria-label={t("rename")}
-                    title={t("rename")}><IconPencil /></button
-                  >
-                  <button
-                    class="text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-red-400"
-                    onclick={() => remove(anim.name)}
-                    aria-label={t("delete")}
-                    title={t("delete")}><IconDelete /></button
-                  >
+                  {#if !anim.inGame}
+                    <button
+                      use:helpOn={{ note: "ctl_rename", section: "anims" }}
+                      class="text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-neutral-200"
+                      onclick={() => {
+                        renaming = anim.name;
+                        newName = anim.name;
+                      }}
+                      aria-label={t("rename")}><IconPencil /></button
+                    >
+                    <button
+                      use:helpOn={{ note: "ctl_delete", section: "anims" }}
+                      class="text-neutral-500 opacity-0 group-hover:opacity-100 hover:text-red-400"
+                      onclick={() => remove(anim.name)}
+                      aria-label={t("delete")}><IconDelete /></button
+                    >
+                  {/if}
                 {/if}
               </li>
             {:else}
@@ -804,10 +931,8 @@
           </ul>
           {#if twins.length}
             <button
+              use:helpOn={{ note: "ctl_twins", section: "anims" }}
               class="flex items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
-              title={t("twinAnimationsHint", {
-                files: twins.map((w) => w.path.split(/[\\/]/).pop()).join(", "),
-              })}
               onclick={async () => {
                 try {
                   await edited(
@@ -828,6 +953,7 @@
             </button>
           {/if}
           <button
+            use:helpOn={{ note: "ctl_new", section: "anims" }}
             class="flex items-center justify-center gap-2 rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500"
             onclick={() => (creating = true)}
           >
@@ -836,21 +962,24 @@
         </section>
 
         {#key current}
-          <Looks
-            {viewer}
-            model={current}
-            {game}
-            onapplied={(path) => edited(path, playing)}
-          />
+          <Looks {viewer} model={current} {game} />
         {/key}
 
         <section class="flex flex-col gap-2">
-          <h3 class="text-sm font-semibold text-neutral-200">
+          <h3
+            use:helpOn={{ note: "ctl_check", section: "check" }}
+            class="text-sm font-semibold text-neutral-200"
+          >
             {t("gameCheck")}
           </h3>
           {#if errors === 0}
             <p class="flex items-center gap-2 text-xs text-green-400">
               <IconOk />{t("allGood")}
+            </p>
+          {/if}
+          {#if gameAnims}
+            <p class="text-xs text-neutral-400">
+              {t("gameAnimations", { n: gameAnims })}
             </p>
           {/if}
           <ul class="flex flex-col gap-2">
@@ -874,15 +1003,20 @@
             {/each}
           </ul>
           <button
+            use:helpOn={{ note: "ctl_export", section: "check" }}
             class="mt-1 flex items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
             onclick={exportGame}
           >
             <IconExport />{t("exportGame", { game: GAMES[game] })}
           </button>
           <button
+            use:helpOn={{
+              note: "ctl_try",
+              section: "try",
+              label: t("tryInGame"),
+            }}
             class="flex items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm hover:bg-white/20 disabled:opacity-60"
-            title={t("tryInGameHint", { game: GAMES[game] })}
-            disabled={!!trying}
+            disabled={!!trying || !!blocked}
             onclick={tryInGame}
           >
             {#if trying}
@@ -891,12 +1025,16 @@
               <IconGame />{t("tryInGame")}
             {/if}
           </button>
+          {#if blocked && !trying}
+            <p class="text-xs text-neutral-500">{coreText(blocked)}</p>
+          {/if}
           {#if inGame === current.path && !trying}
             <div
               class="flex items-center justify-between gap-2 rounded-md border border-white/10 bg-[#1b1b1b] p-3 text-xs"
             >
               <span class="text-neutral-300">{t("inGame")}</span>
               <button
+                use:helpOn={{ note: "ctl_close", section: "try" }}
                 class="shrink-0 text-orange-400 hover:text-orange-300"
                 onclick={closeGame}>{t("closeGame")}</button
               >
@@ -917,6 +1055,7 @@
               {/each}
               <div class="flex gap-3">
                 <button
+                  use:helpOn={{ note: "ctl_readme", section: "check" }}
                   class="text-orange-400 hover:text-orange-300"
                   onclick={() => openPath(exported!.readme)}
                   >{t("openReadme")}</button

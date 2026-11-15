@@ -11,7 +11,8 @@ export const GAMES: Record<Game, string> = {
 export type Settings = {
   modelsDirs?: Partial<Record<Game, string>>;
   creationsDir?: string | null;
-  jakProjectDir?: string | null;
+  /** each game's installation: the OpenGOAL Launcher's, an OpenGOAL release or a jak-project */
+  gameDirs?: Partial<Record<Game, string>>;
   game?: Game | null;
   lang?: string | null;
 };
@@ -38,6 +39,8 @@ export type AnimationInfo = {
   name: string;
   duration: number;
   keyframes: number;
+  /** Jak's: the game has it, it is neither checked nor exported */
+  inGame?: boolean;
 };
 
 /** Words of the core: `code` and `args` pick the interface's text (i18n's coreText), `message` is
@@ -71,7 +74,11 @@ export type Channel = {
 
 /** A part of a model's skinned meshes (primitives drawing the same vertices) and its textures. */
 export type Part = { mesh: number; primitives: number[]; materials: string[] };
-export type Looks = { parts: Part[]; targets: number };
+export type Looks = {
+  parts: Part[];
+  targets: number;
+  segments: number[][];
+};
 
 /** What the MCP server asked the window to play, the movement to put on the model first, and
  * whether to try it in the game and check what the game plays. */
@@ -138,6 +145,8 @@ export const readModel = (path: string) =>
 export const modified = (path: string) =>
   invoke<number | null>("modified", { path });
 export const mcpCommand = () => invoke<string>("mcp_command");
+/** The studio's folder of settings and logs (errors.log, game-test/). */
+export const prefsFolder = () => invoke<string>("prefs_folder");
 
 /** These change the model's creation (copied from the model the first time) and return its path. */
 export const setAnimation = (
@@ -155,15 +164,23 @@ export const importModel = (path: string, game: Game, replace: boolean) =>
 export const takePlay = () => invoke<PlayRequest | null>("take_play");
 export const answerMcp = (result: McpAnswer) =>
   invoke<void>("answer_mcp", { result });
-export const modelLooks = (path: string) =>
-  invoke<Looks>("model_looks", { path });
-/** The look made the creation's own: the hidden primitives ([mesh, primitive]) removed, the blend
- * shapes baked with `weights`. */
-export const applyLooks = (
-  model: string,
-  hidden: [number, number][],
-  weights: number[],
-) => invoke<string>("apply_looks", { model, hidden, weights });
+/** The .png files of the textures the game draws the model's eyes with, when its art group says
+ * them: left then right, each iris, pupil, lid. */
+/** One eye at one frame (eye.gc): x, y, lid, then the iris, pupil and lid sizes. */
+export type EyeFrame = [number, number, number, number, number, number];
+/** Each animation's eye frames, by name: per frame, the left eye then the right. */
+export const modelEyeFrames = (path: string, game: Game) =>
+  invoke<Record<string, [EyeFrame, EyeFrame][]>>("model_eye_frames", {
+    path,
+    game,
+  });
+export const modelEyes = (path: string, game: Game) =>
+  invoke<[[string, string, string], [string, string, string]] | null>(
+    "model_eyes",
+    { path, game },
+  );
+export const modelLooks = (path: string, game: Game) =>
+  invoke<Looks>("model_looks", { path, game });
 export const findModel = (near: string, game: Game, name: string) =>
   invoke<string | null>("find_model", { near, game, name });
 /** Another model with the same skeleton, and the animations it would add. */
@@ -186,8 +203,12 @@ export const exportForGame = (model: string, lang: string) =>
 /** The model tried in the game, playing the animation `animation` again and again. */
 export const testInGame = (model: string, game: Game, animation: string) =>
   invoke<void>("test_in_game", { model, game, animation });
-export const playInGame = (model: string, animation: string) =>
-  invoke<void>("play_in_game", { model, animation });
+/** False when the try did not build that animation (a level holds a few of Jak's). */
+export const playInGame = (animation: string) =>
+  invoke<boolean>("play_in_game", { animation });
 export const checkInGame = (game: Game, animation: string, seconds: number) =>
   invoke<Check>("check_in_game", { game, animation, seconds });
 export const stopGameTest = () => invoke<void>("stop_game_test");
+/** Why `game` cannot be started for a try now (no installation, another game on its port...). */
+export const tryBlocked = (game: Game) =>
+  invoke<CoreText | null>("try_blocked", { game });

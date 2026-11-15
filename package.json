@@ -12,6 +12,7 @@
     "check:retarget": "node --experimental-strip-types --no-warnings src/lib/retarget.check.ts",
     "check:variants": "node --experimental-strip-types --no-warnings src/lib/variants.check.ts",
     "check:keys": "node --experimental-strip-types --no-warnings src/lib/keys.check.ts",
+    "check:masks": "node --experimental-strip-types --no-warnings src/lib/masks.check.ts",
     "check-format": "npx prettier --plugin prettier-plugin-svelte --check .",
     "format": "npx prettier --plugin prettier-plugin-svelte --write . && cargo fmt --all",
     "prepare": "git config core.hooksPath .githooks || exit 0",

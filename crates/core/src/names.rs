@@ -6,7 +6,12 @@
 //!   and mechanical bosses). Made from jak-project's code (the model's own type derives from
 //!   nav-enemy, enemy or process-taskable), then checked by hand: creatures written as plain
 //!   process-drawable, cutscene characters and bosses added; turrets, explosions, parts and robots
-//!   (the wiki's KG Death Bots, mechs, devices and Dark Maker units) removed.
+//!   (the wiki's KG Death Bots, mechs, devices and Dark Maker units) removed. Then the living ones
+//!   the playable game never shows, from the code too: `cutscene` (no gameplay code uses their
+//!   skeletons), `minigame` (only a minigame's code does), `artbook` (only Jak 3's Secrets gallery,
+//!   the MUSEUM levels, loads them), `unused` (the code never picks them: Jak 3's jakb-old, "weird
+//!   broken jak 2 model" in target-h.gc, which no target-geo choice sets); Jak 1's Gol, Maia and
+//!   human Daxter by hand (its cutscenes are gameplay code).
 
 use std::{
   collections::{HashMap, HashSet},
@@ -27,6 +32,14 @@ type Names = HashMap<String, HashMap<String, Title>>;
 #[derive(Deserialize)]
 struct Kinds {
   objects: HashSet<String>,
+  #[serde(default)]
+  cutscene: HashSet<String>,
+  #[serde(default)]
+  minigame: HashSet<String>,
+  #[serde(default)]
+  artbook: HashSet<String>,
+  #[serde(default)]
+  unused: HashSet<String>,
 }
 
 fn names() -> &'static Names {
@@ -47,9 +60,31 @@ pub(crate) fn art_group(model: &str) -> &str {
     .map_or(model, |(base, _)| base)
 }
 
+/// Whether a model is Jak or Daxter, whose art groups GAME.CGO loads (each game's dgos/game.gd), so
+/// every level has their animations: Jak and Daxter's eichar and sidekick, Jak II's and Jak 3's
+/// jakb and daxter, Jak 3's jakb-c (Jak's mesh, his animations being jakb's).
+pub fn is_always_loaded(model: &str) -> bool {
+  matches!(
+    art_group(model),
+    "eichar" | "sidekick" | "jakb" | "jakb-c" | "daxter"
+  )
+}
+
 /// The official name of a model of `game`, when it has one.
 pub fn title(game: &str, model: &str) -> Option<Title> {
   names().get(game)?.get(art_group(model)).cloned()
+}
+
+/// Whether the playable game shows a model as a living entity: not one of its objects, nor a model
+/// only its cutscenes, its minigames or the Secrets' gallery show, nor one its code never picks. A
+/// model the game does not have (a model of your own) is.
+pub fn is_shown(game: &str, model: &str) -> bool {
+  kinds().get(game).is_none_or(|k| {
+    let group = art_group(model);
+    ![&k.objects, &k.cutscene, &k.minigame, &k.artbook, &k.unused]
+      .iter()
+      .any(|list| list.contains(group))
+  })
 }
 
 /// Whether a model is one of `game`'s objects rather than a living entity. A model the game does

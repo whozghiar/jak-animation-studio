@@ -1,29 +1,21 @@
 // The variants of one entity: the game cuts a character into several models, each with only the
-// animations one place or use needs (a level, the cutscenes, a vehicle, a minigame). They share its
-// official name; their tags tell them apart.
+// animations one place or use needs (a level, a vehicle, a mission). They share its official name;
+// their tags tell them apart. Whether a model is a cutscene's or a minigame's is the game's code to
+// say, not its name (names::is_shown): the Models list does not show those.
 
 export type Tag =
   | {
-      kind:
-        | "cutscene"
-        | "lowres"
-        | "simple"
-        | "rider"
-        | "escort"
-        | "minigame"
-        | "main";
+      kind: "highres" | "lowres" | "simple" | "rider" | "escort" | "main";
     }
   | { text: string };
 
 /** words of the art groups' names that say what a variant is for */
 const KINDS: Record<string, Exclude<Tag, { text: string }>["kind"]> = {
-  highres: "cutscene",
-  fma: "cutscene",
+  highres: "highres",
   lowres: "lowres",
   simple: "simple",
   rider: "rider",
   escort: "escort",
-  bt: "minigame",
 };
 
 /** The tags of each variant (file names without .glb), in their order: what its name says of its

@@ -28,7 +28,12 @@ pub struct Settings {
   /// the entities of each game ("jak1", "jak2", "jak3")
   pub models_dirs: BTreeMap<String, PathBuf>,
   pub creations_dir: Option<PathBuf>,
-  /// a jak-project checkout: exports go into its custom_assets/ when set
+  /// each game's installation ("jak1", "jak2", "jak3"): an OpenGOAL Launcher installation, an
+  /// OpenGOAL release or a jak-project; the game the studio tries models in on its own, and where
+  /// exports go (its custom_assets/)
+  pub game_dirs: BTreeMap<String, PathBuf>,
+  /// the one jak-project folder of earlier versions, read once into `game_dirs`
+  #[serde(skip_serializing)]
   pub jak_project_dir: Option<PathBuf>,
   pub game: Option<String>,
   pub lang: Option<String>,
@@ -49,11 +54,19 @@ impl Settings {
   }
 
   pub fn load() -> Settings {
-    std::fs::read(Self::dir().join("settings.json"))
+    let mut settings: Settings = std::fs::read(Self::dir().join("settings.json"))
       .ok()
       // Windows PowerShell and some editors start UTF-8 files with a BOM, which serde refuses
       .and_then(|b| serde_json::from_slice(b.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(&b)).ok())
-      .unwrap_or_default()
+      .unwrap_or_default();
+    if let Some(dir) = settings.jak_project_dir.take()
+      && settings.game_dirs.is_empty()
+    {
+      for game in GAMES {
+        settings.game_dirs.insert(game.to_owned(), dir.clone());
+      }
+    }
+    settings
   }
 
   pub fn save(&self) -> Result<()> {
@@ -71,6 +84,34 @@ impl Settings {
       .unwrap_or("jak1")
   }
 
+  /// Where `game`'s goal_src/, custom_assets/ and decompiler_out/ are in its installation folder: a
+  /// jak-project has them itself, an OpenGOAL release in data/, an OpenGOAL Launcher installation
+  /// in active/<game>/data/.
+  pub fn game_data(&self, game: &str) -> Option<PathBuf> {
+    let root = self.game_dirs.get(game)?;
+    [
+      root.join("active").join(game).join("data"),
+      root.join("data"),
+    ]
+    .into_iter()
+    .find(|d| d.join("goal_src").is_dir())
+    .or_else(|| Some(root.clone()))
+  }
+
+  /// The folder holding `game`'s decompiler_out/ (its art groups and textures): in the game's
+  /// installation folder, else above the game's models folder (decompiler_out/<game>/levels), which a creation,
+  /// kept elsewhere, is not in.
+  pub fn decompiled(&self, game: &str) -> Option<PathBuf> {
+    let has = |d: &Path| d.join("decompiler_out").is_dir();
+    self.game_data(game).filter(|d| has(d)).or_else(|| {
+      self
+        .models_dir(game)?
+        .ancestors()
+        .find(|d| has(d))
+        .map(Path::to_path_buf)
+    })
+  }
+
   pub fn models_dir(&self, game: &str) -> Option<&Path> {
     self.models_dirs.get(game).map(PathBuf::as_path)
   }
@@ -84,7 +125,7 @@ impl Settings {
   }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelEntry {
   pub name: String,
@@ -116,12 +157,25 @@ pub fn model_name(path: &Path) -> String {
 type CopyKey = (String, Vec<String>, Vec<String>);
 
 /// The entities (models with an armature) of a folder and its subfolders, with their official names
-/// in `game`; the game's objects (props, platforms, vehicles...) only when `objects` is set. Exports
-/// are skipped: they are copies of the creations next to them. The extraction writes a model out of
-/// each level that loads it (Babak out of 11 levels of Jak and Daxter), each copy with that level's
-/// unused vertices: one copy is listed per name, joints and animations, the smallest file.
-pub fn list_models(dir: &Path, game: &str, objects: bool) -> Vec<ModelEntry> {
-  let mut copies: HashMap<CopyKey, (u64, ModelEntry)> = HashMap::new();
+/// in `game`. Exports are skipped: they are copies of the creations next to them. The extraction
+/// writes a model out of each level that loads it (Babak out of 11 levels of Jak and Daxter), each
+/// copy with that level's unused vertices: one copy is listed per name, joints and animations, the
+/// smallest file. With `all` unset (a game's models folder), only what the playable game shows: no
+/// object, no model of a cutscene, a minigame or the Secrets' gallery (names::is_shown), no model
+/// without animation. A skin (Jak 3's jakb-c, a mesh without animation) counts the animations of its
+/// twin, and the twin that only carries them (jakb, an empty mesh) is not listed.
+pub fn list_models(dir: &Path, game: &str, all: bool) -> Vec<ModelEntry> {
+  list_models_with(dir, game, all, |_, _| {})
+}
+
+/// `list_models`, telling `progress` how many of the folder's models it read, out of how many.
+pub fn list_models_with(
+  dir: &Path,
+  game: &str,
+  all: bool,
+  progress: impl Fn(usize, usize),
+) -> Vec<ModelEntry> {
+  let mut files = Vec::new();
   let mut stack = vec![dir.to_path_buf()];
   while let Some(d) = stack.pop() {
     let Ok(entries) = std::fs::read_dir(&d) else {
@@ -136,42 +190,130 @@ pub fn list_models(dir: &Path, game: &str, objects: bool) -> Vec<ModelEntry> {
       } else if path
         .extension()
         .is_some_and(|x| x.eq_ignore_ascii_case("glb"))
-        && (objects || !names::is_object(game, &model_name(&path)))
-        && let Ok(glb) = Glb::read_json(&path)
-        && let Ok(joints) = model::skeleton(&glb)
+        && (all || names::is_shown(game, &model_name(&path)))
       {
-        let name = model_name(&path);
-        let anims: Vec<String> = glb
-          .array("animations")
-          .iter()
-          .enumerate()
-          .map(|(i, a)| model::animation_name(a, i))
-          .collect();
-        let size = e.metadata().map_or(u64::MAX, |m| m.len());
-        let entry = ModelEntry {
-          title: names::title(game, &name),
-          name: name.clone(),
-          joints: joints.len(),
-          animations: anims.len(),
-          path,
-        };
-        let key = (name, joints.into_iter().map(|j| j.name).collect(), anims);
-        match copies.get(&key) {
-          Some((s, kept)) if (*s, &kept.path) <= (size, &entry.path) => {}
-          _ => {
-            copies.insert(key, (size, entry));
-          }
-        }
+        files.push(path);
       }
     }
   }
-  let mut out: Vec<ModelEntry> = copies.into_values().map(|(_, m)| m).collect();
+  // per copy: the entry, its joints, and the triangles it draws
+  let mut copies: HashMap<CopyKey, (u64, ModelEntry, usize)> = HashMap::new();
+  let total = files.len();
+  for (done, path) in files.into_iter().enumerate() {
+    progress(done, total);
+    let Ok(glb) = Glb::read_json(&path) else {
+      continue;
+    };
+    let Ok(joints) = model::skeleton(&glb) else {
+      continue;
+    };
+    let name = model_name(&path);
+    let anims: Vec<String> = glb
+      .array("animations")
+      .iter()
+      .enumerate()
+      .map(|(i, a)| model::animation_name(a, i))
+      .collect();
+    let size = std::fs::metadata(&path).map_or(u64::MAX, |m| m.len());
+    let entry = ModelEntry {
+      title: names::title(game, &name),
+      name: name.clone(),
+      joints: joints.len(),
+      animations: anims.len(),
+      path,
+    };
+    let key = (name, joints.into_iter().map(|j| j.name).collect(), anims);
+    match copies.get(&key) {
+      Some((s, kept, _)) if (*s, &kept.path) <= (size, &entry.path) => {}
+      _ => {
+        let triangles = triangles(&glb);
+        copies.insert(key, (size, entry, triangles));
+      }
+    }
+  }
+  progress(total, total);
+  let models: Vec<(CopyKey, ModelEntry, usize)> =
+    copies.into_iter().map(|(k, (_, m, t))| (k, m, t)).collect();
+  // a skin and the twin carrying its animations: same folder, same joints, kin names (twins)
+  let carrier = |(key, m, _): &(CopyKey, ModelEntry, usize)| {
+    models.iter().find(|(k, o, _)| {
+      o.animations > 0
+        && k.1 == key.1
+        && o.path.parent() == m.path.parent()
+        && kin(names::art_group(&m.name), names::art_group(&o.name))
+    })
+  };
+  let mut carriers = HashSet::new();
+  let mut out = Vec::new();
+  for model in &models {
+    let mut entry = model.1.clone();
+    if entry.animations == 0 {
+      match carrier(model) {
+        Some((k, o, _)) => {
+          entry.animations = k.2.len();
+          carriers.insert(o.path.clone());
+        }
+        None if !all => continue,
+        None => {}
+      }
+    }
+    out.push((entry, model.2));
+  }
+  // the carriers draw (almost) nothing: their skins are what the game shows
+  let mut out: Vec<ModelEntry> = out
+    .into_iter()
+    .filter(|(m, triangles)| all || !carriers.contains(&m.path) || *triangles > EMPTY_MESH)
+    .map(|(m, _)| m)
+    .collect();
   out.sort_by(|a, b| (a.name.to_lowercase(), &a.path).cmp(&(b.name.to_lowercase(), &b.path)));
   out
 }
 
+/// At most this many triangles, a mesh is a stand-in: Jak 3's jakb, which carries Jak's 289
+/// animations for the skins, draws 2.
+const EMPTY_MESH: usize = 16;
+
+/// The triangles a model draws, read from its JSON.
+fn triangles(glb: &Glb) -> usize {
+  glb
+    .array("meshes")
+    .iter()
+    .flat_map(|m| m["primitives"].as_array().into_iter().flatten())
+    .filter_map(|p| {
+      let indices = p["indices"].as_u64()?;
+      glb.array("accessors")[indices as usize]["count"].as_u64()
+    })
+    .map(|n| n as usize / 3)
+    .sum()
+}
+
+/// Whether two art groups are one entity's: the same, or one the other's with a suffix (jakb and
+/// jakb-c).
+fn kin(a: &str, b: &str) -> bool {
+  a == b || a.starts_with(&format!("{b}-")) || b.starts_with(&format!("{a}-"))
+}
+
+/// A model read as the studio shows it: a skin without animation (Jak 3's jakb-c) with the
+/// animations of its twin in the same folder (jakb). Jak's animations, read from the game's files,
+/// are marked as the game's (model::is_game_animation); a creation of Jak keeps the marks.
+pub fn read_with_skin_animations(path: &Path) -> Result<Glb> {
+  let mut glb = Glb::read(path)?;
+  if glb.array("animations").is_empty() {
+    let dirs: Vec<PathBuf> = path.parent().map(Path::to_path_buf).into_iter().collect();
+    for twin in twins(path, &dirs) {
+      edit::copy_animations(&mut glb, &Glb::read(&twin.path)?)?;
+    }
+  }
+  if names::is_always_loaded(&model_name(path))
+    && !glb.array("animations").iter().any(model::is_game_animation)
+  {
+    edit::mark_game_animations(&mut glb);
+  }
+  Ok(glb)
+}
+
 pub fn inspect(path: &Path) -> Result<ModelInfo> {
-  let glb = Glb::read(path)?;
+  let glb = read_with_skin_animations(path)?;
   let name = model_name(path);
   Ok(ModelInfo {
     joints: model::skeleton(&glb)?,
@@ -209,7 +351,15 @@ pub fn creation_for(model: &Path, creations: &Path, game: &str) -> Result<PathBu
   }
   let dest = creation_path(model, creations, game)?;
   if !dest.exists() {
-    copy_model(model, &dest)?;
+    let glb = read_with_skin_animations(model)?;
+    let skin = glb.array("animations").len() != Glb::read_json(model)?.array("animations").len();
+    if !skin && !names::is_always_loaded(&model_name(model)) {
+      copy_model(model, &dest)?;
+    } else {
+      // a skin: its creation holds the animations it plays; Jak's, the marks of the game's
+      std::fs::create_dir_all(dest.parent().expect("a file in a folder"))?;
+      glb.write(&dest)?;
+    }
   }
   Ok(dest)
 }
@@ -299,6 +449,7 @@ pub fn export(
   }
   let actor = goal_name(&model_name(creation));
   let mut glb = Glb::read(creation)?;
+  edit::drop_game_animations(&mut glb);
   let mut notes = edit::normalize(&mut glb, &actor)?;
   let issues = rules::check(&glb, &actor);
   for anim in edit::hold_still_keys(&mut glb)? {
@@ -383,6 +534,7 @@ pub fn model_game_names(path: &Path) -> Result<GameNames> {
     .array("animations")
     .iter()
     .enumerate()
+    .filter(|(_, a)| !model::is_game_animation(a))
     .map(|(i, a)| model::animation_name(a, i))
     .collect();
   Ok(game_names(&goal_name(&model_name(path)), &anims))
@@ -502,11 +654,6 @@ pub fn twins(model: &Path, dirs: &[PathBuf]) -> Vec<Twin> {
   };
   let name = model_name(model);
   let group = names::art_group(&name);
-  let kin = |other: &str| {
-    other == group
-      || other.starts_with(&format!("{group}-"))
-      || group.starts_with(&format!("{other}-"))
-  };
   let mut have: HashSet<String> = animations.into_iter().collect();
   let mut seen = HashSet::new();
   let mut out = Vec::new();
@@ -533,7 +680,7 @@ pub fn twins(model: &Path, dirs: &[PathBuf]) -> Vec<Twin> {
       let Some((theirs, their_animations)) = outline(&path) else {
         continue;
       };
-      if theirs != joints || !kin(names::art_group(&model_name(&path))) {
+      if theirs != joints || !kin(group, names::art_group(&model_name(&path))) {
         continue;
       }
       let new: Vec<String> = their_animations

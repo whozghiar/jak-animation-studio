@@ -15,21 +15,22 @@ assert.deepEqual(tags(["bird-lady-lod0", "bird-lady-beach-lod0"]), [
 assert.deepEqual(tags(["babak-lod0", "babak-lod1"]), [["main"], ["LOD 1"]]);
 assert.deepEqual(
   tags(["crimson-guard", "crimson-guard-highres", "crimson-guard-lowres"]),
-  [["main"], ["cutscene"], ["lowres"]],
+  [["main"], ["highres"], ["lowres"]],
 );
 // no shared start: each keeps its own name
 assert.deepEqual(
   tags(["jak-highres", "jak-highres-prison", "jakb", "jakone-highres"]),
   [
-    ["cutscene", "jak"],
-    ["cutscene", "jak-prison"],
+    ["highres", "jak"],
+    ["highres", "jak-prison"],
     ["jakb"],
-    ["cutscene", "jakone"],
+    ["highres", "jakone"],
   ],
 );
+// Jak 3's arena fighters (bt-sig) are no minigame's: the name says nothing of it
 assert.deepEqual(tags(["bt-sig", "sig-highres", "sig-rider"]), [
-  ["minigame", "sig"],
-  ["cutscene", "sig"],
+  ["bt-sig"],
+  ["highres", "sig"],
   ["rider", "sig"],
 ]);
 // copies of one name, each with its level's animations (Jak II's grunt-lod0): their level tells them

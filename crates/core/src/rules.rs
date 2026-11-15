@@ -54,6 +54,9 @@ impl std::fmt::Display for Text {
 
 impl std::error::Error for Text {}
 
+/// An error is what the game cannot take even once exported (a level's memory, too many joints); a
+/// warning, what is worth knowing or what the export fixes itself (keys it adds, removes or makes
+/// linear).
 #[derive(Serialize, Clone, Copy, Debug, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Level {
@@ -108,6 +111,9 @@ pub fn game_name_clashes(glb: &Glb, actor: &str) -> Vec<(String, String, String)
   let mut first = BTreeMap::new();
   let mut clashes = Vec::new();
   for (i, anim) in glb.array("animations").iter().enumerate() {
+    if model::is_game_animation(anim) {
+      continue;
+    }
     let name = model::animation_name(anim, i);
     let symbol = game_name(actor, &name);
     match first.get(&symbol) {
@@ -185,6 +191,12 @@ fn data_bytes(glb: &Glb, joints: &[model::Joint], anim: &serde_json::Value) -> (
     add(6, animated("scale"));
   }
   (frame, fixed)
+}
+
+/// The bytes an animation takes once built: its constant part and each of its frames.
+pub fn built_size(glb: &Glb, joints: &[model::Joint], anim: &serde_json::Value) -> usize {
+  let (frame, fixed) = data_bytes(glb, joints, anim);
+  fixed + frames(glb, anim) * frame
 }
 
 /// Whether the frames build-actor makes of a channel change, as it makes them (compute_keyframes of
@@ -275,6 +287,8 @@ fn weights_outside(glb: &Glb, joints: usize) -> (usize, usize) {
   (outside, highest)
 }
 
+/// What build-actor would stop on or build wrong. The game's own animations (Jak's) are left out:
+/// they are not exported.
 pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
   let mut issues = Vec::new();
   let mut push = |level, text: Text, animation: Option<&str>| {
@@ -431,6 +445,10 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
   let mut names = HashSet::new();
   let mut animation_bytes = 0;
   for (i, anim) in anims.iter().enumerate() {
+    // the game has them already: they are not exported
+    if model::is_game_animation(anim) {
+      continue;
+    }
     let name = model::animation_name(anim, i);
     let a = Some(name.as_str());
     if !names.insert(name.clone()) {
@@ -457,7 +475,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
       );
       if c.path == "weights" {
         push(
-          Error,
+          Warning,
           text(
             "weights",
             "It has morph target (weights) keys on {target}: build-actor stops on them. Export removes them.",
@@ -467,7 +485,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
         );
       } else if joint.is_none() {
         push(
-          Error,
+          Warning,
           text(
             "not-a-joint",
             "It moves node {target}, which is not a joint of the armature: build-actor stops on it. Export drops these keys.",
@@ -478,7 +496,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
       }
       match c.interpolation.as_str() {
         "CUBICSPLINE" => push(
-          Error,
+          Warning,
           text(
             "cubic-spline",
             "Its keys on {target} are cubic splines: build-actor reads linear keys only. Export makes them linear.",
@@ -532,7 +550,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
     if !missing.is_empty() {
       let shown: Vec<_> = missing.iter().take(4).cloned().collect();
       push(
-        Error,
+        Warning,
         text(
           "missing-keys",
           "{count} joint channels have no keys ({list}): the game puts them at the origin instead of their rest pose. Export gives them their rest pose.",
@@ -553,7 +571,7 @@ pub fn check(glb: &Glb, model_name: &str) -> Vec<Issue> {
     }
 
     let (frame, fixed) = data_bytes(glb, &joints, anim);
-    animation_bytes += fixed + frames(glb, anim) * frame;
+    animation_bytes += built_size(glb, &joints, anim);
     let max = ("max", MAX_FRAME_BYTES.to_string());
     if frame > MAX_FRAME_BYTES {
       push(

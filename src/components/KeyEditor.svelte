@@ -20,7 +20,18 @@
   import { setAnimation, type Channel, type ModelInfo } from "$lib/rpc";
   import type { Viewer } from "$lib/viewer";
   import { errorText, t } from "$lib/i18n.svelte";
+  import { helpOn } from "$lib/help.svelte";
   import { toast } from "$lib/toast.svelte";
+
+  /** the note of each key button */
+  const KEY_NOTES = {
+    prevKey: "ctl_steps",
+    nextKey: "ctl_steps",
+    addKey: "ctl_addKey",
+    deleteKey: "ctl_deleteKey",
+    restPose: "ctl_rest",
+    undo: "ctl_undo",
+  } as const;
 
   let {
     viewer,
@@ -213,6 +224,11 @@
   <label class="flex items-center justify-between gap-2 text-sm">
     <span class="text-neutral-300">{t("duration")}</span>
     <input
+      use:helpOn={{
+        note: "ctl_duration",
+        section: "keys",
+        label: t("duration"),
+      }}
       type="number"
       min="0.1"
       step="0.1"
@@ -225,6 +241,7 @@
   <label class="flex items-center justify-between gap-2 text-sm">
     <span class="text-neutral-300">{t("joint")}</span>
     <select
+      use:helpOn={{ note: "ctl_joint", section: "keys", label: t("joint") }}
       class="w-48 rounded-md border border-white/10 bg-[#1b1b1b] px-2 py-1 text-sm"
       value={joint ?? -1}
       onchange={(e) => {
@@ -242,6 +259,7 @@
   <div class="grid grid-cols-2 gap-2">
     {#each [["rotate", IconRotate, "rotateTool"], ["translate", IconMove, "moveTool"]] as const as [id, Icon, label] (id)}
       <button
+        use:helpOn={{ note: "ctl_tools", section: "keys" }}
         class="flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm {mode ===
         id
           ? 'border-orange-500 bg-orange-500/10'
@@ -259,7 +277,7 @@
         class="flex items-center justify-center rounded-md bg-white/10 p-2 text-lg hover:bg-white/20 disabled:opacity-30"
         onclick={action}
         {disabled}
-        title={t(label)}
+        use:helpOn={{ note: KEY_NOTES[label], section: "keys" }}
         aria-label={t(label)}><Icon /></button
       >
     {/each}
@@ -273,6 +291,7 @@
   <button
     class="rounded-md bg-orange-600 px-4 py-2 text-sm font-semibold hover:bg-orange-500 disabled:opacity-40"
     disabled={!name.trim() || !channels.length || saving}
+    use:helpOn={{ note: "ctl_saveKeys", section: "keys" }}
     onclick={save}>{t("save")}</button
   >
 </div>
