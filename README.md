@@ -42,8 +42,9 @@ and a Jak 3 Marauder celebrates next to Jak in the game.
 
 [Put your model in the game](docs/in-game-importation.md) then takes the exported model into your
 own mod: the files to change, where they are, and the code that makes the model an entity of your
-level that plays its animations, a new one included. The studio's **In-game guide** page shows the
-same steps, written for the model you opened.
+level that plays its animations, a new one included. The studio's **Guide** page shows how to use
+the studio, and the same steps, written for the Marauder or the model you opened; each button of the
+studio says what it does when the mouse rests on it.
 
 ## Animate with an AI assistant (MCP)
 

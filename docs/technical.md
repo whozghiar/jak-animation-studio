@@ -39,8 +39,37 @@ flowchart TD
 ```
 
 The extracted models hold every variant of a character at once: Jak 3's Jak carries all his armor
-pieces. The **Appearance** panel hides or shows those parts; **Apply to the creation** removes the
-hidden ones for good.
+pieces. The **Appearance** panel hides or shows those parts, for the view only: the studio never
+changes a model's mesh nor its textures, only its animations.
+
+**The game's segments.** In Jak II and 3, a model's parts come in segments that the game's code
+turns on and off (`setup-masks`). The studio reads them from the decompiler's art group
+(`decompiler_out/<game>/raw_obj/<art group>-ag.go`) and opens the model as the code shows it. Jak 3's
+guard, `crimson-guard-lod0`, has 5 segments:
+
+| Segment | Parts                       | The game shows it             |
+| :------ | :-------------------------- | :---------------------------- |
+| 0       | body, chest and back plates | always                        |
+| 1       | blue armor and helmet       | for a guard                   |
+| 2       | yellow armor and helmet     | for a dark guard (scaled 1.1) |
+| 3       | rifle                       | for a rifle guard             |
+| 4       | stun baton                  | for a tazer or grenade guard  |
+
+The game shows one weapon and one armor (`guard.gc`), so the guard has 4 outfits, the blue one with
+a rifle first. The same goes for Jak's goatee (on unless the secret turns it off), Jak 3's scarf
+over the mouth (only when it is pulled up) and armor, the Marauders' heads and weapons, the
+citizens' clothes, and the Metal Heads' gem. Jak 1 has no segments: its parts are shown as runs of
+triangles.
+
+**The eyes.** The game draws the eyes apart from the model, frame by frame, from data each
+animation carries (`eye.gc`): where the iris looks, its size, the pupil's, how far the lid comes
+down. The studio reads it from the art group. Jak's iris fills his eye (`jakb-stance-loop`: iris
+1.0, pupil 0.44, the lid over the top tenth); without that data the game falls back on smaller
+eyes (iris 0.55), as for an animation you made. Dark Jak's eyes are all pupil, so black.
+
+**What the game does to Jak every frame.** Normal Jak's horns are scaled to nothing and his head
+is narrower than the model's (1 / 1.1 wide, and 0.92 high in Jak 3); Dark Jak is 1.05 times bigger,
+1.2 times wider at the waist, with his horns (`target-darkjak.gc`). The studio shows the same.
 
 **One model, several files.** The extraction writes a model out of every level that loads it: Babak
 comes out of 11 levels of Jak and Daxter. The copies are the same model, each also carrying points
@@ -116,6 +145,16 @@ holds the joints that move, 60 frames a second.
 The games themselves split Jak's animations over several art groups (one for Dark Jak, one for the
 board…), loaded when needed.
 
+**Jak's and Daxter's own animations.** Jak (`eichar` in Jak and Daxter, `jakb` in Jak II, `jakb-c`
+and `jakb` in Jak 3) and Daxter (`sidekick` in Jak and Daxter, `daxter` in Jak II and 3) are in
+`GAME.CGO` (each game's `goal_src/<game>/dgos/game.gd`): every level has their animations loaded
+already. Daxter's 274 animations in Jak 3 would take 7350 KB once built. The studio marks them as
+the game's when it reads their model, and their creation keeps the mark (`"extras":
+{ "gameAnimation": true }` on each of them). The Game check leaves them out and the export drops them:
+what goes to build-actor is his mesh, his skeleton and the animations you added. The try in the
+game shows them all the same (section 7). Jak 3's Jak with a new `wave`: the check finds nothing to say, and the export is a 2.3 MB
+file holding `wave` alone, slot 2, where his creation holds 290 animations.
+
 ## 5. An animation from a video or a mocap file
 
 Both sources become the same thing: the positions of the hips, knees, ankles, shoulders, elbows,
@@ -135,7 +174,17 @@ usual names too: `mixamorig:LeftUpLeg`, in a Mixamo FBX, is the left thigh.
 **The props.** Some joints carry no body part: Jak 3's soldier (`crimson-guard-lod0`) holds his gun
 with a joint `gun`, whose rest pose lies on the floor. The capture moves no such joint, so it keeps
 the pose it has at the start of the model's first animation, and a prop a hand holds there (the
-soldier's gun is 22 cm from his right hand at the start of his idle) follows that hand.
+soldier's gun is 22 cm from his right hand at the start of his idle) follows that hand. A prop
+hangs from the body (the soldier's gun from `swivelMe`), never from a limb, the neck or the head:
+Daxter's first animation starts with the balls of his feet (`Lball`, `Rball`) by his hands, and they
+stay on his feet; Babak, who holds nothing, no longer gets **Hands on the weapon**.
+
+**Keys per second.** The game's own animations have 15 keys a second (the median of Jak's, Daxter's
+and Babak's): the New animation panel and the MCP server's `apply_mocap` key a movement 15 times a
+second by default, 24, 30 or 60 on demand. More keys keep finer detail in a heavier file, but do not
+make the animation lighter or heavier in the game: build-actor makes 60 frames a second whatever the
+keys (section 4). What weighs there is the animation's length and the joints that move: the joints
+the capture does not move (Daxter's fingers, ears and tail) get one key and cost nothing per frame.
 
 **Hands on the weapon.** A capture's arms swing, and the soldier's left hand would let go of the
 barrel. With **Hands on the weapon** (ticked by default, shown when a hand holds a prop), the arms
@@ -146,13 +195,13 @@ Unticked, the arms follow the capture and the gun the right hand.
 ![walk-crouch.fbx extracted on Jak 3's soldier, Hands on the weapon ticked](screenshots/new-animation-weapon.png)
 
 **On the spot, or moving: In place.** A motion capture file also records where the actor goes: in
-`walk.bvh`, the actor walks 2 m forward in 2 seconds. **In place** decides what Babak does with that
+`walk.bvh`, the actor walks 1 m forward in 2 seconds. **In place** decides what Babak does with that
 travel:
 
 | In place             | Babak                                                                                    | When the animation starts again    |
 | -------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------- |
 | Ticked (the default) | Takes the steps, his hips going up and down, but stays where he is, like on a treadmill. | Nothing shows: the loop is smooth. |
-| Unticked             | Really walks 2 m forward.                                                                | He jumps back to his start.        |
+| Unticked             | Really walks forward, about 1.4 m: the capture's 1 m scaled to his legs.                 | He jumps back to his start.        |
 
 Keep it ticked for the game. In the Jak games, characters always walk on the spot in their
 animations, and the game's code moves them through the level while the steps play: an animation
@@ -163,6 +212,10 @@ slide on the floor.
 
 Two details:
 
+- The travel goes to `align`, the joint the game's code moves a character by, not to the body: no
+  part of the model hangs from `align`. The studio's view moves the whole model by `align`'s offset,
+  as the game's code does, so the travel shows there; the try in the game shows the model on the
+  spot, its small viewer playing the animation without moving it.
 - The hips' up and down movement is always kept: only the travel across the floor is concerned.
 - A video gives no travel: the studio reads the body's points relative to each other, not where the
   person goes in the room. In place changes nothing for it.
@@ -193,6 +246,7 @@ The export changes only what the game needs:
   smallest copy holds; Jak 3's Marauder, tried in the game, made the test level 13 MB without this,
   1 MB with it.
 - **The skin**, in every model, so that the game draws it right (below).
+- **Jak's and Daxter's own animations** are left out: the game has them (section 4).
 
 [Put your model in the game](in-game-importation.md) then shows how to make the exported model an
 entity of your level.
@@ -235,7 +289,8 @@ The game's own files are never lost: the two the try replaces (`out/<game>/iso/T
 `out/<game>/fr3/test-zone.fr3`) are kept aside in the studio's settings folder
 (`game-test/<game>/kept/`) and put back when the game closes, or at once when a try fails: the
 studio then stops goalc too, which frees its memory. What the compiler and the game printed is in
-`game-test/<game>/goalc.log` and `gk.log`.
+`game-test/<game>/goalc.log` and `gk.log`. Every error the studio meets, in the try or elsewhere,
+also goes to `errors.log` in the settings folder, one line each with its time in UTC.
 
 Good to know:
 
@@ -243,6 +298,13 @@ Good to know:
   3), and a try does not start while another game holds it.
 - A joint whose keys are all at 0 s gets a second key 1/60 s later in the try's copy, as in the
   export: OpenGOAL v0.3.9's build-actor puts it at the origin otherwise.
+- Any animation of the model can be tried: one you made, one you edited, or one of the game's
+  own, Jak's included. A level loads the model's art group whole, and Jak's 289 animations in Jak 3
+  would take 10 MB: the try builds the animation picked, then those nearest it in the list, the
+  ones you added first, as long as they take less than three quarters of the level's buffer (1312
+  KB in Jak II and Jak 3). Jak II's `jakb-run` built so 1264 KB. Picking an animation the game does
+  not hold, or saving an edit while the game is open, builds the level again: the game restarts on
+  it.
 - The game plays the animation picked again and again, and goalc checks it: the art group's
   element the viewer plays must be that animation (the soldier's `walk-crouch` is element 54),
   else the try fails rather than show another one.
@@ -334,7 +396,22 @@ jak-animation-studio.exe --lang en "--default-library=D:\OpenGOAL\animation-stud
 ```
 
 A game installed with another tooling is not tried: with `v0.3.9` active, Jak II installed with
-`v0.3.9-whozghiar.1` is refused. The studio keeps its settings in `settings.json`, in
+`v0.3.9-whozghiar.1` is refused.
+
+Started on its own, the studio uses the **game installation folder** of its settings, one per
+game. Each can be any of these: the studio finds the game's files in it.
+
+| The folder                         | Its game's files (`goal_src`, `custom_assets`, `decompiler_out`) | gk and goalc             |
+| ---------------------------------- | ---------------------------------------------------------------- | ------------------------ |
+| A jak-project, built               | The folder itself                                                | `out/build/<preset>/bin` |
+| An OpenGOAL release                | `data`                                                           | The folder itself        |
+| The launcher's installation folder | `active/<game>/data`                                             | `active/bin`             |
+
+The try never changes the game for good (section 7), so the launcher's game, with its compiler as
+installed, is enough to try models. Exports go into that `custom_assets` folder: with the launcher's
+folder, `active/jak3/data/custom_assets/jak3/models/custom_levels/` for Jak 3, which a launcher
+update may replace. The game's textures and art groups (the eyes, the outfits) are read from its
+`decompiler_out`, else from above the models folder (`decompiler_out/<game>/levels`). The studio keeps its settings in `settings.json`, in
 `%APPDATA%\OpenGOAL\animation-studio` on Windows, `~/Library/Application Support/OpenGOAL/animation-studio`
 on macOS and `~/.local/share/OpenGOAL/animation-studio` on Linux.
 

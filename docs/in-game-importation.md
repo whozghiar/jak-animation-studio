@@ -9,10 +9,10 @@ plays `idle0`, then `wave` when goalc sends it the event (step 8).
 ![The Marauder, placed by test-zone next to Jak, plays idle0, then wave](screenshots/in-game-actor.gif)
 
 The studio's **Try in the game** does all of this in a copy of `test-zone` to show you a model. This
-guide is for your own mod. The studio's **In-game guide** page shows the same steps with the lines
-made for the model you opened:
+guide is for your own mod. The studio's **Guide** page shows the same steps in its **Put a model in
+the game** tab, with the Marauder, or with the lines made for the model you opened:
 
-![The In-game guide page, made for the Marauder](screenshots/studio-guide.png)
+![The Guide page's Put a model in the game tab, made for the Marauder](screenshots/studio-guide.png)
 
 ## What you need
 
@@ -36,8 +36,8 @@ place of `jak3` in every path below.
 ## 1. Copy the model
 
 Copy the export's `custom_assets` folder into your jak-project. The model lands in
-`custom_assets/jak3/models/custom_levels/marauder-male-lod0.glb`. With the jak-project folder set in
-the studio's settings, the export already put it there.
+`custom_assets/jak3/models/custom_levels/marauder-male-lod0.glb`. With Jak 3's installation folder
+set in the studio's settings (your jak-project), the export already put it there.
 
 ## 2. Build its art group
 
@@ -221,7 +221,7 @@ group bigger than the buffer, so that the try never shows memory written over.
 Any animation of the model plays the same way: its symbol is the model's name, its short name and
 `-ja`, as the export's README lists them. `marauder-male-lod0-celebrate0-ja` in place of
 `marauder-male-lod0-wave-ja` makes the event play the Marauder's celebration. In the studio, the
-**In-game guide** page writes the code for the animation you pick.
+**Guide** page writes the code for the animation you pick, in its **Put a model in the game** tab.
 
 ## When it does not work
 
