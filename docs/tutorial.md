@@ -102,6 +102,8 @@ it, listed in **Creations**.
 
 4. Adjust it if needed: **Smoothing** calms a shaky capture, **Face forward** turns the movement to
    face the model's front, **Bone mapping** says which of Babak's joints plays which body part.
+   For a model holding a weapon, such as Jak 3's soldier, **Hands on the weapon** keeps it in both
+   hands.
 
    **In place**, ticked, keeps Babak walking on the spot, like on a treadmill. Leave it ticked for
    the game: in the Jak games, the game's code moves a character through the level while its

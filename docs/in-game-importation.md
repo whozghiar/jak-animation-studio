@@ -30,6 +30,9 @@ made for the model you opened:
 | The level's files   | `custom_assets/jak3/levels/test-zone/testzone.gd`                | The entity's code and the art group     |
 | The level           | `custom_assets/jak3/levels/test-zone/test-zone.jsonc`            | The model's mesh and the entity's place |
 
+In Jak and Daxter or Jak II, the files are the same, in the game's own folders: `jak1` or `jak2` in
+place of `jak3` in every path below.
+
 ## 1. Copy the model
 
 Copy the export's `custom_assets` folder into your jak-project. The model lands in
@@ -191,6 +194,28 @@ the game sees it in:
 The level can send it too, when Jak walks into a region of `test-zone.jsonc`:
 `"on-enter": "(send-event \"my-marauder-1\" 'wave)"`.
 
+## Memory: how many animations a level holds
+
+Each animation makes the model's art group bigger, and the game has no room to spare for it. A level
+loads each file of its `.gd`, the art group whole, into one of two buffers, and nothing checks the
+size: a bigger art group writes over the memory after the buffer, and the game crashes or draws
+garbage.
+
+| Game           | Buffer of a level's file | Where the game sets it                                                                      |
+| -------------- | ------------------------ | ------------------------------------------------------------------------------------------- |
+| Jak and Daxter | 2 MB                     | `goal_src/jak1/engine/level/level.gc`, `(* 2 1024 1024)`                                    |
+| Jak II, Jak 3  | 1 750 KB (`#x1b5800`)    | `goal_src/jak2/engine/level/level.gc` and `goal_src/jak3/engine/level/level.gc`, `#x1b5800` |
+
+The studio's **Game check** gives the size once built. Jak, in Jak and Daxter, with his 96
+animations: "The animations take 7408 KB once built", far more than any level loads: keep the
+animations your entity plays and remove the others before exporting. The Marauder's 33 fit.
+
+Past the buffer, the game itself has to change: it is probably a mod of your game. The two buffers
+are the `dgo-level-buf-2` allocations of `level.gc` (the values above), and they are taken from the
+level's heap (`LEVEL_HEAP_SIZE` in the same file), which every model, mesh and texture of the level
+shares: raise both, then try the level in the game. The studio's **Try in the game** refuses an art
+group bigger than the buffer, so that the try never shows memory written over.
+
 ## Play another animation
 
 Any animation of the model plays the same way: its symbol is the model's name, its short name and
@@ -200,11 +225,13 @@ Any animation of the model plays the same way: its symbol is the model's name, i
 
 ## When it does not work
 
-| What you see                                         | Why                                                                                                                      | What to do                                                                                                           |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| The entity does not appear                           | A level made by hand has no visibility data: with the game's PS2 actor visibility on, its entities are never born.       | Turn off **PS2 actor vis** in the game's debug menu, or type `(set! (-> *pc-settings* ps2-actor-vis?) #f)` in goalc. |
-| goalc stops while it builds the art group            | An animation is a still pose (all its keys at 0 s): OpenGOAL v0.3.9's build-actor stops on it.                           | Export the model with the studio: it gives still poses a second key 1/60 s later.                                    |
-| The model folds into a ball while an animation plays | Joints of the animation have a single key (at 0 s): OpenGOAL v0.3.9's build-actor puts them at the origin.               | Export the model with the studio: it gives them a second key 1/60 s later.                                           |
-| The model looks stretched as soon as it moves        | build-actor numbers its joints one off (see the [technical guide](technical.md#6-the-export)).                           | Export the model with the studio: it sets the skin for any build-actor.                                              |
-| goalc does not know `marauder-male-lod0-wave-ja`     | The animation is missing from `:art`, or `:art` is not in the file's order.                                              | Copy `def-actor` from the export's README.                                                                           |
-| Jak and Daxter closes when the level loads           | With the jak-project of October 2026, Jak and Daxter closes when a level loads an entity with a skeleton added this way. | Put your models in Jak II or Jak 3.                                                                                  |
+| What you see                                           | Why                                                                                                                      | What to do                                                                                                           |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| The entity does not appear                             | A level made by hand has no visibility data: with the game's PS2 actor visibility on, its entities are never born.       | Turn off **PS2 actor vis** in the game's debug menu, or type `(set! (-> *pc-settings* ps2-actor-vis?) #f)` in goalc. |
+| goalc stops while it builds the art group              | An animation is a still pose (all its keys at 0 s): OpenGOAL v0.3.9's build-actor stops on it.                           | Export the model with the studio: it gives still poses a second key 1/60 s later.                                    |
+| The model folds into a ball while an animation plays   | Joints of the animation have a single key (at 0 s): OpenGOAL v0.3.9's build-actor puts them at the origin.               | Export the model with the studio: it gives them a second key 1/60 s later.                                           |
+| The model looks stretched as soon as it moves          | build-actor numbers its joints one off (see the [technical guide](technical.md#6-the-export)).                           | Export the model with the studio: it sets the skin for any build-actor.                                              |
+| goalc does not know `marauder-male-lod0-wave-ja`       | The animation is missing from `:art`, or `:art` is not in the file's order.                                              | Copy `def-actor` from the export's README.                                                                           |
+| The entity plays another animation than the one named  | `:art` is not in the file's order: each symbol names a slot, and the slot holds the file's animation of that rank.       | Copy `def-actor` from the export's README after every export.                                                        |
+| The game crashes or draws garbage when the level loads | The art group is bigger than the level's buffer (see [Memory](#memory-how-many-animations-a-level-holds)).               | Remove animations, or mod the game for more memory.                                                                  |
+| Jak and Daxter closes when the level loads             | With the jak-project of October 2026, Jak and Daxter closes when a level loads an entity with a skeleton added this way. | Put your models in Jak II or Jak 3.                                                                                  |

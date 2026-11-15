@@ -129,7 +129,21 @@ the way the actor's upper arm points, from shoulder to elbow. Only directions ar
 lengths, so a short lurker can take the walk of a tall person.
 
 Which bone plays which body part is the **bone mapping**. The studio guesses it from the names
-(`Rshoulder` is the right shoulder), and you can change it.
+(`Rshoulder` is the right shoulder), and you can change it. On the capture's side, it reads the
+usual names too: `mixamorig:LeftUpLeg`, in a Mixamo FBX, is the left thigh.
+
+**The props.** Some joints carry no body part: Jak 3's soldier (`crimson-guard-lod0`) holds his gun
+with a joint `gun`, whose rest pose lies on the floor. The capture moves no such joint, so it keeps
+the pose it has at the start of the model's first animation, and a prop a hand holds there (the
+soldier's gun is 22 cm from his right hand at the start of his idle) follows that hand.
+
+**Hands on the weapon.** A capture's arms swing, and the soldier's left hand would let go of the
+barrel. With **Hands on the weapon** (ticked by default, shown when a hand holds a prop), the arms
+keep the pose of the model's first animation, the gun in both hands, while the legs, the hips, the
+chest and the head follow the capture: the soldier walks the capture's crouched walk, aiming.
+Unticked, the arms follow the capture and the gun the right hand.
+
+![walk-crouch.fbx extracted on Jak 3's soldier, Hands on the weapon ticked](screenshots/new-animation-weapon.png)
 
 **On the spot, or moving: In place.** A motion capture file also records where the actor goes: in
 `walk.bvh`, the actor walks 2 m forward in 2 seconds. **In place** decides what Babak does with that
@@ -229,6 +243,9 @@ Good to know:
   3), and a try does not start while another game holds it.
 - A joint whose keys are all at 0 s gets a second key 1/60 s later in the try's copy, as in the
   export: OpenGOAL v0.3.9's build-actor puts it at the origin otherwise.
+- The game plays the animation picked again and again, and goalc checks it: the art group's
+  element the viewer plays must be that animation (the soldier's `walk-crouch` is element 54),
+  else the try fails rather than show another one.
 - Jak and Daxter closes when its test level loads a character with a skeleton added this way.
 
 ## 8. The MCP server
@@ -263,9 +280,33 @@ the joints not named at their rest pose, and checks it against the game's rules.
 | `inspect_model`                        | A model's joints (names, parents, rest positions), animations and check.                               |
 | `create_animation`                     | Writes an animation from poses: `turn`, `rotate` (about the joint's own axes) or `translate` (metres). |
 | `play_animation`                       | Shows the model in the studio's window and plays an animation.                                         |
+| `apply_mocap`                          | Puts a mocap file (BVH, FBX, glTF) on a humanoid model, as the **New animation** panel does.           |
+| `check_in_game`                        | Tries the model in the game and checks what the game plays (below).                                    |
 | `delete_animation`, `rename_animation` | Change the animations of a creation.                                                                   |
 | `import_model`                         | Copies a `.glb` into the game's creations.                                                             |
 | `export_for_game`                      | The studio's **Export**.                                                                               |
+
+`apply_mocap` asks the studio's window to do the retargeting (it starts the studio when it is
+closed), then answers with the joint that plays each body part. For Jak 3's soldier and a Mixamo
+crouched walk:
+
+```json
+{
+  "model": "crimson-guard-lod0",
+  "game": "jak3",
+  "file": "D:\\mocap\\walk-crouch.fbx"
+}
+```
+
+The soldier's creation gets `walk-crouch` (1 s, its hips, chest, neck, head, arms and legs mapped),
+ready for **Try in the game**.
+
+`check_in_game` runs that try (its last animation by default, the one added last) and says what the
+game plays: for the soldier, `walk-crouch` as element 54, 59 frames for the 58 the studio expects
+(build-actor samples at 60 a second), and four screenshots the game takes over one loop, for the
+assistant to compare with the studio. The screenshots go to the assistant only: the server deletes
+them once sent, and the game's own screenshots folder keeps only what you took. The game stays
+open, playing it in front of Jak.
 
 To use it with Claude Code, run once the command of **Settings > AI assistant (MCP)**, for example:
 

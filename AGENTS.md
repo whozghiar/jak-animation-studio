@@ -29,14 +29,14 @@ with its active tooling).
     - `names.rs`, `names.json`: the official English and French names of the entities, by game and art group, each with its source.
     - `living.json`: per game, the models that are living entities and those that are objects (every skeleton of `goal_src/<game>/engine/data/art-elts.gc`). Made from the code (the model's type derives from `nav-enemy`, `enemy` or `process-taskable`), then checked by hand; the Models list hides the objects.
     - `edit.rs`: animations written as `build-actor` reads them; `normalize` for the export (only the animations that need it, names kept); `for_build_actor`, the skin set so that any `build-actor` builds the model right, `trim_points`, the points no triangle draws dropped, and `hold_still_keys`, keys all at 0 s given a second one (all three in the export and the try); `copy_animations` from a twin.
-    - `library.rs`: settings (a models folder per game), the models listed (one copy of each model the extraction wrote out of several levels), the creations folder (by game; `edit_creation` refuses a change that gives two animations one name in the game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to play in the window (`play.json`).
-    - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back.
+    - `library.rs`: settings (a models folder per game), the models listed (one copy of each model the extraction wrote out of several levels), the creations folder (by game; `edit_creation` refuses a change that gives two animations one name in the game), import, the export, the twins (other files of the same entity and skeleton, where the extraction put its animations), and the MCP server's requests to the window (`play.json`: play an animation, or put a mocap file on the model first, answered in `mocap-done.json`).
+    - `game_test.rs`: the try in the game (Jak Level Editor's way): the installation found, goalc's project in `<prefs>/game-test/<game>/`, test-zone rebuilt with the model as `ogas-model` and the viewer `ogas-play`, gk started, the game's files kept and put back; the animation played checked by name in the game, and `check` (the MCP server's `check_in_game`, through the window) reads its element and frames and has the game take screenshots.
   - `crates/mcp/`: the MCP server (JSON-RPC over stdio), on the files and the settings.
   - `src-tauri/`: the program's command line, its Tauri commands, and the watch of the play requests (it brings the window up).
 - **Interface (`src/`)**:
   - `lib/viewer.ts`: the 3D view (three.js).
   - `lib/frames.ts`: body points over time, the common form of every capture.
-  - `lib/pose.ts`: captures from a video (MediaPipe Pose) and from mocap files (BVH, FBX, glTF).
+  - `lib/pose.ts`: captures from a video (MediaPipe Pose) and from mocap files (BVH, FBX, glTF). The MCP server's `apply_mocap` runs this and `lib/retarget.ts` in the window (`components/Studio.svelte`): the retargeting exists once, in three.js.
   - `lib/mapping.ts`: which joint plays which body part, guessed from names.
   - `lib/retarget.ts`: captured points to joint rotations, by bone directions.
   - `lib/looks.ts`: what the games' code does to Jak's looks (Dark Jak's blend targets, Light Jak's wings), with its sources.

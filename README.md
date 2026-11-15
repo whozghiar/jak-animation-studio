@@ -72,6 +72,13 @@ You then refine it in words (_"slower"_, _"raise the arm higher"_), or by hand i
 assistant can also list the models, rename or delete animations, import a model and export it for
 the game.
 
+It also puts a motion capture file on a model, then checks it in the game. Here the assistant puts
+a Mixamo crouched walk, `walk-crouch.fbx`, on Jak 3's soldier (`apply_mocap`), then tries him in the
+game (`check_in_game`): the game plays the new animation in a loop, and the server answers with what
+the game plays and screenshots the game took.
+
+![An assistant puts a crouched walk on Jak 3's soldier, then checks it in the game](docs/screenshots/mcp-to-game.gif)
+
 To set it up, open the studio's **Settings > AI assistant (MCP)**, copy the command it shows and run
 it once in a terminal. The server comes in the portable zip, next to the studio, which is what the
 launcher installs.
