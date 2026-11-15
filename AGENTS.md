@@ -19,7 +19,7 @@ with its active tooling).
 ### Technology Stack
 
 - **Desktop runtime**: Tauri v2 (Rust), in `src-tauri/`.
-- **Interface**: Svelte 5 (runes), Tailwind CSS v4, Flowbite Svelte, Vite, TypeScript, three.js.
+- **Interface**: Svelte 5 (runes), Tailwind CSS v4, Flowbite Svelte, Vite, TypeScript, three.js, svelte-i18n (the OpenGOAL Launcher's translation library).
 - **Workspace** (`Cargo.toml`):
   - `crates/core/`: everything about models, shared by the program and the MCP server.
     - `glb.rs`: the `.glb` container, read and written in place (what is not touched is kept as is; a file left as it was is written back byte for byte), compaction of unused data.
@@ -89,7 +89,10 @@ with its active tooling).
    texts, the notes of its buttons), their screenshots and GIFs included (`docs/screenshots/`, taken again from the studio as
    it now is, with no path of your own computer in them).
 8. **No game data**: no model, texture, sound or extracted file of the games in the repository. Tests make their own models.
-9. **Interface texts**: every text goes through `src/lib/i18n.svelte.ts`, in English and French.
+9. **Interface texts**: every text goes through `t()` of `src/lib/i18n.svelte.ts`, which uses the
+   OpenGOAL Launcher's library, `svelte-i18n`, and its layout: one JSON file per language in
+   `src/assets/translations/` (`en-US.json`, `fr-FR.json`), every key in both. Texts are ICU
+   messages: `{name}` for a value, `''` for an apostrophe right before a brace (`''{name}''`).
    A text of the core the interface shows (issue, export note, error) is a `rules::Text`; its code
    is the key `core_<code>` there. Its English message is what the MCP server says.
 10. **Official names**: an entity's name in `names.json` has a source (the game's text or a wiki

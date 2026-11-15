@@ -383,7 +383,7 @@ starts Jak Level Editor:
 
 | Option                           | What it tells the studio                                             |
 | -------------------------------- | -------------------------------------------------------------------- |
-| `--lang <code>`                  | The language: `en` or `fr`.                                          |
+| `--lang <code>`                  | The language: `en` or `fr`, at each start.                           |
 | `--default-library=<folder>`     | The creations folder, while none is chosen.                          |
 | `--game-install=<game>=<folder>` | A game installed, where models are tried (one option per game).      |
 | `--tooling-version=<version>`    | The launcher's active tooling: the studio tries in those games only. |
@@ -397,6 +397,13 @@ jak-animation-studio.exe --lang en "--default-library=D:\OpenGOAL\animation-stud
 
 A game installed with another tooling is not tried: with `v0.3.9` active, Jak II installed with
 `v0.3.9-whozghiar.1` is refused.
+
+The launcher's games also fill the settings not chosen yet: each game's installation folder
+(`D:\OpenGOAL` for Jak 3 above), and its models folder when the game's extraction wrote the models
+(`D:\OpenGOAL\active\jak3\data\decompiler_out\jak3\levels`; the launcher's own extraction
+does not, a jak-project's decompiler does). A folder you chose stays yours. The creations stay in
+the launcher's `animation-studio` folder. The language button of the title bar (`EN`, `FR`) changes
+the studio's language only; the next start from the launcher gives the launcher's again.
 
 Started on its own, the studio uses the **game installation folder** of its settings, one per
 game. Each can be any of these: the studio finds the game's files in it.
