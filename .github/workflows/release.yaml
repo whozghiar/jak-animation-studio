@@ -6,7 +6,7 @@ name: Release
 # branch, tags the commit, then makes a draft release with, per platform (Windows, Linux, macOS),
 # the installers, a portable zip (the studio and its MCP server side by side, what the OpenGOAL
 # Launcher will download: jak-animation-studio-portable-<platform>.zip) and the MCP server
-# alone. Check the draft, then publish it.
+# alone. Check the draft, then publish it. From a terminal: gh workflow run release.yaml -f bump=minor
 
 on:
   workflow_dispatch:

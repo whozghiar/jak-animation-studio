@@ -2,7 +2,8 @@ name: Format
 
 # Run by hand on a branch (Actions > Format > Run workflow): formats the code as the pre-commit hook
 # does (rustfmt, Prettier) and commits the result to the branch when something changed. For changes
-# made without the hook, such as edits on GitHub's website.
+# made without the hook, such as edits on GitHub's website. From a terminal:
+# gh workflow run format.yaml --ref <branch>
 
 on:
   workflow_dispatch:
