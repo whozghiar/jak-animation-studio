@@ -6,11 +6,23 @@
   import IconWindowMaximize from "~icons/mdi/window-maximize";
   import IconWindowClose from "~icons/mdi/window-close";
   import logo from "../../src-tauri/icons/128x128.png";
-  import { app } from "$lib/settings.svelte";
+  import IconTranslate from "~icons/mdi/translate";
+  import { app, save } from "$lib/settings.svelte";
   import { GAMES } from "$lib/rpc";
-  import { t } from "$lib/i18n.svelte";
+  import { i18n, LANGS, t, type Lang } from "$lib/i18n.svelte";
   const appWindow = getCurrentWindow();
   let version = $state("");
+
+  /** the studio's language only: the next one of LANGS */
+  async function nextLang() {
+    const langs = Object.keys(LANGS) as Lang[];
+    const lang = langs[(langs.indexOf(i18n.lang) + 1) % langs.length];
+    i18n.lang = lang;
+    if (app.settings) {
+      app.settings.lang = lang;
+      await save();
+    }
+  }
 
   onMount(async () => {
     version = `v${await getVersion()}`;
@@ -40,6 +52,14 @@
     <span class="text-neutral-500">{GAMES[app.settings?.game ?? "jak1"]}</span>
   </div>
   <div class="ml-auto flex shrink-0 self-stretch">
+    <button
+      class="flex h-full items-center gap-1.5 px-3 font-mono text-xs text-neutral-400 uppercase hover:bg-white/10 hover:text-neutral-100"
+      onclick={nextLang}
+      aria-label={t("switchLang", { lang: LANGS[i18n.lang] })}
+      title={t("switchLang", { lang: LANGS[i18n.lang] })}
+    >
+      <IconTranslate class="text-sm" />{i18n.lang}
+    </button>
     <button
       class="flex h-full w-12 items-center justify-center hover:bg-white/10"
       onclick={() => appWindow.minimize()}
