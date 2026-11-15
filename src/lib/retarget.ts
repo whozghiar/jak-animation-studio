@@ -230,10 +230,42 @@ export function retarget(
   };
 
   // the props: joints no mapped bone hangs from, under a mapped one, outside the hands, that a hand
-  // holds at the base animation's start (within its forearm's length): each keeps its place in it
+  // holds at the base animation's start (within its forearm's length): each keeps its place in it.
+  // A prop hangs from the body (the guard's gun from swivelMe), never from a limb, the neck or the
+  // head, nor from hips apart from the upper body: Daxter's first animation starts with the balls of
+  // his feet (Lball, Rball) by his hands, and Babak, who holds nothing, has joints there too.
   const reaches = (i: number, set: Set<number>): boolean =>
     set.has(i) || children[i].some((c) => reaches(c, set));
   const mapped = new Set([...aims.keys(), ...bodies.keys()]);
+  const hipsJoint = slot("hips");
+  const chestJoint = slot("chest");
+  const limbs = new Set(
+    (
+      [
+        "thighL",
+        "shinL",
+        "footL",
+        "thighR",
+        "shinR",
+        "footR",
+        "upperArmL",
+        "foreArmL",
+        "upperArmR",
+        "foreArmR",
+        "neck",
+        "head",
+      ] as const
+    )
+      .map(slot)
+      .filter((i) => i !== undefined),
+  );
+  if (
+    hipsJoint !== undefined &&
+    !(chestJoint !== undefined && reaches(hipsJoint, new Set([chestJoint])))
+  )
+    limbs.add(hipsJoint);
+  const onLimb = (i: number): boolean =>
+    i >= 0 && (limbs.has(i) || onLimb(parent[i]));
   const props: { joint: number; hand: number; inHand: THREE.Matrix4 }[] = [];
   if (base) {
     const baseWorld = worldOf((i) => baseLocal[i]);
@@ -251,7 +283,7 @@ export function retarget(
     for (const [i] of joints.entries()) {
       if (parent[i] < 0 || reaches(i, mapped) || !reaches(parent[i], mapped))
         continue;
-      if (inHands(i)) continue;
+      if (inHands(i) || onLimb(i)) continue;
       const holder = hands
         .map((h) => ({ ...h, d: at(i).distanceTo(at(h.hand)) }))
         .filter((h) => h.d < h.reach)

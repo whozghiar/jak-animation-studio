@@ -34,8 +34,13 @@ const REST: [string, string | null, THREE.Vector3][] = [
   ["shinR", "thighR", v(-0.1, 0.55, 0)],
   ["footR", "shinR", v(-0.1, 0.1, 0)],
   ["toeR", "footR", v(-0.1, 0.05, 0.15)],
+  ["toeTipR", "toeR", v(-0.1, 0.05, 0.25)],
   // a prop no mapped bone hangs from, in the right hand at rest
   ["gun", "hips", v(-0.75, 1.5, 0.05)],
+  // the ball of a foot that the first pose puts by the hand (Daxter's Rball): not a prop
+  ["ballR", "footR", v(-0.7, 1.5, 0.05)],
+  // hair on the forearm, by the hand (Babak's Rarmhair): not a prop either
+  ["hairR", "foreR", v(-0.7, 1.52, 0.02)],
 ];
 
 let seed = 7;
@@ -264,6 +269,12 @@ for (const f of [1, 2])
   assert.ok(
     inHand(f).distanceTo(inHand(0)) < 1e-4,
     `the gun leaves the hand at frame ${f}`,
+  );
+for (const limb of ["ballR", "hairR"])
+  assert.equal(
+    hold.channels.find((c) => c.joint === at(limb)),
+    undefined,
+    `${limb}, on a limb, is not held by the hand`,
   );
 
 // Mixamo's bones, as three.js's FBXLoader names them (mixamorig:LeftUpLeg loses its ':')
